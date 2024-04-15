@@ -32,7 +32,7 @@ class LoginActivity : AppCompatActivity() {
         Log.d(TAG, "onCreate: ${Build.BRAND}")
         views.apply {
             if (Build.BRAND=="Itel"/*|| Build.BRAND!!.equals("Redmi",true)*/){
-                //uvc.isUvc.value=true
+
                 usernameEt.setText("guest")
                 passwordEt.setText("1234")
             }else
