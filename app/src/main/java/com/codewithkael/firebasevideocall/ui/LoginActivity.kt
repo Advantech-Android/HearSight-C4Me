@@ -10,6 +10,7 @@ import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.Menu
+import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
@@ -20,6 +21,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.codewithkael.firebasevideocall.QRCode.WifiPasswordGenerated
 import com.codewithkael.firebasevideocall.R
 import com.codewithkael.firebasevideocall.databinding.ActivityLoginBinding
 import com.codewithkael.firebasevideocall.repository.MainRepository
@@ -148,8 +150,18 @@ class LoginActivity : AppCompatActivity() {
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.main_menu,menu)
-
+        menu!!.findItem(R.id.setting).setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM)
         return true
+    }
 
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when(item.itemId)
+        {
+            R.id.qrCode->{
+                val wifipassgenerator= WifiPasswordGenerated(this)
+                wifipassgenerator.showWifi()
+            }
+        }
+        return super.onOptionsItemSelected(item)
     }
 }
