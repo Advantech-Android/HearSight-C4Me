@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/hearsight_logo"
+    tools:context=".ui.LoginActivity"
+  >
+
+
+    <EditText
+        android:id="@+id/usernameEt"
+        android:layout_width="300dp"
+        android:layout_height="50dp"
+        android:layout_gravity="center"
+        android:layout_marginTop="400dp"
+        android:paddingStart="8dp"
+        android:background="@drawable/borderwhite"
+        android:hint="User Name"
+        android:textColor="@color/white"
+        android:textColorHint="@color/white" />
+
+    <EditText
+        android:id="@+id/passwordEt"
+        android:layout_width="300dp"
+        android:layout_height="50dp"
+        android:inputType="phone"
+        android:paddingStart="8dp"
+        android:hint="Phone No"
+        android:textColorHint="@color/white"
+        android:background="@drawable/borderwhite"
+        android:layout_marginTop="20dp"
+        android:layout_gravity="center"
+        android:textColor="@color/white"
+        />
+
+    <Button
+        android:id="@+id/btn"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:backgroundTint="@color/white"
+        android:text="Register"
+        android:textColor="@color/black"
+        android:layout_gravity="center"
+        android:textAllCaps="false" />
+
+
+   <Button
+        android:id="@+id/webview"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:backgroundTint="@color/white"
+        android:text="web"
+        android:textColor="@color/black"
+        android:layout_gravity="center"
+        android:textAllCaps="false" />
+
+
+
+</LinearLayout>

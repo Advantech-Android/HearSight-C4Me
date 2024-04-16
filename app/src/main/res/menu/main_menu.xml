@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/setting"
+        android:actionLayout="@layout/custom_action_bar_label"
+        app:showAsAction="always"
+        android:title="Settings" >
+        <menu>
+            <item
+                android:id="@+id/download"
+                android:title="Download your Language"/>
+            <item
+                android:id="@+id/reading_lang"
+                android:visible="false"
+                android:title="Reading Language"/>
+            <item
+                android:id="@+id/voice_pitch"
+                android:title="Voice Pitch"/>
+            <item
+                android:id="@+id/voice_speed_rate"
+                android:title="Set Speech Rate"/>
+
+            <item
+                android:id="@+id/qrCode"
+                android:title="Wifi QR code"/>
+
+        </menu>
+    </item>
+</menu>
