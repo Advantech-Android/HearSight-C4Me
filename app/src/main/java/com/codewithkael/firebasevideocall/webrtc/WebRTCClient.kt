@@ -23,7 +23,7 @@ class WebRTCClient @Inject constructor(
     //class variables
     var listener: Listener? = null
     private lateinit var username: String
-    var isUvc= false
+    var isUvc= true
     private lateinit var usbCapturer: CameraVideoCapturer
     //webrtc variables
     private val eglBaseContext = EglBase.create().eglBaseContext

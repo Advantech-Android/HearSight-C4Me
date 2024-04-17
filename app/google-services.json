@@ -8,6 +8,44 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:58676096337:android:208cc35e2e72b8413df770",
+        "android_client_info": {
+          "package_name": "com.adv.c4u_demo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDZJ8D8ZnUYnSXE03DCAQE1ifcdYcpSLPI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:58676096337:android:b6f352e3af147f163df770",
+        "android_client_info": {
+          "package_name": "com.adv.ilook"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDZJ8D8ZnUYnSXE03DCAQE1ifcdYcpSLPI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:58676096337:android:ca5453c74be8f2793df770",
         "android_client_info": {
           "package_name": "com.codewithkael.firebasevideocall"

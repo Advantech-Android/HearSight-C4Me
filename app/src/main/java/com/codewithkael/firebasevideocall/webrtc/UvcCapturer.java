@@ -7,14 +7,9 @@ import static com.serenegiant.usb.UVCCamera.DEFAULT_PREVIEW_WIDTH;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.Camera;
 import android.hardware.usb.UsbDevice;
-import android.media.MediaRecorder;
 import android.util.Log;
-import android.widget.Toast;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 /*
 import com.jiangdg.ausbc.callback.IPreviewDataCallBack;
@@ -23,7 +18,6 @@ import com.jiangdg.ausbc.camera.CameraUvcStrategy;
 import com.jiangdg.ausbc.camera.bean.CameraRequest;
 import com.jiangdg.ausbc.render.env.RotateType;*/
 
-import com.herohan.uvcapp.ICameraHelper;
 import com.serenegiant.usb.IFrameCallback;
 import com.serenegiant.usb.Size;
 import com.serenegiant.usb.USBMonitor;
@@ -34,6 +28,7 @@ import org.webrtc.CameraVideoCapturer;
 import org.webrtc.CapturerObserver;
 import org.webrtc.EglRenderer;
 import org.webrtc.NV21Buffer;
+import org.webrtc.RendererCommon;
 import org.webrtc.SurfaceTextureHelper;
 import org.webrtc.SurfaceViewRenderer;
 import org.webrtc.VideoCapturer;
@@ -45,7 +40,7 @@ import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
-public class  UvcCapturer implements VideoCapturer, CameraVideoCapturer, USBMonitor.OnDeviceConnectListener, IFrameCallback{
+public class UvcCapturer implements VideoCapturer, CameraVideoCapturer, USBMonitor.OnDeviceConnectListener, IFrameCallback {
     private static final String TAG = "===>>UvcCapturer";
     private Context context;
 
@@ -107,7 +102,7 @@ public class  UvcCapturer implements VideoCapturer, CameraVideoCapturer, USBMoni
             public void onFrame(Bitmap bitmap) {
                 Log.d(TAG, "onFrame: ====");
             }
-        },0);
+        }, 0);
     }
 
     @Override
@@ -152,8 +147,6 @@ public class  UvcCapturer implements VideoCapturer, CameraVideoCapturer, USBMoni
     }
 
 
-
-
     @Override
     public void onAttach(UsbDevice device) {
         Log.d(TAG, "onAttach: ");
@@ -165,6 +158,7 @@ public class  UvcCapturer implements VideoCapturer, CameraVideoCapturer, USBMoni
         Log.d(TAG, "onDetach: ");
         statusDOpen = false;
     }
+
     @Override
     public void onFrame(ByteBuffer frame) {
         Log.d(TAG, "onFrame: ----------------------------------------------------------------------");
@@ -185,6 +179,7 @@ public class  UvcCapturer implements VideoCapturer, CameraVideoCapturer, USBMoni
                             }
                         });
                 VideoFrame videoFrame = new VideoFrame(nV21Buffer, 0, imageTime);
+                // capturerObserver.onCapturerStarted(true);
                 capturerObserver.onFrameCaptured(videoFrame);
                 svVideoRender.onFrame(videoFrame);
 
@@ -223,7 +218,8 @@ public class  UvcCapturer implements VideoCapturer, CameraVideoCapturer, USBMoni
         try {
 
             camera.setPreviewSize(preview_width, preview_height, UVCCamera.FRAME_FORMAT_MJPEG);
-        } catch (final IllegalArgumentException e) {
+        } catch (final IllegalArgumentException ignored) {
+            Log.d(TAG, "onSetPreviewMJEG: Error===>" + ignored.getMessage());
 
         }
     }
@@ -259,8 +255,10 @@ public class  UvcCapturer implements VideoCapturer, CameraVideoCapturer, USBMoni
     public void onDeviceOpen(UsbDevice device, USBMonitor.UsbControlBlock ctrlBlock, boolean createNew) {
         Log.d(TAG, "onDeviceOpen() called with: device = [" + device + "], ctrlBlock = [" + ctrlBlock + "], createNew = [" + createNew + "]");
 
+
         if (!statusDOpen) {
             statusDOpen = true;
+            svVideoRender.setScalingType(RendererCommon.ScalingType.SCALE_ASPECT_FIT);
             executor.execute(new Runnable() {
                 @Override
                 public void run() {
@@ -269,14 +267,21 @@ public class  UvcCapturer implements VideoCapturer, CameraVideoCapturer, USBMoni
                             DEFAULT_PREVIEW_WIDTH,
                             DEFAULT_PREVIEW_HEIGHT,
                             DEFAULT_PREVIEW_FPS,
-                            new ArrayList<>(DEFAULT_PREVIEW_FPS)),0));
+                            new ArrayList<>(DEFAULT_PREVIEW_FPS)), 0));
                     camera.open(ctrlBlock);
 
                     try {
-                         onSetPreviewMJEG();
-                        //onSetPreviewYUV();
+                        if (camera.getPreviewSize() != null)
+                        {
+                            camera.setPreviewSize(camera.getPreviewSize().width, camera.getPreviewSize().height, UVCCamera.FRAME_FORMAT_MJPEG);
+                            Log.d(TAG, "run: width: " + camera.getPreviewSize().width + " height:" + camera.getPreviewSize().height);
+                        }else{
+                            // onSetPreviewMJEG();
+                            // onSetPreviewYUV();
 
-                        //camera.setPreviewSize(UVCCamera.DEFAULT_PREVIEW_WIDTH, UVCCamera.DEFAULT_PREVIEW_HEIGHT, UVCCamera.UVC_VS_FRAME_MJPEG);
+                            camera.setPreviewSize(UVCCamera.DEFAULT_PREVIEW_WIDTH, UVCCamera.DEFAULT_PREVIEW_HEIGHT, UVCCamera.UVC_VS_FORMAT_UNCOMPRESSED);
+                        }
+
                     } catch (final IllegalArgumentException e) {
                         try {
                             Log.d(TAG, "run: After exception================================================================");
@@ -285,7 +290,7 @@ public class  UvcCapturer implements VideoCapturer, CameraVideoCapturer, USBMoni
 
                         } catch (final IllegalArgumentException e1) {
                             Log.d(TAG, "run: Error =>" + e1.getMessage());
-                            camera.destroy();
+                            // camera.destroy();
 //                        camera = null;
 
                         }

@@ -31,6 +31,7 @@ class FirebaseClient @Inject constructor(
     fun login(username: String, password: String, done: (Boolean, String?) -> Unit) {
         dbRef.addListenerForSingleValueEvent(object  : MyEventListener(){
             override fun onDataChange(snapshot: DataSnapshot) {
+                Log.d(TAG, "onDataChange: ---------")
                 //if the current user exists
                 if (snapshot.hasChild(username)){
                     //user exists , its time to check the password

@@ -11,8 +11,8 @@
         android:id="@+id/remoteView"/>
 
     <org.webrtc.SurfaceViewRenderer
-        android:layout_width="75dp"
-        android:layout_height="120dp"
+        android:layout_width="100dp"
+        android:layout_height="150dp"
         android:id="@+id/localView"
 
         android:layout_marginEnd="2dp"
