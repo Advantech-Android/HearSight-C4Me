@@ -6,8 +6,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="@drawable/hearsight_logo"
-    tools:context=".ui.LoginActivity"
-  >
+    tools:context=".ui.LoginActivity">
 
 
     <EditText

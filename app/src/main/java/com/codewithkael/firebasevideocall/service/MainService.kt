@@ -65,6 +65,7 @@ class MainService : Service(), MainRepository.Listener {
                 TOGGLE_AUDIO_DEVICE.name -> handleToggleAudioDevice(incomingIntent)
                 TOGGLE_SCREEN_SHARE.name -> handleToggleScreenShare(incomingIntent)
                 STOP_SERVICE.name -> handleStopService()
+                START_WIFI_SCAN.name -> handleStartWifiScan()
                 else -> Unit
             }
         }
@@ -72,6 +73,32 @@ class MainService : Service(), MainRepository.Listener {
         return START_STICKY
     }
 
+
+    fun handleStartWifiScan()
+    {
+
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val notificationChannel = NotificationChannel(
+                "channel2", "foreground1", NotificationManager.IMPORTANCE_HIGH
+            )
+
+            val intent = Intent(this,MainServiceReceiver::class.java).apply {
+                action = "ACTION_WIFI_SCAN"
+            }
+            val pendingIntent : PendingIntent =
+                PendingIntent.getBroadcast(this,0 ,intent,PendingIntent.FLAG_IMMUTABLE)
+
+            notificationManager.createNotificationChannel(notificationChannel)
+            val notification = NotificationCompat.Builder(
+                this, "channel2"
+            ).setSmallIcon(R.mipmap.ic_launcher)
+                .addAction(R.drawable.baseline_wifi_24,"Wifi",pendingIntent)
+
+            startForeground(1, notification.build())
+
+        }
+    }
     private fun handleStopService() {
         mainRepository.endCall()
         mainRepository.logOff {
@@ -197,6 +224,7 @@ class MainService : Service(), MainRepository.Listener {
                 .addAction(R.drawable.ic_end_call,"Exit",pendingIntent)
 
             startForeground(1, notification.build())
+
         }
     }
 

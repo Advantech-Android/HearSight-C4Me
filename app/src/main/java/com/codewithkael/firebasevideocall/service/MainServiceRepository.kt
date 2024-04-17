@@ -9,11 +9,12 @@ class MainServiceRepository @Inject constructor(
     private val context: Context
 ) {
 
-    fun startService(username:String){
+    fun startService(username:String,intentAction:String){
         Thread{
             val intent = Intent(context, MainService::class.java)
             intent.putExtra("username",username)
-            intent.action = MainServiceActions.START_SERVICE.name
+           // intent.action = MainServiceActions.START_SERVICE.name
+            intent.action = intentAction
             startServiceIntent(intent)
         }.start()
     }

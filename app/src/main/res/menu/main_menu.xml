@@ -1,15 +1,6 @@
-<?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+<!-- res/menu/menu_main.xml -->
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
-        android:id="@+id/setting"
-        android:actionLayout="@layout/custom_action_bar_label"
-        app:showAsAction="always"
-        android:title="Settings" >
-        <menu>
-            <item
-                android:id="@+id/qrCode"
-                android:title="Wifi QR code"/>
-        </menu>
-    </item>
+        android:id="@+id/qr_codeid"
+        android:title="Wifi QR Code"/>
 </menu>

@@ -20,6 +20,7 @@ import com.codewithkael.firebasevideocall.databinding.ActivityMainBinding
 import com.codewithkael.firebasevideocall.firebaseClient.FirebaseClient
 import com.codewithkael.firebasevideocall.repository.MainRepository
 import com.codewithkael.firebasevideocall.service.MainService
+import com.codewithkael.firebasevideocall.service.MainServiceActions
 import com.codewithkael.firebasevideocall.service.MainServiceRepository
 import com.codewithkael.firebasevideocall.utils.ContactInfo
 import com.codewithkael.firebasevideocall.utils.DataModel
@@ -126,7 +127,7 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
     }
 
     private fun startMyService() {
-        mainServiceRepository.startService(username!!)
+        mainServiceRepository.startService(username!!, MainServiceActions.START_SERVICE.name)
     }
 
     override fun onVideoCallClicked(username: String) {
