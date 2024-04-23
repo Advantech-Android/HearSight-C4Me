@@ -125,53 +125,38 @@ class UvcCaptureKot constructor(
         statusDOpen = false
     }
 
-    override fun onDeviceOpen(
-        device: UsbDevice?,
-        ctrlBlock: USBMonitor.UsbControlBlock?,
-        createNew: Boolean
-    ) {
-        Log.d(
-           TAG,
-            "onDeviceOpen() called with: device = [$device], ctrlBlock = [$ctrlBlock], createNew = [$createNew]"
-        )
+    override fun onDeviceOpen(device: UsbDevice?, ctrlBlock: USBMonitor.UsbControlBlock?, createNew: Boolean) {
+        Log.d(TAG, "onDeviceOpen() called with: device = [$device], ctrlBlock = [$ctrlBlock], createNew = [$createNew]")
 
 
         if (!statusDOpen) {
             statusDOpen = true
+            val list= mutableListOf(UVCCamera.DEFAULT_PREVIEW_FPS,29)
             svVideoRender.setScalingType(RendererCommon.ScalingType.SCALE_ASPECT_FIT)
+
+
+
           //  executor.execute {
-                camera = UVCCamera(
-                    UVCParam(
-                        Size(
-                            UVCCamera.DEFAULT_PREVIEW_FRAME_FORMAT,
-                            UVCCamera.DEFAULT_PREVIEW_WIDTH,
-                            UVCCamera.DEFAULT_PREVIEW_HEIGHT,
-                            UVCCamera.DEFAULT_PREVIEW_FPS,
-                            ArrayList(UVCCamera.DEFAULT_PREVIEW_FPS)
-                        ), 0
-                    )
-                )
+                camera = UVCCamera(UVCParam(Size(UVCCamera.DEFAULT_PREVIEW_FRAME_FORMAT, UVCCamera.DEFAULT_PREVIEW_WIDTH, UVCCamera.DEFAULT_PREVIEW_HEIGHT, UVCCamera.DEFAULT_PREVIEW_FPS, list), 1))
                 camera!!.open(ctrlBlock)
                 try {
                     // onSetPreviewMJEG();
                     // onSetPreviewYUV();
-                    camera!!.setPreviewSize(
-                        camera!!.previewSize.width,
-                        camera!!.previewSize.height,
-                        UVCCamera.FRAME_FORMAT_MJPEG
-                    )
-                    //  camera.setPreviewSize(UVCCamera.DEFAULT_PREVIEW_WIDTH, UVCCamera.DEFAULT_PREVIEW_HEIGHT, UVCCamera.UVC_VS_FORMAT_UNCOMPRESSED);
+                    val supportedSizes = camera!!.getSupportedSizeList()
+                    for (size in supportedSizes) {
+                        Log.d(TAG, "Supported Size: $size")
+                    }
+                    if (supportedSizes.size > 0) {
+                        val previewSize = choosePreviewSize(supportedSizes, 16f / 9f, 1200, 700)
+                        camera!!.setPreviewSize(previewSize)
+                    }else{
+                        camera!!.setPreviewSize(UVCCamera.DEFAULT_PREVIEW_WIDTH, UVCCamera.DEFAULT_PREVIEW_HEIGHT, UVCCamera.UVC_VS_FRAME_MJPEG);
+                    }
+                    //
                 } catch (e: java.lang.IllegalArgumentException) {
                     try {
-                        Log.d(
-                         TAG,
-                            "run: After exception================================================================"
-                        )
-                        camera!!.setPreviewSize(
-                            UVCCamera.DEFAULT_PREVIEW_WIDTH,
-                            UVCCamera.DEFAULT_PREVIEW_HEIGHT,
-                            UVCCamera.DEFAULT_PREVIEW_FRAME_FORMAT
-                        )
+                        Log.d(TAG, "run: After exception================================================================")
+                        camera!!.setPreviewSize(UVCCamera.DEFAULT_PREVIEW_WIDTH, UVCCamera.DEFAULT_PREVIEW_HEIGHT, UVCCamera.DEFAULT_PREVIEW_FRAME_FORMAT)
                     } catch (e1: java.lang.IllegalArgumentException) {
                         Log.d(TAG, "run: Error =>" + e1.message)
                         // camera.destroy();
@@ -179,11 +164,9 @@ class UvcCaptureKot constructor(
                     }
                 }
                 if (camera != null) {
-                    Log.d(TAG,
-                        "run: setPreviewDisplay================================"
-                    )
+                    Log.d(TAG, "run: setPreviewDisplay================================")
                     camera!!.setPreviewDisplay(svVideoRender.holder)
-                    camera!!.setFrameCallback(this@UvcCaptureKot, UVCCamera.PIXEL_FORMAT_NV21)
+                    camera!!.setFrameCallback(this@UvcCaptureKot, UVCCamera.PIXEL_FORMAT_YUV)
                     camera!!.startPreview()
                 } else {
                     Log.d(TAG, "run: nulll")
@@ -191,6 +174,32 @@ class UvcCaptureKot constructor(
            // }
         }
     }
+
+
+    private fun choosePreviewSize(supportedSizes: List<Size>, targetAspectRatio: Float, targetWidth: Int, targetHeight: Int): Size {
+        var optimalSize: Size? = null
+        var minDiff = Float.MAX_VALUE
+
+        // Calculate the aspect ratio of the target size
+        val targetRatio = targetWidth.toFloat() / targetHeight
+
+        // Iterate through the supported sizes
+        for (size in supportedSizes) {
+            val supportedRatio = size.width.toFloat() / size.height
+
+            // Calculate the difference in aspect ratio
+            val aspectRatioDiff = Math.abs(supportedRatio - targetRatio)
+
+            // Check if the current size is closer to the target aspect ratio
+            if (aspectRatioDiff < minDiff) {
+                optimalSize = size
+                minDiff = aspectRatioDiff
+            }
+        }
+
+        return optimalSize ?: supportedSizes.first()
+    }
+
 
     private fun onSetPreviewMJEG() {
         val mjpeg_camera_sizes = camera!!.getSupportedSizeList()

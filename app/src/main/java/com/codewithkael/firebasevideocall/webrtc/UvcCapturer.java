@@ -271,16 +271,10 @@ public class UvcCapturer implements VideoCapturer, CameraVideoCapturer, USBMonit
                     camera.open(ctrlBlock);
 
                     try {
-                        if (camera.getPreviewSize() != null)
-                        {
-                            camera.setPreviewSize(camera.getPreviewSize().width, camera.getPreviewSize().height, UVCCamera.FRAME_FORMAT_MJPEG);
-                            Log.d(TAG, "run: width: " + camera.getPreviewSize().width + " height:" + camera.getPreviewSize().height);
-                        }else{
-                            // onSetPreviewMJEG();
-                            // onSetPreviewYUV();
-
-                            camera.setPreviewSize(UVCCamera.DEFAULT_PREVIEW_WIDTH, UVCCamera.DEFAULT_PREVIEW_HEIGHT, UVCCamera.UVC_VS_FORMAT_UNCOMPRESSED);
-                        }
+                        // onSetPreviewMJEG();
+                        // onSetPreviewYUV();
+                       camera.setPreviewSize(camera.getPreviewSize().width, camera.getPreviewSize().height, UVCCamera.UVC_VS_FRAME_MJPEG); // this line is worked well in oppo device
+                        //camera.setPreviewSize(UVCCamera.DEFAULT_PREVIEW_WIDTH, UVCCamera.DEFAULT_PREVIEW_HEIGHT, UVCCamera.UVC_VS_FRAME_MJPEG);
 
                     } catch (final IllegalArgumentException e) {
                         try {

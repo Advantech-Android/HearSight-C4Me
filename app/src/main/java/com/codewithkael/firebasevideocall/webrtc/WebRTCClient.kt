@@ -25,6 +25,7 @@ class WebRTCClient @Inject constructor(
     private lateinit var username: String
     var isUvc= true
     private lateinit var usbCapturer: CameraVideoCapturer
+
     //webrtc variables
     private val eglBaseContext = EglBase.create().eglBaseContext
     private val peerConnectionFactory by lazy { createPeerConnectionFactory() }
@@ -273,7 +274,9 @@ class WebRTCClient @Inject constructor(
 
 
             }
-            usbCapturer = UvcCapturer(context, localView) as CameraVideoCapturer
+
+           usbCapturer = UvcCapturer(context, localView) as CameraVideoCapturer
+           // usbCapturer = UvcCaptureKot(context, localView) as CameraVideoCapturer
          usbCapturer.initialize(surfaceTextureHelper,context,
            localVideoSource.capturerObserver)
             usbCapturer.startCapture(

@@ -19,6 +19,8 @@
         android:layout_marginBottom="2dp"
         app:layout_constraintBottom_toTopOf="@id/controlPanelLayout"
         app:layout_constraintEnd_toEndOf="parent"/>
+
+
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="60dp"

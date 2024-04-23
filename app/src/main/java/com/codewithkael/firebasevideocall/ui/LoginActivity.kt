@@ -43,7 +43,7 @@ class LoginActivity : AppCompatActivity() {
          wifiManager = getSystemService(Context.WIFI_SERVICE) as WifiManager
         Log.d(TAG, "onCreate: ${Build.BRAND}")
         views.apply {
-            if (Build.BRAND=="Itel"/*|| Build.BRAND!!.equals("Redmi",true)*/){
+            if (Build.BRAND=="Itel"|| Build.BRAND!!.equals("Redmi",true)){
 
                 usernameEt.setText("guest")
                 passwordEt.setText("1234")
