@@ -1,5 +1,4 @@
-# FirebaseWebRTCVideoCall
-An Implementation of webrtc video call with firebase Signaling server  follow my Youtube Channel to see the full course about this source.
+# hearsight advantech 
+App Name:C4Me
+des: UVC camera via videocall to host and client  
 
-my channel name is CodeWithKael
-www.youtube.com/@CodeWithKael
