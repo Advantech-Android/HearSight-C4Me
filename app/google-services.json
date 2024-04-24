@@ -1,22 +1,22 @@
 {
   "project_info": {
-    "project_number": "58676096337",
-    "firebase_url": "https://webrtc-android-3ca67-default-rtdb.asia-southeast1.firebasedatabase.app",
-    "project_id": "webrtc-android-3ca67",
-    "storage_bucket": "webrtc-android-3ca67.appspot.com"
+    "project_number": "328799103240",
+    "firebase_url": "https://fir-video-callf-default-rtdb.firebaseio.com",
+    "project_id": "fir-video-callf",
+    "storage_bucket": "fir-video-callf.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:58676096337:android:ca5453c74be8f2793df770",
+        "mobilesdk_app_id": "1:328799103240:android:dd928018044a133b87e4bd",
         "android_client_info": {
-          "package_name": "com.codewithkael.firebasevideocall"
+          "package_name": "com.codewithkael.firebasevideocal"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDZJ8D8ZnUYnSXE03DCAQE1ifcdYcpSLPI"
+          "current_key": "AIzaSyDnt41s8w1lvsBfj7736Bey0miSzCZKRU4"
         }
       ],
       "services": {
@@ -27,15 +27,15 @@
     },
     {
       "client_info": {
-        "mobilesdk_app_id": "1:58676096337:android:b1235590f28f8ab73df770",
+        "mobilesdk_app_id": "1:328799103240:android:510e905fc4c96fa387e4bd",
         "android_client_info": {
-          "package_name": "com.codewithkael.webrtcprojectforrecord"
+          "package_name": "com.codewithkael.firebasevideocall"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDZJ8D8ZnUYnSXE03DCAQE1ifcdYcpSLPI"
+          "current_key": "AIzaSyDnt41s8w1lvsBfj7736Bey0miSzCZKRU4"
         }
       ],
       "services": {

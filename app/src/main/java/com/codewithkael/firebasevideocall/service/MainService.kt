@@ -218,6 +218,7 @@ class MainService : Service(), MainRepository.Listener {
     }
 
     override fun endCall() {
+        Log.d(TAG, "endCall: ========>>>>>")
         //we are receiving end call signal from remote peer
         endCallAndRestartRepository()
     }

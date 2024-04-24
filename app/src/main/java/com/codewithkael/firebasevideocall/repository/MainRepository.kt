@@ -1,6 +1,9 @@
 package com.codewithkael.firebasevideocall.repository
 
 import android.content.Intent
+import android.util.Log
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import com.codewithkael.firebasevideocall.firebaseClient.FirebaseClient
 import com.codewithkael.firebasevideocall.utils.DataModel
 import com.codewithkael.firebasevideocall.utils.DataModelType.*
@@ -12,6 +15,7 @@ import org.webrtc.*
 import javax.inject.Inject
 import javax.inject.Singleton
 
+private const val TAG = "***>>MainRepository"
 @Singleton
 class MainRepository @Inject constructor(
     private val firebaseClient: FirebaseClient,
@@ -30,7 +34,17 @@ class MainRepository @Inject constructor(
     fun observeUsersStatus(status: (List<Pair<String, String>>) -> Unit,status1: (List<Pair<String, String>>) -> Unit) {
         firebaseClient.observeUsersStatus(status,status1)
     }
-
+    fun onObserveEndCall(data: (DataModel,String)->Unit){
+        firebaseClient.getEndCallEvent(data)
+    }
+    public fun getUserName(): String {
+       return firebaseClient.getUserName()
+    }
+//    var status:LiveData<Boolean> = MutableLiveData(true)
+//    fun getInOutStatus(status:Boolean):Boolean
+//    {
+//    return true
+//    }
     fun initFirebase() {
         firebaseClient.subscribeForLatestEvent(object : FirebaseClient.Listener {
             override fun onLatestEventReceived(event: DataModel) {
@@ -92,6 +106,7 @@ class MainRepository @Inject constructor(
     }
 
     fun initWebrtcClient(username: String) {
+        Log.d(TAG, "initWebrtcClient: username: $username")
         webRTCClient.listener = this
         webRTCClient.initializeWebrtcClient(username, object : MyPeerObserver() {
 
@@ -143,6 +158,7 @@ class MainRepository @Inject constructor(
     }
 
     fun sendEndCall() {
+        Log.d(TAG, "sendEndCall: target =$target")
         onTransferEventToSocket(
             DataModel(
                 type = EndCall,
@@ -184,5 +200,10 @@ class MainRepository @Inject constructor(
     }
 
     fun logOff(function: () -> Unit) = firebaseClient.logOff(function)
+    fun setCallStatus(target:String,sender:String,callLogs:String,callStatus: (String) -> Unit) {
+        //here sender act as caller change
+        //here target act as receiver change
+        firebaseClient.sendCallStatusToOtherClient(target,sender,callLogs,callStatus)
+    }
 
 }
