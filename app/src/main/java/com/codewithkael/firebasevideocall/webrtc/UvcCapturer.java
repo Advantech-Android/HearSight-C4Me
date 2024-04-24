@@ -263,12 +263,7 @@ public class UvcCapturer implements VideoCapturer, CameraVideoCapturer, USBMonit
             executor.execute(new Runnable() {
                 @Override
                 public void run() {
-                    camera = new UVCCamera(new UVCParam(new Size(
-                        DEFAULT_PREVIEW_FRAME_FORMAT,
-                        DEFAULT_PREVIEW_WIDTH,
-                        DEFAULT_PREVIEW_HEIGHT,
-                        DEFAULT_PREVIEW_FPS,
-                        new ArrayList<>(DEFAULT_PREVIEW_FPS)),0));
+                    camera = new UVCCamera(new UVCParam(new Size(DEFAULT_PREVIEW_FRAME_FORMAT, DEFAULT_PREVIEW_WIDTH, DEFAULT_PREVIEW_HEIGHT, DEFAULT_PREVIEW_FPS, new ArrayList<>(DEFAULT_PREVIEW_FPS)),0));
                     camera.open(ctrlBlock);
                     try {
                        onSetPreviewMJEG();
@@ -291,11 +286,9 @@ public class UvcCapturer implements VideoCapturer, CameraVideoCapturer, USBMonit
                         camera.setFrameCallback(UvcCapturer.this, UVCCamera.PIXEL_FORMAT_NV21);
                         camera.startPreview();
 
-
                     } else {
                         Log.d(TAG, "run: nulll");
                     }
-
                 }
             });
         }

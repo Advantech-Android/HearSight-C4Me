@@ -234,7 +234,6 @@ class CallActivity : AppCompatActivity(), MainService.EndCallListener {
         super.onDestroy()
         MainService.remoteSurfaceView?.release()
         MainService.remoteSurfaceView = null
-
         MainService.localSurfaceView?.release()
         MainService.localSurfaceView =null
 

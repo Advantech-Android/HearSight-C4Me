@@ -56,6 +56,7 @@ class WifiPasswordGenerated(private val context: Context)
 
         wifiListShow(wifiListView,createBtn,wifieEditxt,wifiePassword,availableWifilistContainer,qrCodeGenerateContainer,mImage)
         refresh.setOnClickListener {
+            Toast.makeText(context, "Scanning...", Toast.LENGTH_SHORT).show()
            wifiListShow(wifiListView, createBtn, wifieEditxt, wifiePassword, availableWifilistContainer, qrCodeGenerateContainer, mImage)
         }
 
@@ -194,6 +195,27 @@ class WifiPasswordGenerated(private val context: Context)
            }
            val adapter = ArrayAdapter(context, android.R.layout.simple_list_item_1, ssidList)
            wifiListView.adapter = adapter
+           wifiListView.setOnItemClickListener { parent, view, position, id ->
+               availableWifilistContainer.visibility=View.GONE
+               qrCodeGenerateContainer.visibility=View.VISIBLE
+               wifieEditxt.setText(ssidList[position])
+               createBtn.setOnClickListener {
+                   if (wifieEditxt.text.toString().isNotEmpty())
+                   {
+                       val mpassword=wifiePassword.text.toString()
+                       if (mpassword.isNotEmpty())
+                       {
+                           val combinedData: String = wifieEditxt.text.toString()+"|"+mpassword
+                           generateQRCodeBitmap(combinedData,mImage)
+                       }else{
+                           Toast.makeText(context, "Wifi password missing", Toast.LENGTH_SHORT).show()
+                       }
+                   }
+                   else{
+                       Toast.makeText(context, "Wifi name missing", Toast.LENGTH_SHORT).show()
+                   }
+               }
+           }
            Log.d(TAG, "scanSuccess: SSID $ssidList")
            ssidList.toTypedArray()
        }

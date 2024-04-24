@@ -95,9 +95,9 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
         setupRecyclerView()
         MainService.listener = this
         var outerList:List<ContactInfo> ?=null
-        var innerList:List<ContactInfo> ?=null
         mainRepository.observeUsersStatus({ userList->
                                           outerList=userList
+
 //            if (userList.isEmpty())
 //            {
 //                views.noContactTV.visibility=View.VISIBLE
@@ -107,8 +107,10 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
 //                mainAdapter!!.updateList(userList,innerList?: emptyList())
 //            }
         },{ userList1->
+            Toast.makeText(this, "${userList1}", Toast.LENGTH_SHORT).show()
             if (userList1.isNullOrEmpty()){
                 views.noContactTV.visibility=View.VISIBLE
+                mainAdapter!!.updateList(outerList ?: emptyList(),emptyList())
             }else{
                 views.noContactTV.visibility=View.GONE
                 mainAdapter!!.updateList(outerList ?: emptyList(),userList1)

@@ -22,7 +22,7 @@ class WebRTCClient @Inject constructor(
     //class variables
     var listener: Listener? = null
     private lateinit var username: String
-    private var isUvc = true;
+    private var isUvc = false;
     private lateinit var usbCapturer: CameraVideoCapturer
     //webrtc variables
     private val eglBaseContext = EglBase.create().eglBaseContext
@@ -220,7 +220,6 @@ class WebRTCClient @Inject constructor(
     //streaming section
     private fun initSurfaceView(view: SurfaceViewRenderer) {
         view.run {
-
             //release()
             setMirror(false)
             setEnableHardwareScaler(true)
@@ -314,9 +313,7 @@ class WebRTCClient @Inject constructor(
         val screenWidthPixels = displayMetrics.widthPixels
         val screenHeightPixels = displayMetrics.heightPixels
 
-        val surfaceTextureHelper = SurfaceTextureHelper.create(
-            Thread.currentThread().name, eglBaseContext
-        )
+        val surfaceTextureHelper = SurfaceTextureHelper.create(Thread.currentThread().name, eglBaseContext)
 
         screenCapturer = createScreenCapturer()
         screenCapturer!!.initialize(
@@ -324,8 +321,7 @@ class WebRTCClient @Inject constructor(
         )
         screenCapturer!!.startCapture(screenWidthPixels, screenHeightPixels, 15)
 
-        localScreenShareVideoTrack =
-            peerConnectionFactory.createVideoTrack(localTrackId + "_video", localScreenVideoSource)
+        localScreenShareVideoTrack = peerConnectionFactory.createVideoTrack(localTrackId + "_video", localScreenVideoSource)
         localScreenShareVideoTrack?.addSink(localSurfaceView)
         localStream?.addTrack(localScreenShareVideoTrack)
         peerConnection?.addStream(localStream)

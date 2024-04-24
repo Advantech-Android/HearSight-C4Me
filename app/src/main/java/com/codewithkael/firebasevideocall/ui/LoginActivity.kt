@@ -47,12 +47,12 @@ class LoginActivity : AppCompatActivity() {
         wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
         views.apply {
             Log.d(TAG, "onCreate: ${Build.BRAND}")
-            if (Build.BRAND == "samsung") {
-                usernameEt.setText("guest")
-                passwordEt.setText("111")
+            if (Build.BRAND == "Redmi") {
+                usernameEt.setText("client")
+                passwordEt.setText("1111")
             } else {
-                usernameEt.setText("host")
-                passwordEt.setText("222")
+                usernameEt.setText("server")
+                passwordEt.setText("2222")
             }
         }
         init()
@@ -74,14 +74,12 @@ class LoginActivity : AppCompatActivity() {
     private fun init() {
 
         views.btn.setOnClickListener {
-            mainRepository.login(
-                views.usernameEt.text.toString(), views.passwordEt.text.toString()
-            ) { isDone, reason ->
+            mainRepository.login(views.usernameEt.text.toString(), views.passwordEt.text.toString()) { isDone, reason ->
                 if (!isDone) {
                     Toast.makeText(this@LoginActivity, reason, Toast.LENGTH_SHORT).show()
                 } else {
                     startActivity(Intent(this@LoginActivity, MainActivity::class.java).apply {
-                        putExtra("username", views.usernameEt.text.toString())
+                        putExtra("username", views.passwordEt.text.toString())
                     })
                 }
             }
@@ -172,10 +170,11 @@ class LoginActivity : AppCompatActivity() {
 
     private fun isPermissionGrand() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED &&
-            ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_WIFI_STATE) == PackageManager.PERMISSION_GRANTED) {
+            ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_WIFI_STATE) == PackageManager.PERMISSION_GRANTED &&
+            ContextCompat.checkSelfPermission(this,Manifest.permission.ACCESS_COARSE_LOCATION)==PackageManager.PERMISSION_GRANTED){
             // Permissions granted, do nothing
         } else {
-            val permissions = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_WIFI_STATE)
+            val permissions = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_WIFI_STATE,Manifest.permission.ACCESS_COARSE_LOCATION)
             ActivityCompat.requestPermissions(this, permissions, STORAGE_PERMISSION_CODE)
         }
     }

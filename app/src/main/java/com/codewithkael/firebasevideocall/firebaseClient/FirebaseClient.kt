@@ -29,6 +29,9 @@ class FirebaseClient @Inject constructor(
     val registerContactKeysArrayList = ArrayList<registerContactKeys>()
     private var currentUsername: String? = null
     private var currentUserPhonenumber: String? = null
+    companion object{
+        var registerNumber=""
+    }
     private fun setUsername(username: String, phonenumber: String) {
         this.currentUsername = username
         this.currentUserPhonenumber = phonenumber
@@ -37,44 +40,53 @@ class FirebaseClient @Inject constructor(
 
 
     fun login(username: String, phonenumber: String, done: (Boolean, String?) -> Unit) {
-        dbRef.addListenerForSingleValueEvent(object : MyEventListener() {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                //if the current user exists
-                if (snapshot.hasChild(phonenumber)) {
-                    //user exists , its time to check the phone_number
-                    val dbUsername = snapshot.child(phonenumber).child("user_name").value
-                    if (username == dbUsername) {
-                        //username is correct and sign in
-                        dbRef.child(phonenumber).child(STATUS).setValue(UserStatus.ONLINE)
-                            .addOnCompleteListener {
-                                setUsername(username, phonenumber)
-                                done(true, null)
-                            }.addOnFailureListener {
-                                done(false, "${it.message}")
-                            }
-                    } else {
-                        //password is wrong, notify user
-                        done(false, "Password is wrong")
-                    }
 
-                } else {
-                    //user doesnt exist, register the user
-                    dbRef.child(phonenumber).child("user_name").setValue(username)
-                        .addOnCompleteListener {
+        try {
+            dbRef.addListenerForSingleValueEvent(object : MyEventListener() {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    //if the current user exists
+                    if (snapshot.hasChild(phonenumber)) {
+                        //user exists , its time to check the phone_number
+                        val dbUsername = snapshot.child(phonenumber).child("user_name").value
+                        if (username == dbUsername) {
+                            //username is correct and sign in
+                            registerNumber=phonenumber
                             dbRef.child(phonenumber).child(STATUS).setValue(UserStatus.ONLINE)
                                 .addOnCompleteListener {
                                     setUsername(username, phonenumber)
                                     done(true, null)
                                 }.addOnFailureListener {
-                                    done(false, it.message)
+                                    done(false, "${it.message}")
                                 }
-                        }.addOnFailureListener {
-                            done(false, it.message)
+                        } else {
+                            //password is wrong, notify user
+                            done(false, "Password is wrong")
                         }
 
+                    } else {
+                        //user doesnt exist, register the user
+                        dbRef.child(phonenumber).child("user_name").setValue(username)
+                            .addOnCompleteListener {
+                                dbRef.child(phonenumber).child(STATUS).setValue(UserStatus.ONLINE)
+                                    .addOnCompleteListener {
+                                        setUsername(username, phonenumber)
+                                        done(true, null)
+                                    }.addOnFailureListener {
+                                        done(false, it.message)
+                                    }
+                            }.addOnFailureListener {
+                                done(false, it.message)
+                            }
+
+                    }
                 }
-            }
-        })
+            })
+
+        }
+        catch (e:Exception)
+        {
+            e.printStackTrace()
+        }
     }
 
 
@@ -124,76 +136,47 @@ class FirebaseClient @Inject constructor(
 //    }
 
 
-    fun observeContactDetails(
-        status: (List<ContactInfo>) -> Unit,
-        status2: (List<ContactInfo>) -> Unit
-    ) {
+    fun observeContactDetails(status: (List<ContactInfo>) -> Unit, status2: (List<ContactInfo>) -> Unit) {
         val finalList = mutableListOf<ContactInfo>()
-        val innerList = mutableListOf<ContactInfo>()
         val outerList = mutableListOf<ContactInfo>()
+
         dbRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                Log.d(TAG, "observeContactDetails:-> onDataChange: ")
                 finalList.clear()
-                innerList.clear()
                 outerList.clear()
-                 snapshot.children
-                    .filter { it.key != currentUserPhonenumber }
-                    .map {
-                        outerList.add(
-                            ContactInfo(
-                                it.key.toString(),
-                                it.child("user_name").value.toString(),
-                                it.child(STATUS).value.toString()
-                            )
-                        )
-                        it.key!! to it.child(STATUS).value.toString()
-                    }
+
+                // Extract outer contacts
+                snapshot.children.filter { it.key != currentUserPhonenumber }.forEach { currentUser ->
+                    val currentUserInfo = ContactInfo(currentUser.key.toString(), currentUser.child("user_name").value.toString(), currentUser.child(STATUS).value.toString())
+                    outerList.add(currentUserInfo)
+                }
                 status(outerList)
+                snapshot.children.filter { it.key == currentUserPhonenumber }.forEach { currentUser ->
+                    currentUser.child("contacts").children.filter { it.key != currentUserPhonenumber }.forEach { innerContact ->
+                        val innerContactInfo = ContactInfo(innerContact.key.toString(), innerContact.child("user_name").value.toString(), innerContact.child(STATUS).value.toString())
+                        val matchingContact = outerList.find { it.contactNumber == innerContactInfo.contactNumber }
+                        if (matchingContact != null) {
+                            finalList.add(innerContactInfo.copy(status = matchingContact.status))
+                            val statusUpdateTask = dbRef.child(currentUserPhonenumber!!)
+                                .child("contacts")
+                                .child(innerContactInfo.contactNumber)
+                                .child(STATUS)
+                                .setValue(matchingContact.status)
 
-                snapshot.children
-                    .filter { it.key == currentUserPhonenumber }
-                    .forEach { currentUser ->
-                         currentUser.child("contacts").children
-                            .filter { it.key != currentUserPhonenumber }
-                            .map {
-                                innerList.add(
-                                    ContactInfo(
-                                        it.key.toString(),
-                                        it.child("user_name").value.toString(),
-                                        it.child(STATUS).value.toString()
-                                    )
-                                )
-                                it.key!! to it.child("user_name").value.toString()
-                            }
-
-
-                        outerList.forEach { outerContact ->
-                            innerList.filter { innerContact ->
-                                if (innerContact.contactNumber==outerContact.contactNumber){
-
-                                    innerContact.status=outerContact.status
-
-                                    dbRef.child(currentUserPhonenumber!!)
-                                        .child("contacts")
-                                        .child(innerContact.contactNumber)
-                                        .child("status").setValue(outerContact.status.toString())
-                                        .addOnCompleteListener {
-
-                                        }
-                                        .addOnFailureListener {
-
-                                        }
+                            statusUpdateTask.addOnCompleteListener { task ->
+                                if (task.isSuccessful) {
+                                    Log.d(TAG, "Successfully updated status for contact: ${innerContactInfo.contactNumber}")
+                                } else {
+                                    Log.e(TAG, "Failed to update status for contact: ${innerContactInfo.contactNumber}", task.exception)
                                 }
-                               innerContact.contactNumber==outerContact.contactNumber
-                            }.map {
-                                finalList.add(it)
+                            }
+                            statusUpdateTask.addOnFailureListener { exception ->
+                                Log.e(TAG, "Failed to update status for contact: ${innerContactInfo.contactNumber}", exception)
                             }
                         }
                     }
-                Log.d(TAG, "observeContactDetails ==> onDataChange: ${finalList.size}")
+                }
                 status2(finalList)
-
             }
 
             override fun onCancelled(error: DatabaseError) {
@@ -205,16 +188,21 @@ class FirebaseClient @Inject constructor(
 
     fun subscribeForLatestEvent(listener: Listener) {
         try {
-            Log.d(TAG, "subscribeForLatestEvent: ")
-            dbRef.child(currentUsername!!).child(LATEST_EVENT).addValueEventListener(
+            Log.d(TAG, "subscribeForLatestEvent:currentUsername: $currentUserPhonenumber")
+            dbRef.child(currentUserPhonenumber!!).child(LATEST_EVENT).addValueEventListener(
                 object : MyEventListener() {
                     override fun onDataChange(snapshot: DataSnapshot) {
                         super.onDataChange(snapshot)
-                        val event = try { gson.fromJson(snapshot.value.toString(), DataModel::class.java)
+
+                        val event = try {
+                            Log.d(TAG, "subscribeForLatestEvent => onDataChange: ${snapshot.value.toString()}")
+                            gson.fromJson(snapshot.value.toString(), DataModel::class.java)
+
                         } catch (e: Exception) {
                             e.printStackTrace()
                             null
                         }
+
                         event?.let {
                             listener.onLatestEventReceived(it)
                         }
@@ -227,13 +215,19 @@ class FirebaseClient @Inject constructor(
     }
 
     fun sendMessageToOtherClient(message: DataModel, success: (Boolean) -> Unit) {
-        val convertedMessage = gson.toJson(message.copy(sender = currentUsername))
-        dbRef.child(message.target).child(LATEST_EVENT).setValue(convertedMessage)
-            .addOnCompleteListener {
-                success(true)
-            }.addOnFailureListener {
-                success(false)
-            }
+        try {
+            val convertedMessage = gson.toJson(message.copy(sender = currentUserPhonenumber))
+            dbRef.child(message.target).child(LATEST_EVENT).setValue(convertedMessage)
+                .addOnCompleteListener {
+                    success(true)
+                }.addOnFailureListener {
+                    success(false)
+                }
+        }catch (e:Exception)
+        {
+            Log.d(TAG, "sendMessageToOtherClient: ${e.printStackTrace()}")
+        }
+       
     }
 
     fun changeMyStatus(status: UserStatus) {
@@ -259,10 +253,8 @@ class FirebaseClient @Inject constructor(
                     dbRef.child(currentUserPhonenumber!!).child("contacts").child(phone)
                         .child("user_name").setValue(username)
                         .addOnCompleteListener {
-                            dbRef.child(currentUserPhonenumber!!)
-                                .child("contacts")
-                                .child(phone)
-                                .child("status").setValue(userContactStatus.value.toString())
+                            dbRef.child(currentUserPhonenumber!!).child("contacts")
+                                .child(phone).child("status").setValue(userContactStatus.value.toString())
                                 .addOnCompleteListener {
                                     done(true, null)
                                 }
@@ -291,6 +283,7 @@ class FirebaseClient @Inject constructor(
             }
         })
     }
+
 
 
     interface Listener {

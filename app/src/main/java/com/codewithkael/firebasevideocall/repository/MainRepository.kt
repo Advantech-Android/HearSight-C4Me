@@ -14,6 +14,7 @@ import org.webrtc.*
 import javax.inject.Inject
 import javax.inject.Singleton
 
+private const val TAG = "==>>MainRepository"
 @Singleton
 class MainRepository @Inject constructor(
     private val firebaseClient: FirebaseClient,
@@ -45,20 +46,12 @@ class MainRepository @Inject constructor(
                 when (event.type) {
                     Offer->{
                         webRTCClient.onRemoteSessionReceived(
-                            SessionDescription(
-                                SessionDescription.Type.OFFER,
-                                event.data.toString()
-                            )
-                        )
+                            SessionDescription(SessionDescription.Type.OFFER, event.data.toString()))
                         webRTCClient.answer(target!!)
                     }
                     Answer->{
                         webRTCClient.onRemoteSessionReceived(
-                            SessionDescription(
-                                SessionDescription.Type.ANSWER,
-                                event.data.toString()
-                            )
-                        )
+                            SessionDescription(SessionDescription.Type.ANSWER, event.data.toString()))
                     }
                     IceCandidates->{
                         val candidate: IceCandidate? = try {
@@ -81,12 +74,8 @@ class MainRepository @Inject constructor(
     }
 
     fun sendConnectionRequest(target: String, isVideoCall: Boolean, success: (Boolean) -> Unit) {
-        firebaseClient.sendMessageToOtherClient(
-            DataModel(
-                type = if (isVideoCall) StartVideoCall else StartAudioCall,
-                target = target
-            ), success
-        )
+        firebaseClient.sendMessageToOtherClient(DataModel(type = if (isVideoCall) StartVideoCall else StartAudioCall, target = target), success)
+        Log.d(TAG, "sendConnectionRequest: TARGET \t${target.toString()} isVideoCall::\t${isVideoCall}")
     }
 
     fun setTarget(target: String) {
@@ -99,6 +88,7 @@ class MainRepository @Inject constructor(
     }
 
     fun initWebrtcClient(username: String) {
+        Log.d(TAG, "initWebrtcClient: $username ")
         webRTCClient.listener = this
         webRTCClient.initializeWebrtcClient(username, object : MyPeerObserver() {
 
