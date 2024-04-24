@@ -3,24 +3,35 @@ package com.codewithkael.firebasevideocall.adapters
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import android.widget.Filter
+import android.widget.Filterable
+import android.widget.Toast
+import androidx.core.content.contentValuesOf
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import com.codewithkael.firebasevideocall.R
 import com.codewithkael.firebasevideocall.databinding.ItemMainRecyclerViewBinding
+import com.codewithkael.firebasevideocall.utils.ProgressBarUtil
 import com.codewithkael.firebasevideocall.utils.UserStatus
+import java.util.Locale
 
 private const val TAG = "====>>MainRecycViewAdap"
 
 class MainRecyclerViewAdapter(private val listener: Listener) :
-    RecyclerView.Adapter<MainRecyclerViewAdapter.MainRecyclerViewHolder>() {
+    RecyclerView.Adapter<MainRecyclerViewAdapter.MainRecyclerViewHolder>(){
+
+
 
     private var usersList: List<Pair<String, String>>? = null
+
+
     private var usersList1: List<Pair<String, String>>? = null
     private var password = ""
     fun updateList(list: List<Pair<String, String>>, list1: List<Pair<String, String>>) {
         this.usersList = list
         this.usersList1 = list1
         notifyDataSetChanged()
+
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MainRecyclerViewHolder {
@@ -51,6 +62,8 @@ class MainRecyclerViewAdapter(private val listener: Listener) :
 
     }
 
+    //implement filterable interface methods
+
     interface Listener {
         fun onVideoCallClicked(username: String)
         fun onAudioCallClicked(username: String)
@@ -71,39 +84,57 @@ class MainRecyclerViewAdapter(private val listener: Listener) :
                 when (user.second) {
                     "ONLINE" -> {
                         videoCallBtn.isVisible = true
-                        audioCallBtn.isVisible = true
+                        audioCallBtn.isVisible = false
 
-                        videoCallBtn.setOnClickListener {
-                            videoCallClicked.invoke(user.first)
+                        /*videoCallBtn.setOnClickListener {
+                            Toast.makeText(context, "Please wait while your call is being connected", Toast.LENGTH_LONG).show()
+
+                            videoCallClicked.invoke(user.first)//represents username
+                        }*/
+                        cardview.setOnClickListener {
+                            Toast.makeText(context, "Please wait while your call is being connected", Toast.LENGTH_LONG).show()
+                            videoCallClicked.invoke(user.first)//represents username
+
                         }
                         audioCallBtn.setOnClickListener {
                             audioCallClicked.invoke(user.first)
                         }
                         statusTv.setTextColor(context.resources.getColor(R.color.light_green, null))
-                        statusTv.text = "Online"
+                        statusTv.text =  "${user.first} is Online"
                     }
 
                     "OFFLINE" -> {
                         videoCallBtn.isVisible = false
                         audioCallBtn.isVisible = false
                         statusTv.setTextColor(context.resources.getColor(R.color.red, null))
-                        statusTv.text = "Offline"
+                        statusTv.text = "${user.first} is Offline"
                     }
 
                     "IN_CALL" -> {
                         videoCallBtn.isVisible = false
                         audioCallBtn.isVisible = false
                         statusTv.setTextColor(context.resources.getColor(R.color.yellow, null))
-                        statusTv.text = "In Call"
+                        statusTv.text = "${user.first} is In Call"
                     }
                 }
 
-                usernameTv.text = user.first
-                userNumber.text = user1.second
+                usernameTv.text = "Call ${user.first}"
+                userNumber.text = ": ${user1.second}"
             }
 
 
         }
 
     }
+
+
 }
+
+
+
+
+
+
+
+
+

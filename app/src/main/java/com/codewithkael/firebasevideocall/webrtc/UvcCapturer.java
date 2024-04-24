@@ -167,6 +167,7 @@ public class  UvcCapturer implements VideoCapturer, CameraVideoCapturer, USBMoni
     }
     @Override
     public void onFrame(ByteBuffer frame) {
+
         Log.d(TAG, "onFrame: ----------------------------------------------------------------------");
 //[Size(2592x1944@15,type:7), Size(2048x1536@15,type:7), Size(1600x1200@15,type:7), Size(1920x1080@30,type:7), Size(1280x960@30,type:7), Size(1280x720@30,type:7), Size(1024x768@30,type:7), Size(960x720@30,type:7), Size(800x600@30,type:7), Size(640x480@30,type:7), Size(320x240@30,type:7), Size(2592x1944@2,type:5), Size(2048x1536@3,type:5), Size(1600x1200@5,type:5), Size(1920x1080@5,type:5), Size(1280x960@5,type:5), Size(1280x720@10,type:5), Size(1024x768@15,type:5), Size(960x720@15,type:5), Size(800x600@20,type:5), Size(640x480@30,type:5), Size(320x240@30,type:5)]
         executor.execute(new Runnable() {
