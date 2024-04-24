@@ -38,6 +38,7 @@ class LoginActivity : AppCompatActivity() {
         setContentView(views.root)
         Log.d(TAG, "onCreate: ${Build.BRAND}")
         views.apply {
+
             if (Build.BRAND!!.equals("samsung", true)) {
                 //uvc.isUvc.value=true
                 usernameEt.setText("Divya")
@@ -47,6 +48,7 @@ class LoginActivity : AppCompatActivity() {
                 // uvc.isUvc.value=true
                 usernameEt.setText("Pooja")
                 passwordEt.setText("9994639839")
+
             }
         }
         init()
