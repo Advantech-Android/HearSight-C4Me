@@ -15,10 +15,10 @@ import com.codewithkael.firebasevideocall.firebaseClient.FirebaseClient
 import com.codewithkael.firebasevideocall.utils.ContactInfo
 import com.google.firebase.database.FirebaseDatabase
 
-
 private const val TAG = "====>>MainRecycViewAdap"
 
 class MainRecyclerViewAdapter(private val listener: Listener) :
+
     RecyclerView.Adapter<MainRecyclerViewAdapter.MainRecyclerViewHolder>() {
 
     private var innerContactList: List<ContactInfo>? = null
@@ -27,12 +27,11 @@ class MainRecyclerViewAdapter(private val listener: Listener) :
         this.innerContactList =list
         this.onlineContactList=onlineList
         notifyDataSetChanged()
+
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MainRecyclerViewHolder {
-        val binding = ItemMainRecyclerViewBinding.inflate(
-            LayoutInflater.from(parent.context), parent, false
-        )
+        val binding = ItemMainRecyclerViewBinding.inflate(LayoutInflater.from(parent.context), parent, false)
         return MainRecyclerViewHolder(binding,listener)
     }
 
@@ -53,89 +52,107 @@ class MainRecyclerViewAdapter(private val listener: Listener) :
         }
     }
 
+
+
     interface Listener {
         fun onVideoCallClicked(username: String)
         fun onAudioCallClicked(username: String)
     }
 
-    class MainRecyclerViewHolder(
-        private val binding: ItemMainRecyclerViewBinding,private val listener: Listener) :
+
+    class MainRecyclerViewHolder(private val binding: ItemMainRecyclerViewBinding,private val listener: Listener) :
         RecyclerView.ViewHolder(binding.root) {
         private val context = binding.root.context
-        fun bind(user: ContactInfo,pos:Int, videoCallClicked: (String) -> Unit, audioCallClicked: (String) -> Unit)
-        {
+        fun bind(user: ContactInfo, pos: Int, videoCallClicked: (String) -> Unit, audioCallClicked: (String) -> Unit) {
             Log.d(TAG, "bind: user:${user.userName} ,phone:${user.contactNumber},status:${user.status}")
             binding.apply {
 
                 when (user.status) {
                     "ONLINE" -> {
                         videoCallBtn.isVisible = true
-                        audioCallBtn.isVisible = true
+                        audioCallBtn.isVisible = false
 
-                        videoCallBtn.setOnClickListener {
-                            videoCallClicked.invoke(user.contactNumber)
+                        /*videoCallBtn.setOnClickListener {
+                            Toast.makeText(context, "Please wait while your call is being connected", Toast.LENGTH_LONG).show()
+
+                            videoCallClicked.invoke(user.first)//represents username
+                        }*/
+                        cardview.setOnClickListener {
+                            Toast.makeText(context, "Please wait while your call is being connected", Toast.LENGTH_LONG).show()
+                            videoCallClicked.invoke(user.contactNumber)//represents username
+
                         }
                         audioCallBtn.setOnClickListener {
                             audioCallClicked.invoke(user.contactNumber)
                         }
                         statusTv.setTextColor(context.resources.getColor(R.color.light_green, null))
-                        statusTv.text = "Online"
+                        statusTv.text = "${user.userName} is Online"
                     }
+
 
                     "OFFLINE" -> {
                         videoCallBtn.isVisible = false
                         audioCallBtn.isVisible = false
                         statusTv.setTextColor(context.resources.getColor(R.color.red, null))
-                        statusTv.text = "Offline"
+                        statusTv.text = "${user.userName} is Offline"
                     }
 
                     "IN_CALL" -> {
                         videoCallBtn.isVisible = false
                         audioCallBtn.isVisible = false
                         statusTv.setTextColor(context.resources.getColor(R.color.yellow, null))
-                        statusTv.text = "In Call"
+                        statusTv.text ="${user.userName} is In call"
                     }
                 }
 
-                usernameTv.text = user.userName
-                userNumber.text = user.contactNumber
-            }
+                usernameTv.text = "Call ${user.userName}"
+                userNumber.text = ": ${user.contactNumber}"
 
-
-            binding.apply {
-                statusTv.setOnClickListener {
-                    val deleteDialog=Dialog(context)
+                profileImageView.setOnClickListener {
+                    val deleteDialog = Dialog(context)
                     deleteDialog.setContentView(R.layout.deletelayout)
-                    deleteDialog.window!!.setLayout(WindowManager.LayoutParams.MATCH_PARENT,WindowManager.LayoutParams.WRAP_CONTENT)
-                    val noBtn=deleteDialog.findViewById<Button>(R.id.noId)
-                    val yesBtn=deleteDialog.findViewById<Button>(R.id.yesId)
+                    deleteDialog.window!!.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.WRAP_CONTENT)
+                    val noBtn = deleteDialog.findViewById<Button>(R.id.noId)
+                    val yesBtn = deleteDialog.findViewById<Button>(R.id.yesId)
                     deleteDialog.show()
                     yesBtn.setOnClickListener {
                         Log.d(TAG, "deleteContacts:ContactNumber: ${user.contactNumber.toString()}\t,UserName${user.userName.toString()}")
-                        deleteContacts(deleteDialog,user.contactNumber,user.userName,listener,pos) }
+                        deleteContacts(deleteDialog, user.contactNumber, user.userName, listener, pos)
+                    }
                     noBtn.setOnClickListener { deleteDialog.dismiss() }
 
                 }
+
             }
         }
 
-        private fun deleteContacts(deleteDialog: Dialog, contactNumber: String, userName: String, listener: Listener,pos:Int) {
-            val registerNumber=FirebaseClient.registerNumber
+
+        private fun deleteContacts(deleteDialog: Dialog, contactNumber: String, userName: String, listener: Listener, pos: Int) {
+            val registerNumber = FirebaseClient.registerNumber
             Log.d(TAG, "deleteContacts:ContactNumber: ${contactNumber}\t,UserName${userName.toString()}\t\tRegisterNumber${registerNumber}")
             val ref = FirebaseDatabase.getInstance().reference
-            val hastContactRef=ref.child(registerNumber).child("contacts").child(contactNumber)
+            val hastContactRef =
+                ref.child(registerNumber).child("contacts").child(contactNumber)
             hastContactRef.removeValue().addOnSuccessListener {
                 Toast.makeText(context, "Successfully removed ${userName} contact", Toast.LENGTH_SHORT).show()
-                val mainRecyclerViewAdapter=MainRecyclerViewAdapter(listener)
+                val mainRecyclerViewAdapter = MainRecyclerViewAdapter(listener)
                 mainRecyclerViewAdapter.notifyItemChanged(pos)
                 deleteDialog.dismiss()
 
             }
-                .addOnFailureListener {exception->
+                .addOnFailureListener { exception ->
                     Toast.makeText(context, "Failed to remove host contact: ${exception.message}", Toast.LENGTH_SHORT).show()
                 }
         }
 
+
     }
 
 }
+
+
+
+
+
+
+

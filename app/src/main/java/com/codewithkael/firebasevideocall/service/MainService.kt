@@ -66,6 +66,7 @@ class MainService : Service(), MainRepository.Listener {
                 TOGGLE_SCREEN_SHARE.name -> handleToggleScreenShare(incomingIntent)
                 STOP_SERVICE.name -> handleStopService()
                 START_WIFI_SCAN.name -> handleStartWifiScan()
+
                 else -> Unit
             }
         }
@@ -99,6 +100,7 @@ class MainService : Service(), MainRepository.Listener {
 
         }
     }
+
     private fun handleStopService() {
         mainRepository.endCall()
         mainRepository.logOff {
@@ -246,6 +248,7 @@ class MainService : Service(), MainRepository.Listener {
     }
 
     override fun endCall() {
+        Log.d(TAG, "endCall: ========>>>>>")
         //we are receiving end call signal from remote peer
         endCallAndRestartRepository()
     }

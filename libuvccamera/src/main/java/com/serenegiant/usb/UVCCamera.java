@@ -106,6 +106,7 @@ public class UVCCamera {
     public UVCCamera(UVCParam param) {
         mNativePtr = nativeCreate();
         mParam = param != null ? (UVCParam) param.clone() : new UVCParam();
+
     }
 
     /**

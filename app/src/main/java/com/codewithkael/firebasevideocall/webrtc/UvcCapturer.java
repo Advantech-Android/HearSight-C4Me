@@ -45,7 +45,9 @@ import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
+
 public class UvcCapturer implements VideoCapturer, CameraVideoCapturer, USBMonitor.OnDeviceConnectListener, IFrameCallback {
+
     private static final String TAG = "===>>UvcCapturer";
     private Context context;
 
@@ -102,16 +104,19 @@ public class UvcCapturer implements VideoCapturer, CameraVideoCapturer, USBMonit
 //      }
         Log.d(TAG, "startCapture: ");
         capturerObserver.onCapturerStarted(true);
+
       svVideoRender.addFrameListener(new EglRenderer.FrameListener() {
           @Override
           public void onFrame(Bitmap bitmap) {
               Log.d(TAG, "onFrame: ====");
           }
       },0);
+
     }
 
     @Override
     public void stopCapture() throws InterruptedException {
+        Log.d(TAG, "stopCapture: ");
         if (camera != null) {
             camera.stopPreview();
             camera.close();
@@ -159,8 +164,6 @@ public class UvcCapturer implements VideoCapturer, CameraVideoCapturer, USBMonit
         monitor.requestPermission(device);
     }
 
-
-
     @Override
     public void onDetach(UsbDevice device) {
         Log.d(TAG, "onDetach: ");
@@ -168,6 +171,9 @@ public class UvcCapturer implements VideoCapturer, CameraVideoCapturer, USBMonit
     }
     @Override
     public void onFrame(ByteBuffer frame) {
+
+        Log.d(TAG, "onFrame: ----------------------------------------------------------------------");
+
 //[Size(2592x1944@15,type:7), Size(2048x1536@15,type:7), Size(1600x1200@15,type:7), Size(1920x1080@30,type:7), Size(1280x960@30,type:7), Size(1280x720@30,type:7), Size(1024x768@30,type:7), Size(960x720@30,type:7), Size(800x600@30,type:7), Size(640x480@30,type:7), Size(320x240@30,type:7), Size(2592x1944@2,type:5), Size(2048x1536@3,type:5), Size(1600x1200@5,type:5), Size(1920x1080@5,type:5), Size(1280x960@5,type:5), Size(1280x720@10,type:5), Size(1024x768@15,type:5), Size(960x720@15,type:5), Size(800x600@20,type:5), Size(640x480@30,type:5), Size(320x240@30,type:5)]
         executor.execute(new Runnable() {
             @Override
@@ -263,19 +269,29 @@ public class UvcCapturer implements VideoCapturer, CameraVideoCapturer, USBMonit
             executor.execute(new Runnable() {
                 @Override
                 public void run() {
-                    camera = new UVCCamera(new UVCParam(new Size(DEFAULT_PREVIEW_FRAME_FORMAT, DEFAULT_PREVIEW_WIDTH, DEFAULT_PREVIEW_HEIGHT, DEFAULT_PREVIEW_FPS, new ArrayList<>(DEFAULT_PREVIEW_FPS)),0));
+
+                    camera = new UVCCamera(new UVCParam(new Size(
+                            DEFAULT_PREVIEW_FRAME_FORMAT,
+                            DEFAULT_PREVIEW_WIDTH,
+                            DEFAULT_PREVIEW_HEIGHT,
+                            DEFAULT_PREVIEW_FPS,
+                            new ArrayList<>(DEFAULT_PREVIEW_FPS)),0));
                     camera.open(ctrlBlock);
+
                     try {
-                       onSetPreviewMJEG();
-                         //onSetPreviewYUV();
-                    //camera.setPreviewSize(UVCCamera.DEFAULT_PREVIEW_WIDTH, UVCCamera.DEFAULT_PREVIEW_HEIGHT, UVCCamera.FRAME_FORMAT_MJPEG);
+                         onSetPreviewMJEG();
+                        //onSetPreviewYUV();
+
+                        //camera.setPreviewSize(UVCCamera.DEFAULT_PREVIEW_WIDTH, UVCCamera.DEFAULT_PREVIEW_HEIGHT, UVCCamera.UVC_VS_FRAME_MJPEG);
+
                     } catch (final IllegalArgumentException e) {
                         try {
                             Log.d(TAG, "run: After exception================================================================");
                             camera.setPreviewSize(UVCCamera.DEFAULT_PREVIEW_WIDTH, UVCCamera.DEFAULT_PREVIEW_HEIGHT, DEFAULT_PREVIEW_FRAME_FORMAT);
+
                         } catch (final IllegalArgumentException e1) {
                             Log.d(TAG, "run: Error =>" + e1.getMessage());
-                    camera.destroy();
+                          //camera.destroy();
 //                        camera = null;
 
                         }
@@ -292,6 +308,7 @@ public class UvcCapturer implements VideoCapturer, CameraVideoCapturer, USBMonit
                 }
             });
         }
+
     }
 
     @Override

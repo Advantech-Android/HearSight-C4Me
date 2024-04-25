@@ -4,6 +4,8 @@ import android.content.Intent
 import android.util.Log
 import com.codewithkael.firebasevideocall.firebaseClient.FirebaseClient
 import com.codewithkael.firebasevideocall.utils.ContactInfo
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import com.codewithkael.firebasevideocall.utils.DataModel
 import com.codewithkael.firebasevideocall.utils.DataModelType.*
 import com.codewithkael.firebasevideocall.utils.UserStatus
@@ -14,7 +16,8 @@ import org.webrtc.*
 import javax.inject.Inject
 import javax.inject.Singleton
 
-private const val TAG = "==>>MainRepository"
+
+private const val TAG = "***>>MainRepository"
 @Singleton
 class MainRepository @Inject constructor(
     private val firebaseClient: FirebaseClient,
@@ -39,14 +42,24 @@ class MainRepository @Inject constructor(
         firebaseClient.observeContactDetails(contactInfoList,commonContactInfoList)
     }
 
+    fun onObserveEndCall(data: (DataModel,String)->Unit){
+        firebaseClient.getEndCallEvent(data)
+    }
+    public fun getUserName(): String {
+        return firebaseClient.getUserName()
+    }
+
+    public fun getUserPhone(): String {
+        return firebaseClient.getUserPhone()
+    }
+
     fun initFirebase() {
         firebaseClient.subscribeForLatestEvent(object : FirebaseClient.Listener {
             override fun onLatestEventReceived(event: DataModel) {
                 listener?.onLatestEventReceived(event)
                 when (event.type) {
                     Offer->{
-                        webRTCClient.onRemoteSessionReceived(
-                            SessionDescription(SessionDescription.Type.OFFER, event.data.toString()))
+                        webRTCClient.onRemoteSessionReceived(SessionDescription(SessionDescription.Type.OFFER, event.data.toString()))
                         webRTCClient.answer(target!!)
                     }
                     Answer->{
@@ -88,7 +101,7 @@ class MainRepository @Inject constructor(
     }
 
     fun initWebrtcClient(username: String) {
-        Log.d(TAG, "initWebrtcClient: $username ")
+        Log.d(TAG, "initWebrtcClient: username: $username")
         webRTCClient.listener = this
         webRTCClient.initializeWebrtcClient(username, object : MyPeerObserver() {
 
@@ -140,6 +153,7 @@ class MainRepository @Inject constructor(
     }
 
     fun sendEndCall() {
+        Log.d(TAG, "sendEndCall: target =$target")
         onTransferEventToSocket(
             DataModel(
                 type = EndCall,
@@ -182,5 +196,10 @@ class MainRepository @Inject constructor(
 
     fun logOff(function: () -> Unit) = firebaseClient.logOff(function)
 
+    fun setCallStatus(target:String,sender:String,callLogs:String,callStatus: (String) -> Unit) {
+        //here sender act as caller change
+        //here target act as receiver change
+        firebaseClient.sendCallStatusToOtherClient(target,sender,callLogs,callStatus)
+    }
 
 }

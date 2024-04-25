@@ -21,6 +21,9 @@ import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
 import android.preference.PreferenceManager;
 
+import android.util.Log;
+
+
 import org.webrtc.ThreadUtils;
 
 import java.util.Collections;
@@ -40,6 +43,7 @@ public class RTCAudioManager {
     private final Context apprtcContext;
 
     private final int volumeRange=100;
+
     // Contains speakerphone setting: auto, true or false
     private final String useSpeakerphone;
     // Handles all tasks related to Bluetooth headset devices.
@@ -82,6 +86,7 @@ public class RTCAudioManager {
         ThreadUtils.checkIsOnMainThread();
         apprtcContext = context;
         audioManager = ((android.media.AudioManager) context.getSystemService(Context.AUDIO_SERVICE));
+
         bluetoothManager = BluetoothManager.create(context, this);
         wiredHeadsetReceiver = new WiredHeadsetReceiver();
         amState = AudioManagerState.UNINITIALIZED;
@@ -195,8 +200,18 @@ public class RTCAudioManager {
             }
         };
 
+
         // Request audio playout focus (without ducking) and install listener for changes in focus.
         int result = audioManager.requestAudioFocus(audioFocusChangeListener, android.media.AudioManager.STREAM_VOICE_CALL, android.media.AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
+        if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+            // Your audio focus request was granted
+            // Adjust volume here
+            Log.d(TAG, "start: AudioManager.AUDIOFOCUS_REQUEST_GRANTED");
+        } else {
+            // Your audio focus request was denied
+            // Handle accordingly
+            Log.d(TAG, "start: AUDIOFOCUS_REQUEST_DENIED");
+        }
 
         // Start by setting MODE_IN_COMMUNICATION as default audio mode. It is
         // required to be in this mode when playout and/or recording starts for
@@ -343,6 +358,7 @@ public class RTCAudioManager {
     private void setSpeakerphoneOn(boolean on) {
         boolean wasOn = audioManager.isSpeakerphoneOn();
         audioManager.setStreamVolume(AudioManager.STREAM_VOICE_CALL,volumeRange,0);
+
         if (wasOn == on) {
             return;
         }

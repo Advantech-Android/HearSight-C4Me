@@ -1,5 +1,6 @@
 package com.codewithkael.firebasevideocall.ui
 
+
 import WebQ
 import android.Manifest
 import android.content.Context
@@ -24,7 +25,15 @@ import com.codewithkael.firebasevideocall.service.MainServiceActions
 import com.codewithkael.firebasevideocall.service.MainServiceRepository
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
+import android.os.Handler
+import android.os.Looper
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import com.codewithkael.firebasevideocall.utils.ProgressBarUtil
+import com.codewithkael.firebasevideocall.webrtc.WebRTCClient
+import com.google.android.material.snackbar.Snackbar
 
+import kotlin.properties.Delegates
 
 private const val TAG = "***LoginActivity"
 private const val STORAGE_PERMISSION_CODE = 123
@@ -32,6 +41,12 @@ private const val FILECHOOSER_RESULTCODE = 1
 
 @AndroidEntryPoint
 class LoginActivity : AppCompatActivity() {
+    object uvc {
+
+        var isUvc = MutableLiveData<Boolean>(false)
+    }
+
+
     private lateinit var webView1: WebView
     private lateinit var views: ActivityLoginBinding
     @Inject lateinit var mainRepository: MainRepository
@@ -40,16 +55,18 @@ class LoginActivity : AppCompatActivity() {
 
     @Inject
     lateinit var mainServiceRepository: MainServiceRepository
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         views = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(views.root)
+
         wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
         views.apply {
             Log.d(TAG, "onCreate: ${Build.BRAND}")
-            if (Build.BRAND == "Redmi") {
-                usernameEt.setText("client")
-                passwordEt.setText("1111")
+            if (Build.BRAND.equals("oppo",true) ) {
+                usernameEt.setText("sunil")
+                passwordEt.setText("9000")
             } else {
                 usernameEt.setText("server")
                 passwordEt.setText("2222")
@@ -58,33 +75,76 @@ class LoginActivity : AppCompatActivity() {
         init()
 
 
-//        webQ = WebQ(this)
-//        views.webview.setOnClickListener {
-//            requestStoragePermission()
-//            webQ.setupWebView()
-//            //webView()
-//        }
-
-
-
     }
-
-
 
     private fun init() {
 
-        views.btn.setOnClickListener {
-            mainRepository.login(views.usernameEt.text.toString(), views.passwordEt.text.toString()) { isDone, reason ->
-                if (!isDone) {
-                    Toast.makeText(this@LoginActivity, reason, Toast.LENGTH_SHORT).show()
-                } else {
-                    startActivity(Intent(this@LoginActivity, MainActivity::class.java).apply {
-                        putExtra("username", views.passwordEt.text.toString())
-                    })
+        views.apply {
+            btn.isEnabled=true
+            btn.setOnClickListener {
+                btn.isEnabled=false
+                ProgressBarUtil.showProgressBar(this@LoginActivity)
+
+                val run={
+                    Snackbar.make(it,"Check your Wifi Internet Connection",Snackbar.LENGTH_SHORT).show()
+                    ProgressBarUtil.hideProgressBar(this@LoginActivity)
+                    passwordEt.isEnabled = true
+                    usernameEt.isEnabled = true
+                    btn.isEnabled=true
                 }
+                var hand=Handler(Looper.getMainLooper())
+                hand.postDelayed(run, 5000)
+
+                passwordEt.isEnabled = false
+                usernameEt.isEnabled = false
+
+                if (!ProgressBarUtil.checkInternetConnection(this@LoginActivity)) {
+                    passwordEt.isEnabled = true
+                    usernameEt.isEnabled = true
+                    btn.isEnabled=true
+                    Toast.makeText(
+                        this@LoginActivity,
+                        "Check your Internet Connection",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    hand.removeCallbacksAndMessages(null)
+                    ProgressBarUtil.hideProgressBar(this@LoginActivity)
+                    //return@setOnClickListener
+                } else {
+                    mainRepository.login(
+                        usernameEt.text.toString(), passwordEt.text.toString()
+                    ) { isDone, reason ->
+                        ProgressBarUtil.hideProgressBar(this@LoginActivity)
+                        hand.removeCallbacksAndMessages(null)
+                        passwordEt.isEnabled = true
+                        usernameEt.isEnabled = true
+                        btn.isEnabled=true
+                        if (!isDone) {
+//                                Toast.makeText(this@LoginActivity, reason, Toast.LENGTH_SHORT).show()
+                            Toast.makeText(
+                                this@LoginActivity,
+                                "Something went wrong",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        } else {
+                            //start moving to our main activity
+                            startActivity(Intent(
+                                this@LoginActivity,
+                                MainActivity::class.java
+                            ).apply {
+
+                                putExtra("username", passwordEt.text.toString())
+                            })
+                        }
+                    }
+
+                }
+
             }
         }
     }
+
+
     private fun startMyService() {
         mainServiceRepository.startService( "wifi", MainServiceActions.START_WIFI_SCAN.name)
     }
@@ -184,3 +244,5 @@ class LoginActivity : AppCompatActivity() {
     }
 
 }
+
+

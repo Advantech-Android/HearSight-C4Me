@@ -28,15 +28,11 @@ class WebRTCClient @Inject constructor(
     private val eglBaseContext = EglBase.create().eglBaseContext
     private val peerConnectionFactory by lazy { createPeerConnectionFactory() }
     private var peerConnection: PeerConnection? = null
-    private val iceServer = listOf(
-        PeerConnection.IceServer.builder("turn:a.relay.metered.ca:443?transport=tcp")
-            .setUsername("83eebabf8b4cce9d5dbcb649")
-            .setPassword("2D7JvfkOQtBdYW3R").createIceServer(),
-        PeerConnection.IceServer(
-            "turn:openrelay.metered.ca:80",
+    private val iceServer = listOf(PeerConnection.IceServer.builder("turn:a.relay.metered.ca:443?transport=tcp").setUsername("83eebabf8b4cce9d5dbcb649").setPassword("2D7JvfkOQtBdYW3R").createIceServer(),
+
+        PeerConnection.IceServer("turn:openrelay.metered.ca:80",
             "openrelayproject",
-            "openrelayproject"
-        ),
+            "openrelayproject"),
         PeerConnection.IceServer(
             "turn:openrelay.metered.ca:443",
             "openrelayproject",
@@ -254,9 +250,11 @@ class WebRTCClient @Inject constructor(
         surfaceTextureHelper = SurfaceTextureHelper.create(
             Thread.currentThread().name, eglBaseContext
         )
+
         if (isUvc) {
             usbCapturer = UvcCapturer(context, localView) as CameraVideoCapturer
          usbCapturer.initialize(surfaceTextureHelper,context,localVideoSource.capturerObserver)
+
             usbCapturer.startCapture(
                 720, 480, 20
             )
@@ -269,7 +267,8 @@ class WebRTCClient @Inject constructor(
             )
         }
 
-        localVideoTrack =
+
+        val localVideoTrack =
             peerConnectionFactory.createVideoTrack(localTrackId + "_video", localVideoSource)
         localVideoTrack?.addSink(localView)
         localStream?.addTrack(localVideoTrack)
@@ -277,7 +276,9 @@ class WebRTCClient @Inject constructor(
 
 
     private fun getVideoCapturer(context: Context): CameraVideoCapturer? =
+
         if (isUvc) {
+
             // create USBCapturer (USB Camera)
          null
         } else {
@@ -315,6 +316,7 @@ class WebRTCClient @Inject constructor(
 
         val surfaceTextureHelper = SurfaceTextureHelper.create(Thread.currentThread().name, eglBaseContext)
 
+
         screenCapturer = createScreenCapturer()
         screenCapturer!!.initialize(
             surfaceTextureHelper, context, localScreenVideoSource.capturerObserver
@@ -322,6 +324,7 @@ class WebRTCClient @Inject constructor(
         screenCapturer!!.startCapture(screenWidthPixels, screenHeightPixels, 15)
 
         localScreenShareVideoTrack = peerConnectionFactory.createVideoTrack(localTrackId + "_video", localScreenVideoSource)
+
         localScreenShareVideoTrack?.addSink(localSurfaceView)
         localStream?.addTrack(localScreenShareVideoTrack)
         peerConnection?.addStream(localStream)
