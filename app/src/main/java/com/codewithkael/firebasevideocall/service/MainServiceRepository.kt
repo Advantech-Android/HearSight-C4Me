@@ -9,11 +9,13 @@ class MainServiceRepository @Inject constructor(
     private val context: Context
 ) {
 
-    fun startService(username:String){
+
+    fun startService(username:String,intentAction:String){
         Thread{
             val intent = Intent(context, MainService::class.java)
             intent.putExtra("username",username)
-            intent.action = MainServiceActions.START_SERVICE.name
+            //intent.action = MainServiceActions.START_SERVICE.name
+            intent.action = intentAction
             startServiceIntent(intent)
         }.start()
     }
@@ -26,13 +28,14 @@ class MainServiceRepository @Inject constructor(
         }
     }
 
-    fun setupViews(videoCall: Boolean, caller: Boolean, target: String) {
+    fun setupViews(videoCall: Boolean, caller: Boolean, target: String, callerName: String) {
         val intent = Intent(context,MainService::class.java)
         intent.apply {
             action = MainServiceActions.SETUP_VIEWS.name
             putExtra("isVideoCall",videoCall)
             putExtra("target",target)
             putExtra("isCaller",caller)
+            putExtra("callerName",callerName)
         }
         startServiceIntent(intent)
     }

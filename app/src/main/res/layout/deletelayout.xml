@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="16dp"
+    app:cardCornerRadius="15dp"
+    app:cardElevation="4dp">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:padding="16dp">
+        <TextView
+            android:id="@+id/textView3"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:gravity="center"
+            android:text="Are you sure you want to delete contacts?"
+            android:textColor="@android:color/black"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center">
+            <Button
+                android:id="@+id/yesId"
+                android:layout_width="120dp"
+                android:layout_height="45dp"
+                android:textSize="12dp"
+                android:layout_marginLeft="10dp"
+                android:text="Yes" />
+
+            <Button
+                android:id="@+id/noId"
+                android:layout_width="120dp"
+                android:layout_height="45dp"
+                android:textSize="12dp"
+                android:layout_marginLeft="10dp"
+                android:text="Cancel" />
+        </LinearLayout>
+    </LinearLayout>
+</androidx.cardview.widget.CardView>

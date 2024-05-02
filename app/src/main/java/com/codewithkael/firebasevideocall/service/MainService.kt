@@ -12,6 +12,7 @@ import androidx.core.app.NotificationCompat
 import com.codewithkael.firebasevideocall.R
 import com.codewithkael.firebasevideocall.repository.MainRepository
 import com.codewithkael.firebasevideocall.service.MainServiceActions.*
+import com.codewithkael.firebasevideocall.ui.LoginActivity.uvc.isUvc
 import com.codewithkael.firebasevideocall.utils.DataModel
 import com.codewithkael.firebasevideocall.utils.DataModelType
 import com.codewithkael.firebasevideocall.utils.isValid
@@ -65,6 +66,8 @@ class MainService : Service(), MainRepository.Listener {
                 TOGGLE_AUDIO_DEVICE.name -> handleToggleAudioDevice(incomingIntent)
                 TOGGLE_SCREEN_SHARE.name -> handleToggleScreenShare(incomingIntent)
                 STOP_SERVICE.name -> handleStopService()
+                START_WIFI_SCAN.name -> handleStartWifiScan()
+
                 else -> Unit
             }
         }
@@ -72,12 +75,45 @@ class MainService : Service(), MainRepository.Listener {
         return START_STICKY
     }
 
+
+    fun handleStartWifiScan()
+    {
+
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val notificationChannel = NotificationChannel(
+                "channel2", "foreground1", NotificationManager.IMPORTANCE_HIGH
+            )
+
+            val intent = Intent(this,MainServiceReceiver::class.java).apply {
+                action = "ACTION_WIFI_SCAN"
+            }
+            val pendingIntent : PendingIntent =
+                PendingIntent.getBroadcast(this,0 ,intent,PendingIntent.FLAG_IMMUTABLE)
+
+            notificationManager.createNotificationChannel(notificationChannel)
+            val notification = NotificationCompat.Builder(
+                this, "channel2"
+            ).setSmallIcon(R.mipmap.ic_launcher)
+                .addAction(R.drawable.baseline_wifi_24,"Wifi",pendingIntent)
+
+            startForeground(1, notification.build())
+
+        }
+    }
+
     private fun handleStopService() {
-        mainRepository.endCall()
-        mainRepository.logOff {
+        if (isUvc.value==true){
             isServiceRunning = false
             stopSelf()
+        }else{
+            mainRepository.endCall()
+            mainRepository.logOff {
+                isServiceRunning = false
+                stopSelf()
+            }
         }
+
     }
 
     private fun handleToggleScreenShare(incomingIntent: Intent) {
@@ -148,8 +184,9 @@ class MainService : Service(), MainRepository.Listener {
         val isCaller = incomingIntent.getBooleanExtra("isCaller",false)
         val isVideoCall = incomingIntent.getBooleanExtra("isVideoCall",true)
         val target = incomingIntent.getStringExtra("target")
+        val callerName = incomingIntent.getStringExtra("callerName")
         this.isPreviousCallStateVideo = isVideoCall
-        mainRepository.setTarget(target!!)
+        mainRepository.setTarget(target!!,callerName!!)
         //initialize our widgets and start streaming our video and audio source
         //and get prepared for call
         mainRepository.initLocalSurfaceView(localSurfaceView!!,isVideoCall)
@@ -197,6 +234,7 @@ class MainService : Service(), MainRepository.Listener {
                 .addAction(R.drawable.ic_end_call,"Exit",pendingIntent)
 
             startForeground(1, notification.build())
+
         }
     }
 
@@ -218,6 +256,7 @@ class MainService : Service(), MainRepository.Listener {
     }
 
     override fun endCall() {
+        Log.d(TAG, "endCall: ========>>>>>")
         //we are receiving end call signal from remote peer
         endCallAndRestartRepository()
     }
@@ -228,5 +267,8 @@ class MainService : Service(), MainRepository.Listener {
 
     interface EndCallListener {
         fun onCallEnded()
+
     }
+
+
 }

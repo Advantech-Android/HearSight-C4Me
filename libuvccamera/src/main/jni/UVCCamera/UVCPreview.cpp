@@ -541,8 +541,10 @@ int UVCPreview::prepare_preview(uvc_stream_ctrl_t *ctrl) {
             frameFormatType = requestFormatType;
         }
         frameBytes = frameWidth * frameHeight * (frameFormatType == UVC_VS_FRAME_MJPEG ? 4 : 2);
+
     previewBytes = frameWidth * frameHeight * PREVIEW_PIXEL_BYTES;
        // previewBytes = frameWidth * frameHeight * frameBytes;
+
     } else {
         LOGE("could not negotiate with camera:err=%d", result);
     }

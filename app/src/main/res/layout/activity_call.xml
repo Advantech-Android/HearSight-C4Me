@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:id="@+id/callActiviy"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <org.webrtc.SurfaceViewRenderer
@@ -11,14 +12,15 @@
         android:id="@+id/remoteView"/>
 
     <org.webrtc.SurfaceViewRenderer
-        android:layout_width="75dp"
-        android:layout_height="120dp"
-        android:id="@+id/localView"
 
+        android:id="@+id/localView"
+        android:layout_width="185dp"
+        android:layout_height="202dp"
         android:layout_marginEnd="2dp"
         android:layout_marginBottom="2dp"
         app:layout_constraintBottom_toTopOf="@id/controlPanelLayout"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        app:layout_constraintEnd_toEndOf="parent" />
+
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="60dp"
@@ -54,6 +56,9 @@
         <androidx.appcompat.widget.AppCompatImageButton
             android:id="@+id/screenShareButton"
             android:layout_width="60dp"
+
+            android:visibility="gone"
+
             android:layout_height="60dp"
             android:background="@android:color/transparent"
             android:src="@drawable/ic_screen_share"

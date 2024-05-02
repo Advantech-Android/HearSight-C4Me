@@ -20,7 +20,9 @@ import android.content.pm.PackageManager;
 import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
 import android.preference.PreferenceManager;
+
 import android.util.Log;
+
 
 import org.webrtc.ThreadUtils;
 
@@ -39,6 +41,9 @@ public class RTCAudioManager {
     private static final String SPEAKERPHONE_TRUE = "true";
     private static final String SPEAKERPHONE_FALSE = "false";
     private final Context apprtcContext;
+
+    private final int volumeRange=100;
+
     // Contains speakerphone setting: auto, true or false
     private final String useSpeakerphone;
     // Handles all tasks related to Bluetooth headset devices.
@@ -196,8 +201,6 @@ public class RTCAudioManager {
         };
 
 
-
-
         // Request audio playout focus (without ducking) and install listener for changes in focus.
         int result = audioManager.requestAudioFocus(audioFocusChangeListener, android.media.AudioManager.STREAM_VOICE_CALL, android.media.AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
         if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
@@ -209,6 +212,7 @@ public class RTCAudioManager {
             // Handle accordingly
             Log.d(TAG, "start: AUDIOFOCUS_REQUEST_DENIED");
         }
+
         // Start by setting MODE_IN_COMMUNICATION as default audio mode. It is
         // required to be in this mode when playout and/or recording starts for
         // best possible VoIP performance.
@@ -353,7 +357,8 @@ public class RTCAudioManager {
      */
     private void setSpeakerphoneOn(boolean on) {
         boolean wasOn = audioManager.isSpeakerphoneOn();
-        audioManager.setStreamVolume(android.media.AudioManager.STREAM_VOICE_CALL,100,0);
+        audioManager.setStreamVolume(AudioManager.STREAM_VOICE_CALL,volumeRange,0);
+
         if (wasOn == on) {
             return;
         }
@@ -391,8 +396,10 @@ public class RTCAudioManager {
         for (AudioDeviceInfo device : devices) {
             final int type = device.getType();
             if (type == AudioDeviceInfo.TYPE_WIRED_HEADSET) {
+                audioManager.setStreamVolume(type,volumeRange,0);
                 return true;
             } else if (type == AudioDeviceInfo.TYPE_USB_DEVICE) {
+                audioManager.setStreamVolume(type,volumeRange,0);
                 return true;
             }
         }
