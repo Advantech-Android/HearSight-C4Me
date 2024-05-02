@@ -23,6 +23,13 @@ import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import android.os.Handler
 import android.os.Looper
+<<<<<<< HEAD
+=======
+import android.text.Editable
+import android.text.InputFilter
+import android.text.TextWatcher
+import android.text.method.DigitsKeyListener
+>>>>>>> 3151b8d84f417bc3ed11db49a7e1e57f08f2085d
 import androidx.lifecycle.MutableLiveData
 import com.codewithkael.firebasevideocall.utils.ProgressBarUtil
 import com.google.android.material.snackbar.Snackbar
@@ -52,21 +59,46 @@ class LoginActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         views = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(views.root)
-
         wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+        init()
+      //  loginCredentials()
+        modelDebug()
+
+    }
+
+    private fun loginCredentials(){
         views.apply {
+<<<<<<< HEAD
             Log.d(TAG, "onCreate: ${Build.BRAND}")
             if (Build.BRAND.equals("samsung", true)) {
                 usernameEt.setText("sunil")
                 passwordEt.setText("9000")
+=======
+
+            val usernameText = usernameEt.text.toString()
+            val passwordText = passwordEt.text.toString()
+
+            usernameEt.filters= arrayOf(InputFilter.LengthFilter(20))
+            passwordEt.filters= arrayOf(InputFilter.LengthFilter(10),DigitsKeyListener.getInstance("0123456789"))
+
+            usernameEt.setText(usernameText)
+            passwordEt.setText(passwordText)
+        }
+    }
+    private fun modelDebug() {
+        views.apply {
+            if (Build.BRAND!!.equals("oppo", true)) {
+                //uvc.isUvc.value=true
+                usernameEt.setText("Divya")
+                passwordEt.setText("9843716886")
+>>>>>>> 3151b8d84f417bc3ed11db49a7e1e57f08f2085d
             } else {
-                usernameEt.setText("server")
-                passwordEt.setText("2222")
+                //Toast.makeText(this@LoginActivity, "UVC is Connected", Toast.LENGTH_SHORT).show()
+                // uvc.isUvc.value=true
+                usernameEt.setText("Pooja")
+                passwordEt.setText("9994639839")
             }
         }
-        init()
-
-
     }
 
     private fun init() {
@@ -74,7 +106,20 @@ class LoginActivity : AppCompatActivity() {
         views.apply {
             btn.isEnabled = true
             btn.setOnClickListener {
+<<<<<<< HEAD
                 btn.isEnabled = false
+=======
+
+                val usernameText = usernameEt.text.toString()
+                val passwordText = passwordEt.text.toString()
+//
+                if (usernameText.isEmpty() || passwordText.isEmpty()) {
+                    Toast.makeText(this@LoginActivity, "Enter both username and password", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+
+                btn.isEnabled=false
+>>>>>>> 3151b8d84f417bc3ed11db49a7e1e57f08f2085d
                 ProgressBarUtil.showProgressBar(this@LoginActivity)
 
                 val run = {
@@ -113,15 +158,25 @@ class LoginActivity : AppCompatActivity() {
                         usernameEt.isEnabled = true
                         btn.isEnabled = true
                         if (!isDone) {
+<<<<<<< HEAD
+=======
+
+>>>>>>> 3151b8d84f417bc3ed11db49a7e1e57f08f2085d
                             Toast.makeText(
                                 this@LoginActivity,
                                 "Something went wrong",
                                 Toast.LENGTH_SHORT
                             ).show()
+<<<<<<< HEAD
                         } else {
 //                            val otpScreen=OTPScreen(this@LoginActivity)
 //                            otpScreen.getOTP(passwordEt.text.toString())
                             Toast.makeText(this@LoginActivity, "clicked", Toast.LENGTH_SHORT).show()
+=======
+                        }
+                        else
+                        {
+>>>>>>> 3151b8d84f417bc3ed11db49a7e1e57f08f2085d
                             //start moving to our main activity
                             startActivity(Intent(this@LoginActivity, MainActivity::class.java).apply { putExtra("username", passwordEt.text.toString()) })
                         }

@@ -10,6 +10,7 @@ import java.lang.annotation.RetentionPolicy;
 @Retention(RetentionPolicy.SOURCE)
 public @interface MirrorMode {
     int MIRROR_NORMAL = 0;
+    //int mirrorMode=MirrorMode.MIRROR_NORMAL;
     int MIRROR_HORIZONTAL = 1;
     int MIRROR_VERTICAL = 2;
     int MIRROR_BOTH = 3;
