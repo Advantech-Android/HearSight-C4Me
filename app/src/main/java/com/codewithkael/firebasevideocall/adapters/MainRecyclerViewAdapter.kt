@@ -1,8 +1,10 @@
 package com.codewithkael.firebasevideocall.adapters
 
 import android.app.Dialog
+import android.os.CountDownTimer
 import android.util.Log
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.Button
@@ -12,8 +14,11 @@ import androidx.recyclerview.widget.RecyclerView
 import com.codewithkael.firebasevideocall.R
 import com.codewithkael.firebasevideocall.databinding.ItemMainRecyclerViewBinding
 import com.codewithkael.firebasevideocall.firebaseClient.FirebaseClient
+import com.codewithkael.firebasevideocall.ui.CallActivity
 import com.codewithkael.firebasevideocall.utils.ContactInfo
+import com.codewithkael.firebasevideocall.utils.DataModel
 import com.google.firebase.database.FirebaseDatabase
+import kotlin.concurrent.timer
 
 private const val TAG = "====>>MainRecycViewAdap"
 
@@ -23,12 +28,28 @@ class MainRecyclerViewAdapter(private val listener: Listener) :
 
     private var innerContactList: List<ContactInfo>? = null
     private var onlineContactList:List<ContactInfo>?=null
+    var filteredContactList:List<ContactInfo>?=null
+
+
+
+
     fun updateList(list:List<ContactInfo>, onlineList:List<ContactInfo> ) {
         this.innerContactList =list
         this.onlineContactList=onlineList
+        filteredContactList=onlineList
         notifyDataSetChanged()
 
     }
+
+    //Method to filter the query based on the query
+    fun filterList(query:String){
+            filteredContactList=onlineContactList?.filter {
+                it.userName.contains(query, ignoreCase = true) || it.contactNumber.contains(query,ignoreCase = true)
+            }
+        notifyDataSetChanged()
+
+    }
+
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MainRecyclerViewHolder {
         val binding = ItemMainRecyclerViewBinding.inflate(LayoutInflater.from(parent.context), parent, false)
@@ -36,15 +57,16 @@ class MainRecyclerViewAdapter(private val listener: Listener) :
     }
 
     override fun getItemCount(): Int {
-        return onlineContactList?.size ?: 0
+       // return onlineContactList?.size ?: 0
+        return filteredContactList?.size?:0
     }
 
     override fun onBindViewHolder(holder: MainRecyclerViewHolder, position: Int) {
-        onlineContactList?.let { list ->
+        filteredContactList?.let { list ->
             val user = list[position]
             holder.bind(user,position,{
                 Log.d(TAG, "onBindViewHolder: onVideoCallClicked $it")
-                listener.onVideoCallClicked(it)
+                listener.onVideoCallClicked(it,user)
             }, {
                 Log.d(TAG, "onBindViewHolder: onAudioCallClicked")
                 listener.onAudioCallClicked(it)
@@ -55,7 +77,7 @@ class MainRecyclerViewAdapter(private val listener: Listener) :
 
 
     interface Listener {
-        fun onVideoCallClicked(username: String)
+        fun onVideoCallClicked(username: String,userData:ContactInfo)
         fun onAudioCallClicked(username: String)
     }
 
@@ -63,6 +85,7 @@ class MainRecyclerViewAdapter(private val listener: Listener) :
     class MainRecyclerViewHolder(private val binding: ItemMainRecyclerViewBinding,private val listener: Listener) :
         RecyclerView.ViewHolder(binding.root) {
         private val context = binding.root.context
+        private var timer:CountDownTimer?=null
         fun bind(user: ContactInfo, pos: Int, videoCallClicked: (String) -> Unit, audioCallClicked: (String) -> Unit) {
             Log.d(TAG, "bind: user:${user.userName} ,phone:${user.contactNumber},status:${user.status}")
             binding.apply {
@@ -77,10 +100,9 @@ class MainRecyclerViewAdapter(private val listener: Listener) :
 
                             videoCallClicked.invoke(user.first)//represents username
                         }*/
-                        cardview.setOnClickListener {
+                        cardViewVideoCallClick.setOnClickListener {
                             Toast.makeText(context, "Please wait while your call is being connected", Toast.LENGTH_LONG).show()
                             videoCallClicked.invoke(user.contactNumber)//represents username
-
                         }
                         audioCallBtn.setOnClickListener {
                             audioCallClicked.invoke(user.contactNumber)
@@ -106,9 +128,10 @@ class MainRecyclerViewAdapter(private val listener: Listener) :
                 }
 
                 usernameTv.text = "Call ${user.userName}"
-                userNumber.text = ": ${user.contactNumber}"
+                userNumber.text = "${user.contactNumber}"
 
-                profileImageView.setOnClickListener {
+                deleteContactBtn.setOnClickListener {
+
                     val deleteDialog = Dialog(context)
                     deleteDialog.setContentView(R.layout.deletelayout)
                     deleteDialog.window!!.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.WRAP_CONTENT)
@@ -125,6 +148,9 @@ class MainRecyclerViewAdapter(private val listener: Listener) :
 
             }
         }
+
+
+
 
 
         private fun deleteContacts(deleteDialog: Dialog, contactNumber: String, userName: String, listener: Listener, pos: Int) {

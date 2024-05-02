@@ -3,11 +3,20 @@ import android.app.Dialog
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.text.InputFilter
+import android.text.method.DigitsKeyListener
 import android.util.Log
+import android.util.TypedValue
+import android.view.LayoutInflater
 import android.view.View
 import android.view.WindowManager
+import android.widget.Button
+import android.widget.EditText
 
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -28,6 +37,7 @@ import com.codewithkael.firebasevideocall.utils.ProgressBarUtil
 import com.codewithkael.firebasevideocall.utils.getCameraAndMicPermission
 import com.google.android.material.textfield.TextInputEditText
 import dagger.hilt.android.AndroidEntryPoint
+import java.nio.channels.AlreadyBoundException
 import javax.inject.Inject
 import kotlin.math.log
 
@@ -47,7 +57,7 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
     @Inject
     lateinit var serviceRepository: MainServiceRepository
     private var mainAdapter: MainRecyclerViewAdapter? = null
-
+    private var callerName:String?=""
     @Inject
     lateinit var context: Context
 
@@ -58,13 +68,57 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
         super.onCreate(savedInstanceState)
         views = ActivityMainBinding.inflate(layoutInflater)
         setContentView(views.root)
+
+        searchQuery()
         init()
+        logOut()
     }
+
+
+    private fun logOut(){
+        views.logOut.setOnClickListener {
+            showLogoutDialog()
+        }
+    }
+
+    private fun showLogoutDialog() {
+        val builder = AlertDialog.Builder(this)
+        val inflater = layoutInflater
+        val dialogView = inflater.inflate(R.layout.dialog_logout, null)
+
+        val logoutOkBtn = dialogView.findViewById<Button>(R.id.logoutOkBtn)
+        val logoutCancelBtn = dialogView.findViewById<Button>(R.id.logoutCancleBtn)
+
+        builder.setView(dialogView)
+            .setPositiveButton(null, null) // Setting null for positive button for custom handling
+            .setNegativeButton(null, null) // Setting null for negative button for custom handling
+
+        val dialog = builder.create()
+        dialog.show()
+
+        logoutOkBtn.setOnClickListener {
+            // Perform logout action
+            // For example, navigate to login screen or clear session
+            val intent = Intent(this, LoginActivity::class.java)
+            startActivity(intent)
+            dialog.dismiss()
+        }
+
+        logoutCancelBtn.setOnClickListener {
+            dialog.dismiss()
+        }
+
+    }
+
+
+
+
 
     private fun init() {
         username = intent.getStringExtra("username")
         if (username == null) finish()
         views.addContact.setOnClickListener {
+
             addContacts()
         }
         //1. observe other users status
@@ -73,8 +127,37 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
         startMyService()
     }
 
+    private fun searchQuery(){
+        views.searchView.queryHint="Search Contacts"
+
+        // Find the EditText inside the SearchView
+        val searchEditText = views.searchView.findViewById<EditText>(
+            androidx.appcompat.R.id.search_src_text
+        )
+
+        // Set the text size of the query hint
+        searchEditText.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 15f)
+
+
+        views.searchView.setOnQueryTextListener(object :SearchView.OnQueryTextListener{
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                return false
+            }
+
+            override fun onQueryTextChange(newText: String?): Boolean// if the text is available in search query box
+            {
+                newText?.let {
+                    mainAdapter?.filterList(newText)
+                }
+                return true
+            }
+
+        })
+    }
+
     private fun addContacts()
     {
+
         val mDialog= Dialog(this)
         mDialog.setContentView(R.layout.addcontacts)
         mDialog.window!!.setLayout(WindowManager.LayoutParams.WRAP_CONTENT,WindowManager.LayoutParams.WRAP_CONTENT)
@@ -82,10 +165,19 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
         val addName=mDialog.findViewById<TextInputEditText>(R.id.addNameid)
         val addPhoneNumber=mDialog.findViewById<TextInputEditText>(R.id.addPhoneNumberid)
         val registerBtn=mDialog.findViewById<CardView>(R.id.registerbutton)
+        val cancelBtn=mDialog.findViewById<CardView>(R.id.cancelBtn)
+
+        addName.filters= arrayOf(InputFilter.LengthFilter(20))
+        addPhoneNumber.filters= arrayOf(InputFilter.LengthFilter(10),DigitsKeyListener.getInstance("0123456789"))
+
         registerBtn.setOnClickListener {
-            if (addName==null||addPhoneNumber==null)
+
+            val name=addName.text.toString().trim()
+            val phoneNumber=addPhoneNumber.text.toString().trim()
+
+            if (name.isEmpty()||phoneNumber.isEmpty())
             {
-                Toast.makeText(this, "Field empty", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Field can not be empty", Toast.LENGTH_SHORT).show()
             }
             else {
                 mainRepository.addContacts(addName.text.toString(),addPhoneNumber.text.toString()){ isDone, reason ->
@@ -93,12 +185,18 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
                         Toast.makeText(this, reason, Toast.LENGTH_SHORT).show()
                         mDialog.dismiss()
                     }else{
-                        Toast.makeText(this,"Success" , Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this,"Contact added Successfully" , Toast.LENGTH_SHORT).show()
                         mDialog.dismiss()
                     }
                 }
             }
         }
+
+        cancelBtn.setOnClickListener {
+            mDialog.dismiss()
+        }
+
+
     }
 
 
@@ -118,7 +216,7 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
 //                mainAdapter!!.updateList(userList,innerList?: emptyList())
 //            }
         },{ userList1->
-            Toast.makeText(this, "${userList1}", Toast.LENGTH_SHORT).show()
+            //Toast.makeText(this, "${userList1}", Toast.LENGTH_SHORT).show()
             if (userList1.isNullOrEmpty()){
                 views.noContactTV.visibility=View.VISIBLE
                 mainAdapter!!.updateList(outerList ?: emptyList(),emptyList())
@@ -153,7 +251,7 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
 
     }
 
-    override fun onVideoCallClicked(username: String) {
+    override fun onVideoCallClicked(username: String,user:ContactInfo) {
         //check if permission of mic and camera is taken
         Log.d(TAG, "onVideoCallClicked: =====================$username")
         getCameraAndMicPermission {
@@ -161,14 +259,17 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
                 if (it) {
                     //we have to start video call
                     //we wanna create an intent to move to call activity
-                    startActivity(Intent(this, CallActivity::class.java).apply {
-                        putExtra("target", username)
-                        putExtra("isVideoCall", true)
-                        putExtra("isCaller", true)
-                        putExtra("isIncoming", "Out")
-                        putExtra("timer", false)
-                    })
-
+                    //here username is phone number
+                  //  mainRepository.getUserNameFB(username){ user_name->
+                        startActivity(Intent(this, CallActivity::class.java).apply {
+                            putExtra("target", username)
+                            putExtra("isVideoCall", true)
+                            putExtra("isCaller", true)
+                            putExtra("isIncoming", "Out")
+                            putExtra("timer", false)
+                            putExtra("callerName", user.userName)
+                        })
+                  //  }
 
                 }
             }
@@ -186,15 +287,14 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
                         putExtra("isVideoCall", false)
                         putExtra("isCaller", true)
 
-
                     })
                 }
             }
         }
     }
-    override fun onPause() {
+    override fun onPause()
+    {
         super.onPause()
-
     }
 
     override fun onDestroy() {
@@ -213,30 +313,40 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
         runOnUiThread {
             views.apply {
                 Log.d(TAG, "onCallReceived: sender:${model.sender}, target: ${model.target}")
-
+                var username=""
                 val isVideoCall = model.type == DataModelType.StartVideoCall
                 val isVideoCallText = if (isVideoCall) "Video" else "Audio"
                 incomingCallTitleTv.text = "${model.sender} is $isVideoCallText Calling you"
                 contactLayout.isVisible=false
                 incomingCallLayout.isVisible = true
+                mainRepository.getUserNameFB(model.sender!!) { user_name ->
+                    Log.d(TAG, "onCallReceived: $user_name")
+                    username=user_name+""
+                }
                 acceptButton.setOnClickListener {
-                    mp3Player.stopMP3()
                     getCameraAndMicPermission {
+
+                    mp3Player.stopMP3()
+                    mainRepository.setCallStatus(model.target,model.sender!!,"AcceptCall"){
+                        mp3Player.stopMP3()
                         incomingCallLayout.isVisible = false
                         contactLayout.isVisible=true
-                        mp3Player.stopMP3()
-                        //create an intent to go to video call activity
-                        startActivity(Intent(this@MainActivity,CallActivity::class.java).apply {
-                            putExtra("target",model.sender)
-                            putExtra("isVideoCall",isVideoCall)
-                            putExtra("isCaller",false)
-                            putExtra("timer", true)
-                        })
+
+
+                            //create an intent to go to video call activity
+                            startActivity(Intent(this@MainActivity,CallActivity::class.java).apply {
+                                putExtra("target",model.sender)
+                                putExtra("isVideoCall",isVideoCall)
+                                putExtra("isCaller",false)
+                                putExtra("timer", true)
+                                putExtra("callerName", username)
+                            })
+
                     }
 
-                    mainRepository.setCallStatus(model.target!!,model.sender!!,"AcceptCall"){
-                        mp3Player.stopMP3()
                     }
+
+
                 }
                 declineButton.setOnClickListener {
                     incomingCallLayout.isVisible = false
@@ -247,6 +357,13 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
                     decline(model.target,model.sender,"EndCall")
 
                 }
+
+                Handler(Looper.getMainLooper()).postDelayed({
+                    mp3Player.stopMP3()
+                    incomingCallLayout.isVisible = false
+                    contactLayout.isVisible=true
+
+                }, 20000)
             }
         }
     }

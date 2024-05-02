@@ -6,9 +6,13 @@ import android.media.projection.MediaProjection
 import android.util.DisplayMetrics
 import android.util.Log
 import android.view.WindowManager
+import com.codewithkael.firebasevideocall.ui.CallActivity
+import com.codewithkael.firebasevideocall.ui.LoginActivity.uvc.isUvc
 import com.codewithkael.firebasevideocall.utils.DataModel
 import com.codewithkael.firebasevideocall.utils.DataModelType
 import com.google.gson.Gson
+import com.herohan.uvcapp.CameraHelper
+import com.herohan.uvcapp.ICameraHelper
 import org.webrtc.*
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -22,8 +26,9 @@ class WebRTCClient @Inject constructor(
     //class variables
     var listener: Listener? = null
     private lateinit var username: String
-    private var isUvc = false;
+   // private var isUvc = true
     private lateinit var usbCapturer: CameraVideoCapturer
+    private var mCameraHelper: ICameraHelper? = null
     //webrtc variables
     private val eglBaseContext = EglBase.create().eglBaseContext
     private val peerConnectionFactory by lazy { createPeerConnectionFactory() }
@@ -45,7 +50,7 @@ class WebRTCClient @Inject constructor(
     )
 
     private val localVideoSource by lazy {
-        if (isUvc)
+        if (isUvc.value==true)
             peerConnectionFactory.createVideoSource(usbCapturer.isScreencast)
         else
             peerConnectionFactory.createVideoSource(false)
@@ -97,6 +102,11 @@ class WebRTCClient @Inject constructor(
                 disableNetworkMonitor = false
                 disableEncryption = false
             }).createPeerConnectionFactory()
+    }
+
+    fun onCameraHelper(onCameraHelper: ICameraHelper)
+    {
+        mCameraHelper=onCameraHelper as ICameraHelper
     }
 
     fun initializeWebrtcClient(
@@ -251,7 +261,7 @@ class WebRTCClient @Inject constructor(
             Thread.currentThread().name, eglBaseContext
         )
 
-        if (isUvc) {
+        if (isUvc.value==true) {
             usbCapturer = UvcCapturer(context, localView) as CameraVideoCapturer
          usbCapturer.initialize(surfaceTextureHelper,context,localVideoSource.capturerObserver)
 
@@ -277,7 +287,7 @@ class WebRTCClient @Inject constructor(
 
     private fun getVideoCapturer(context: Context): CameraVideoCapturer? =
 
-        if (isUvc) {
+        if (isUvc.value==true) {
 
             // create USBCapturer (USB Camera)
          null

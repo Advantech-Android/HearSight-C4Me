@@ -12,6 +12,7 @@ import androidx.core.app.NotificationCompat
 import com.codewithkael.firebasevideocall.R
 import com.codewithkael.firebasevideocall.repository.MainRepository
 import com.codewithkael.firebasevideocall.service.MainServiceActions.*
+import com.codewithkael.firebasevideocall.ui.LoginActivity.uvc.isUvc
 import com.codewithkael.firebasevideocall.utils.DataModel
 import com.codewithkael.firebasevideocall.utils.DataModelType
 import com.codewithkael.firebasevideocall.utils.isValid
@@ -102,11 +103,17 @@ class MainService : Service(), MainRepository.Listener {
     }
 
     private fun handleStopService() {
-        mainRepository.endCall()
-        mainRepository.logOff {
+        if (isUvc.value==true){
             isServiceRunning = false
             stopSelf()
+        }else{
+            mainRepository.endCall()
+            mainRepository.logOff {
+                isServiceRunning = false
+                stopSelf()
+            }
         }
+
     }
 
     private fun handleToggleScreenShare(incomingIntent: Intent) {
@@ -177,8 +184,9 @@ class MainService : Service(), MainRepository.Listener {
         val isCaller = incomingIntent.getBooleanExtra("isCaller",false)
         val isVideoCall = incomingIntent.getBooleanExtra("isVideoCall",true)
         val target = incomingIntent.getStringExtra("target")
+        val callerName = incomingIntent.getStringExtra("callerName")
         this.isPreviousCallStateVideo = isVideoCall
-        mainRepository.setTarget(target!!)
+        mainRepository.setTarget(target!!,callerName!!)
         //initialize our widgets and start streaming our video and audio source
         //and get prepared for call
         mainRepository.initLocalSurfaceView(localSurfaceView!!,isVideoCall)
@@ -259,5 +267,8 @@ class MainService : Service(), MainRepository.Listener {
 
     interface EndCallListener {
         fun onCallEnded()
+
     }
+
+
 }

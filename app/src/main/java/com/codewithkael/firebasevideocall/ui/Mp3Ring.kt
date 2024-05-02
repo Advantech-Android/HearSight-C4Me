@@ -16,8 +16,8 @@ class Mp3Ring @Inject constructor(private val context:Context)
 
     private var mediaPlayer: MediaPlayer? = null
 
-    private val mp3ResourceIncoming: Int = R.raw.song//incoming caller tune
-    private val mp3ResourceOutgoing:Int=R.raw.ring//outgoing caller tune
+    private val mp3ResourceIncoming: Int = R.raw.incall//incoming caller tune
+    private val mp3ResourceOutgoing:Int=R.raw.outcall//outgoing caller tune
     @SuppressLint("SuspiciousIndentation")
     fun startMP3(isIncoming: Boolean) {
         val mp3Resource = if (isIncoming) mp3ResourceIncoming else mp3ResourceOutgoing

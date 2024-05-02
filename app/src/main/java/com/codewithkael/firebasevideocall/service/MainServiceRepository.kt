@@ -28,13 +28,14 @@ class MainServiceRepository @Inject constructor(
         }
     }
 
-    fun setupViews(videoCall: Boolean, caller: Boolean, target: String) {
+    fun setupViews(videoCall: Boolean, caller: Boolean, target: String, callerName: String) {
         val intent = Intent(context,MainService::class.java)
         intent.apply {
             action = MainServiceActions.SETUP_VIEWS.name
             putExtra("isVideoCall",videoCall)
             putExtra("target",target)
             putExtra("isCaller",caller)
+            putExtra("callerName",callerName)
         }
         startServiceIntent(intent)
     }
