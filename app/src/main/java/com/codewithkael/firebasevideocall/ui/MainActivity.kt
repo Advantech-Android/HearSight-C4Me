@@ -1,15 +1,23 @@
 package com.codewithkael.firebasevideocall.ui
+import android.Manifest
 import android.app.Dialog
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.wifi.WifiManager
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.text.InputFilter
 import android.text.method.DigitsKeyListener
 import android.util.Log
+<<<<<<< HEAD
+import android.view.Menu
+import android.view.MenuItem
+=======
 import android.util.TypedValue
 import android.view.LayoutInflater
+>>>>>>> 3151b8d84f417bc3ed11db49a7e1e57f08f2085d
 import android.view.View
 import android.view.WindowManager
 import android.widget.Button
@@ -22,6 +30,9 @@ import androidx.core.view.isVisible
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.appcompat.widget.SearchView
 import androidx.cardview.widget.CardView
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import com.codewithkael.firebasevideocall.QRCode.WifiPasswordGenerated
 
 import com.codewithkael.firebasevideocall.R
 import com.codewithkael.firebasevideocall.adapters.MainRecyclerViewAdapter
@@ -42,6 +53,7 @@ import javax.inject.Inject
 import kotlin.math.log
 
 
+private const val STORAGE_PERMISSION_CODE = 123
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, MainService.Listener {
     private val TAG = "***>>MainActivity"
@@ -63,13 +75,18 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
 
     @Inject
     lateinit var mp3Player: Mp3Ring
+    lateinit var wifiManager: WifiManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         views = ActivityMainBinding.inflate(layoutInflater)
         setContentView(views.root)
+<<<<<<< HEAD
+        wifiManager=getSystemService(Context.WIFI_SERVICE) as WifiManager
+=======
 
         searchQuery()
+>>>>>>> 3151b8d84f417bc3ed11db49a7e1e57f08f2085d
         init()
         logOut()
     }
@@ -393,6 +410,75 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
             }
         }
     }
+
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.main_menu, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.qr_codeid -> {
+                Log.d(TAG, "onOptionsItemSelected: ===>>>")
+                isPermissionGrand()
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                    555
+                )
+                isCheckHotspot()
+
+                if (wifiManager.isWifiEnabled )
+                {
+                    val wifiReceiver= WifiPasswordGenerated(this)
+                    wifiReceiver.showQRDialog()
+                }else{
+                    Toast.makeText(this, "Please turn on Wifi", Toast.LENGTH_SHORT).show()
+                }
+
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+
+    private fun isCheckHotspot(): Boolean {
+        try {
+            val npm = Class.forName("android.net.NetworkPolicyManager").getDeclaredMethod("from", Context::class.java).invoke(null, this)
+            val policies = npm.javaClass.getDeclaredMethod("getNetworkPolicies").invoke(npm)
+
+            if (policies != null) {
+                val policyArray = policies as Array<Any>
+                for (policy in policyArray) {
+                    val isHotspotEnabled =
+                        policy.javaClass.getDeclaredMethod("isMetered", *arrayOfNulls(0))
+                            .invoke(policy) as Boolean
+                    if (isHotspotEnabled) {
+                        return true
+                    } else {
+                        return false
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return false
+    }
+
+    private fun isPermissionGrand() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED &&
+            ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_WIFI_STATE) == PackageManager.PERMISSION_GRANTED &&
+            ContextCompat.checkSelfPermission(this,Manifest.permission.ACCESS_COARSE_LOCATION)== PackageManager.PERMISSION_GRANTED){
+            // Permissions granted, do nothing
+        } else {
+            val permissions = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_WIFI_STATE,Manifest.permission.ACCESS_COARSE_LOCATION)
+            ActivityCompat.requestPermissions(this, permissions, STORAGE_PERMISSION_CODE)
+        }
+    }
+
 
 }
 

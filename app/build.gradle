@@ -47,9 +47,11 @@ dependencies {
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation platform('com.google.firebase:firebase-bom:32.2.0')
     implementation 'com.google.firebase:firebase-database-ktx:20.2.2'
+    implementation("com.google.firebase:firebase-auth:20.2.2")
     implementation 'com.google.code.gson:gson:2.10.1'
     implementation 'com.mesibo.api:webrtc:1.0.5'
     implementation "com.google.dagger:hilt-android:2.44"
+    implementation 'com.google.firebase:firebase-auth-ktx:22.3.1'
     kapt "com.google.dagger:hilt-compiler:2.44"
     implementation 'com.guolindev.permissionx:permissionx:1.6.1'
     //implementation "com.github.jiangdongguo.AndroidUSBCamera:libausbc:3.3.3"
