@@ -3,9 +3,12 @@ package com.codewithkael.firebasevideocall.webrtc
 import android.content.Context
 import android.content.Intent
 import android.media.projection.MediaProjection
+import android.os.Build
 import android.util.DisplayMetrics
 import android.util.Log
 import android.view.WindowManager
+import android.widget.Toast
+import androidx.core.graphics.scaleMatrix
 import com.codewithkael.firebasevideocall.utils.DataModel
 import com.codewithkael.firebasevideocall.utils.DataModelType
 import com.google.gson.Gson
@@ -19,17 +22,18 @@ class WebRTCClient @Inject constructor(
     private val context: Context,
     private val gson: Gson
 ) {
+    private var isUvc = true;
     //class variables
+   lateinit var uvcCapturer:CameraVideoCapturer
     var listener: Listener? = null
     private lateinit var username: String
-    private var isUvc = false;
+
     private lateinit var usbCapturer: CameraVideoCapturer
     //webrtc variables
     private val eglBaseContext = EglBase.create().eglBaseContext
     private val peerConnectionFactory by lazy { createPeerConnectionFactory() }
     private var peerConnection: PeerConnection? = null
     private val iceServer = listOf(PeerConnection.IceServer.builder("turn:a.relay.metered.ca:443?transport=tcp").setUsername("83eebabf8b4cce9d5dbcb649").setPassword("2D7JvfkOQtBdYW3R").createIceServer(),
-
         PeerConnection.IceServer("turn:openrelay.metered.ca:80",
             "openrelayproject",
             "openrelayproject"),
@@ -75,6 +79,11 @@ class WebRTCClient @Inject constructor(
 
     //installing requirements section
     init {
+       /* if (Build.BRAND.equals("samsung", true)){
+            isUvc=false
+        }else{
+            isUvc=true
+        }*/
         initPeerConnectionFactory()
     }
 
@@ -214,23 +223,38 @@ class WebRTCClient @Inject constructor(
     }
 
     //streaming section
-    private fun initSurfaceView(view: SurfaceViewRenderer) {
+    private fun initSurfaceView(view: SurfaceViewRenderer,isLocal: Boolean) {
         view.run {
-            //release()
+            release()
             setMirror(false)
+            if (!isUvc ) {
+                scaleX=1.0f
+                scaleY=1.0f
+            }
             setEnableHardwareScaler(true)
-            init(eglBaseContext, null)
+            setZOrderMediaOverlay(true)
+            scaleMatrix()
+            setScalingType(RendererCommon.ScalingType.SCALE_ASPECT_BALANCED)
+            init(eglBaseContext, object: RendererCommon.RendererEvents {
+                override fun onFirstFrameRendered() {
+                    Log.d(TAG, "onFirstFrameRendered: ")
+                }
+                override fun onFrameResolutionChanged(p0: Int, p1: Int, p2: Int) {
+                    Log.d(TAG,"$p0,$p1,$p2")
+                }
+            })
         }
     }
 
+
     fun initRemoteSurfaceView(remoteView: SurfaceViewRenderer) {
         this.remoteSurfaceView = remoteView
-        initSurfaceView(remoteView)
+        initSurfaceView(remoteView,isLocal = false)
     }
 
     fun initLocalSurfaceView(localView: SurfaceViewRenderer, isVideoCall: Boolean) {
         this.localSurfaceView = localView
-        initSurfaceView(localView)
+        initSurfaceView(localView,isLocal = true)
         startLocalStreaming(localView, isVideoCall)
     }
 
@@ -247,32 +271,41 @@ class WebRTCClient @Inject constructor(
     }
 
     private fun startCapturingCamera(localView: SurfaceViewRenderer) {
+        Log.d(TAG, "startCapturingCamera: ")
+        localSurfaceView = localView
         surfaceTextureHelper = SurfaceTextureHelper.create(
             Thread.currentThread().name, eglBaseContext
         )
-
         if (isUvc) {
-            usbCapturer = UvcCapturer(context, localView) as CameraVideoCapturer
-         usbCapturer.initialize(surfaceTextureHelper,context,localVideoSource.capturerObserver)
-
-            usbCapturer.startCapture(
-                720, 480, 20
+            Toast.makeText(context, "uvc support=${Camera2Enumerator.isSupported(context)}", Toast.LENGTH_SHORT).show()
+            Log.d(TAG, "startCapturingCamera: ${Camera2Enumerator(context).deviceNames}")
+// create USBCapturer (USB Camera)
+            uvcCapturer = UvcCapturer(context, localView) as CameraVideoCapturer
+            var localVideoSource = peerConnectionFactory.createVideoSource(uvcCapturer.isScreencast)
+            uvcCapturer.initialize(
+                surfaceTextureHelper,
+                context,
+                localVideoSource.capturerObserver
             )
+            uvcCapturer.startCapture(1280, 720, 30)
+            localVideoTrack =
+                peerConnectionFactory.createVideoTrack(localTrackId + "_video", localVideoSource)
         } else {
             videoCapturer?.initialize(
                 surfaceTextureHelper, context, localVideoSource.capturerObserver
             )
             videoCapturer?.startCapture(
-                720, 480, 20
+                720, 480, 30
             )
+            localVideoTrack =
+                peerConnectionFactory.createVideoTrack(localTrackId + "_video", localVideoSource)
         }
-
-
-        val localVideoTrack =
-            peerConnectionFactory.createVideoTrack(localTrackId + "_video", localVideoSource)
-        localVideoTrack?.addSink(localView)
+        Log.d(TAG, "startCapturingCamera: ")
+// localVideoTrack?.addSink(localView)
+        localVideoTrack?.addSink(localSurfaceView)
         localStream?.addTrack(localVideoTrack)
     }
+
 
 
     private fun getVideoCapturer(context: Context): CameraVideoCapturer? =

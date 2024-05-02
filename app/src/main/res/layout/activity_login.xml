@@ -19,6 +19,7 @@
         android:paddingStart="8dp"
         android:background="@drawable/borderwhite"
         android:hint="User Name"
+        android:singleLine="true"
         android:textColor="@color/white"
         android:textColorHint="@color/white"
         app:layout_constraintStart_toStartOf="parent"
@@ -34,6 +35,7 @@
     android:layout_marginTop="20dp"
     android:paddingStart="8dp"
     android:inputType="phone"
+    android:singleLine="true"
     android:background="@drawable/borderwhite"
     android:hint="Phone No"
     android:textColor="@color/white"
@@ -44,10 +46,11 @@
 
 
     <CheckBox
+        android:id="@+id/clear_data"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="532dp"
-        android:text="Save register"
+        android:text="clear register"
         android:textColor="@color/white"
         android:textSize="14dp"
         app:layout_constraintEnd_toEndOf="parent"

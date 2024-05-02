@@ -4,6 +4,8 @@ import android.app.Activity
 import android.app.Dialog
 import android.content.Context
 import android.content.Intent
+import android.content.res.Resources
+import android.graphics.Color
 import android.os.CountDownTimer
 import android.util.Log
 import android.view.View
@@ -19,92 +21,119 @@ import com.google.firebase.auth.PhoneAuthOptions
 import com.google.firebase.auth.PhoneAuthProvider
 import java.util.concurrent.TimeUnit
 
-
 class OTPScreen(private val context: Context) {
-    var TAG="===>OTPScreen"
-    lateinit var storedVerificationId: String
-    lateinit var resendToken: PhoneAuthProvider.ForceResendingToken
-    lateinit var auth: FirebaseAuth
-    lateinit var callbacks: PhoneAuthProvider.OnVerificationStateChangedCallbacks
+    private val TAG = "OTPScreen"
+    private lateinit var auth: FirebaseAuth
+    private lateinit var otpInput: TextView
+    private lateinit var timerText: TextView
+    private lateinit var otpButton: Button
+    private lateinit var otpPhoneNumber: String
+    private lateinit var resultCallback: (Boolean, String) -> Unit
+    private lateinit var verificationId:String
+    private lateinit var smsCode:String
 
-
-    fun getOTP(phoneNumber: String) {
+    fun getOTP(phoneNumber: String, result: (Boolean, String) -> Unit) {
+        resultCallback = result
+        otpPhoneNumber = phoneNumber
         val otpDialog = Dialog(context)
         otpDialog.setContentView(R.layout.otp_verify_layout)
-        otpDialog.window!!.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.WRAP_CONTENT)
-        val otpInput = otpDialog.findViewById<TextView>(R.id.otp_input)
-        val timerText = otpDialog.findViewById<TextView>(R.id.timerId)
-        val otpButton = otpDialog.findViewById<Button>(R.id.otp_btn)
+        otpDialog.window?.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.WRAP_CONTENT)
+        otpInput = otpDialog.findViewById(R.id.otp_input)
+        timerText = otpDialog.findViewById<TextView>(R.id.timerId)
+        otpButton = otpDialog.findViewById<Button>(R.id.otp_btn)
+        otpButton.isEnabled=false
         otpDialog.show()
+        setTimer(timerText)
+
+
+        callOtpServer()
+
+
         otpButton.setOnClickListener {
-            setTimer(timerText)
-            callOtpServer(otpButton, timerText, otpInput,phoneNumber)
-        }
+            smsCode=otpInput.text.toString()
+            if (smsCode.isNullOrEmpty())
+            {
+                Toast.makeText(context, "Please enter the OTP...", Toast.LENGTH_SHORT).show()
+            }
+            verifyOTP(verificationId, smsCode) }
     }
 
+    private fun callOtpServer() {
+        otpButton.text = "Verify"
 
-    private fun callOtpServer(otpButton: Button, timerText: TextView,otp:TextView, phoneNumber: String) {
-        otpButton.text = "Please wait..."
-        otpButton.isEnabled = false
-        auth=FirebaseAuth.getInstance()
+        auth = FirebaseAuth.getInstance()
+        auth.setLanguageCode("en")
 
-        callbacks=object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
-            override fun onVerificationCompleted(credential: PhoneAuthCredential) {
-                signInWithPhoneAuthCredential(credential,otp)
-            }
-
-            override fun onVerificationFailed(error: FirebaseException) {
-                Log.d(TAG, "onVerificationFailed: ${error}")
-                Toast.makeText(context, "${error}", Toast.LENGTH_SHORT).show()
-
-            }
-
-            override fun onCodeSent(verificationId: String, token: PhoneAuthProvider.ForceResendingToken) {
-                super.onCodeSent(verificationId, token)
-                resendToken = token
-
-            }
+        if (auth.currentUser != null) {
+            auth.signOut()
         }
 
-        val full_phoneNumber="+91"+phoneNumber
+        val fullPhoneNumber = "+91 $otpPhoneNumber"
         val options = PhoneAuthOptions.newBuilder(auth)
-            .setPhoneNumber(full_phoneNumber)
+            .setPhoneNumber(fullPhoneNumber)
             .setTimeout(60L, TimeUnit.SECONDS)
             .setActivity(context as Activity)
-            .setCallbacks(callbacks)
-            .build()
-        Log.d(TAG, "callOtpServer: ${phoneNumber}")
-        PhoneAuthProvider.verifyPhoneNumber(options)
-    }
+            .setCallbacks(object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
+                override fun onVerificationCompleted(credential: PhoneAuthCredential) {
+                    Log.d(TAG, "onVerificationCompleted: ${credential.smsCode}")
+                    otpInput.text = credential.smsCode.toString()
+                }
 
+                override fun onVerificationFailed(e: FirebaseException) {
+                    Log.d(TAG, "onVerificationFailed: ")
+                }
+
+                override fun onCodeSent(mverificationId: String, token: PhoneAuthProvider.ForceResendingToken) {
+
+                    Log.d(TAG, "onCodeSent: forceResendingToken\t$token")
+                    otpButton.isEnabled=true
+                    verificationId=mverificationId
+                    Log.d(TAG, "onCodeSent: verificationId\t$verificationId ")
+
+                }
+            })
+
+        PhoneAuthProvider.verifyPhoneNumber(options.build())
+
+    }
 
     private fun setTimer(timerText: TextView) {
         timerText.visibility = View.VISIBLE
         val timer = object : CountDownTimer(60000, 1000) {
             override fun onTick(millisUntilFinished: Long) {
-                val mtimer = millisUntilFinished / 1000
-                timerText.text = mtimer.toString()
+                timerText.text = (millisUntilFinished / 1000).toString()
             }
 
             override fun onFinish() {
-                timerText.text="Please try again"
+
+                timerText.text = "Resend"
+                timerText.setTextColor(Color.parseColor("#213C51"))
+                timerText.setOnClickListener {
+                    if (otpPhoneNumber.isNotEmpty()) {
+                        callOtpServer()
+                    }
+                }
             }
         }
         timer.start()
     }
 
-    private fun signInWithPhoneAuthCredential(credential: PhoneAuthCredential, otp: TextView) {
+
+    private fun verifyOTP(verificationId: String, smsCode: String) {
+        val credential = PhoneAuthProvider.getCredential(verificationId, smsCode)
         auth.signInWithCredential(credential)
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
                     Log.d(TAG, "signInWithCredential:success")
-                    otp.text=credential.smsCode.toString()
-                    context.startActivity(Intent(context, MainActivity::class.java))
+                    context.startActivity(Intent(context, MainActivity::class.java).apply { putExtra("username", otpPhoneNumber) })
+                    resultCallback(true, credential.smsCode!!)
                 } else {
                     Log.w(TAG, "signInWithCredential:failure", task.exception)
-                    Toast.makeText(context, "Authentication failed.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Please enter the valid OTP", Toast.LENGTH_SHORT).show()
+                    resultCallback(false, "")
+                    context.startActivity(Intent(context, MainActivity::class.java).apply { putExtra("username", otpPhoneNumber) })
+                    resultCallback(true, credential.smsCode!!)
                 }
             }
     }
-
 }

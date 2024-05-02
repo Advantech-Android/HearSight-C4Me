@@ -8,6 +8,10 @@
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>
 
     <uses-feature android:name="android.hardware.camera.autofocus" />
+    <uses-feature
+        android:name="android.hardware.telephony"
+        android:required="false" />
+
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
@@ -28,6 +32,10 @@
     <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES" />
 
 
+    <uses-permission android:name="android.permission.READ_SMS"/>
+    <uses-permission android:name="android.permission.RECEIVE_SMS"/>
+    <uses-permission android:name="android.permission.SEND_SMS"/>
+    <uses-permission android:name="android.permission.SEND_RESPOND_VIA_MESSAGE"/>
 
     <application
         android:allowBackup="true"
@@ -50,7 +58,17 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
         </activity>
+
+        <receiver android:name=".utils.MySMSBroadcastReceiver" android:exported="true"
+            android:permission="com.google.android.gms.auth.api.phone.permission.SEND">
+            <intent-filter>
+                <action android:name="com.google.android.gms.auth.api.phone.SMS_RETRIEVED"/>
+            </intent-filter>
+        </receiver>
+
+
         <activity android:name=".ui.MainActivity"
             android:exported="true"
             android:screenOrientation="portrait"/>

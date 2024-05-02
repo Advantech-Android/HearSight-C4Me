@@ -129,7 +129,7 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
 //                mainAdapter!!.updateList(userList,innerList?: emptyList())
 //            }
         },{ userList1->
-            Toast.makeText(this, "${userList1}", Toast.LENGTH_SHORT).show()
+           // Toast.makeText(this, "${userList1}", Toast.LENGTH_SHORT).show()
             if (userList1.isNullOrEmpty()){
                 views.noContactTV.visibility=View.VISIBLE
                 mainAdapter!!.updateList(outerList ?: emptyList(),emptyList())
@@ -140,7 +140,7 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
         })
 
         mainRepository.onObserveEndCall() { data,callStatus ->
-            Log.d(TAG, "subscribeObservers: target: ${data.target} ,sender:${data.sender} , message:${"empty"} callstatus:$callStatus")
+          //  Log.d(TAG, "subscribeObservers: target: ${data.target} ,sender:${data.sender} , message:${"empty"} callstatus:$callStatus")
             if (callStatus == "EndCall"||callStatus=="AcceptCall")
             {        mp3Player.stopMP3()
                 decline(target = data.target, sender = data.sender, message = "")
