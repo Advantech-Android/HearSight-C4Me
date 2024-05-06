@@ -9,9 +9,9 @@
               <option name="connection">
                 <ConnectionSetting>
                   <option name="appId" value="com.codewithkael.firebasevideocall" />
-                  <option name="mobileSdkAppId" value="1:58676096337:android:ca5453c74be8f2793df770" />
-                  <option name="projectId" value="webrtc-android-3ca67" />
-                  <option name="projectNumber" value="58676096337" />
+                  <option name="mobileSdkAppId" value="1:328799103240:android:510e905fc4c96fa387e4bd" />
+                  <option name="projectId" value="fir-video-callf" />
+                  <option name="projectNumber" value="328799103240" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />

@@ -3,6 +3,7 @@
   <component name="deploymentTargetDropDown">
     <value>
       <entry key="app">
+<<<<<<< HEAD
         <State>
           <runningDeviceTargetSelectedWithDropDown>
             <Target>
@@ -17,6 +18,9 @@
           </runningDeviceTargetSelectedWithDropDown>
           <timeTargetWasSelectedWithDropDown value="2024-05-06T04:13:10.287931400Z" />
         </State>
+=======
+        <State />
+>>>>>>> 9c2ed2afbd6808d508f1907cdded4978779dd77b
       </entry>
     </value>
   </component>
