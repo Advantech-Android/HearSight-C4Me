@@ -19,7 +19,6 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
@@ -51,26 +50,21 @@ class CallActivity : AppCompatActivity(), MainService.EndCallListener {
     private var callerName:String?=""
     private var isVideoCall:Boolean= true
     private var isCaller:Boolean = true
-
     private var isMicrophoneMuted = false
     private var isCameraMuted = false
     private var isSpeakerMode = true
     private var isScreenCasting = false
-
-
     @Inject
     lateinit var mp3Player: Mp3Ring
-
     @Inject
     lateinit var webRTCClient:WebRTCClient
     var isAttend=false
-
     @Inject
     lateinit var mainRepository: MainRepository
     @Inject lateinit var serviceRepository: MainServiceRepository
     private lateinit var requestScreenCaptureLauncher:ActivityResultLauncher<Intent>
     private lateinit var views:ActivityCallBinding
-    private lateinit var handler: Handler
+
 
 
     override fun onStart() {
@@ -95,83 +89,77 @@ class CallActivity : AppCompatActivity(), MainService.EndCallListener {
         super.onCreate(savedInstanceState)
         views = ActivityCallBinding.inflate(layoutInflater)
         setContentView(views.root)
-        init()
+        initializeUI()
+    }
+    private fun initializeUI()
+    {
+        initVariables()
+        setUpCallDetails()
+        setUpButtonsListener()
+        startMp3Player()
+        setUpTimerToStop2SecMp3()
+        observeEndCall()
+        setupMicToggleClicked()
+        setupCameraToggleClicked()
+        setupToggleAudioDevice()
+        setupScreenCasting()
+        MainService.endCallListener = this
     }
 
-    @SuppressLint("SuspiciousIndentation")
-    private fun init(){
+    private fun initVariables() {
         intent.getStringExtra("target")?.let {
             this.target = it
-        }?: kotlin.run {
+        } ?: kotlin.run {
             finish()
         }
-
+       // target=intent.getStringExtra("target")
         isVideoCall = intent.getBooleanExtra("isVideoCall",true)
         isCaller = intent.getBooleanExtra("isCaller",true)
         isIncoming = intent.getStringExtra("isIncoming").toString()
         timer = intent.getBooleanExtra("timer",false)
         callerName = intent.getStringExtra("callerName").toString()
-        Log.d(TAG, "init: isIncoming=$isIncoming")
         isAttend=timer
-        views.apply {
-            callTitleTv.text = "In call with $callerName"
-            if (!isCaller)startCallTimer()
+    }
 
-            if (!isVideoCall){
+    private fun setUpCallDetails(){
+        views.apply {
+            callTitleTv.text="In Call with $callerName"
+            if(!isCaller) startCallTimer()
+            if(!isVideoCall){
                 toggleCameraButton.isVisible = false
                 screenShareButton.isVisible = false
                 switchCameraButton.isVisible = false
-
             }
             MainService.remoteSurfaceView = remoteView
             MainService.localSurfaceView = localView
-            serviceRepository.setupViews(isVideoCall,isCaller,target!!, callerName!!)
+            serviceRepository.setupViews(isVideoCall, isCaller, target!!, callerName!!)
+        }
+    }
 
+    private fun setUpButtonsListener(){
+        views.apply {
             endCallButton.setOnClickListener {
                 serviceRepository.sendEndCall()
-                //target- receiver
-                //sender-caller
+                //target- receiver  //sender-caller
                 Log.d(TAG, "init: EndCall => target :${mainRepository.getUserPhone()}")
                 mainRepository.setCallStatus(target=mainRepository.getUserPhone(), sender = target!!,"EndCall"){
-
                     mp3Player.stopMP3()
                 }
             }
-
             switchCameraButton.setOnClickListener {
                 serviceRepository.switchCamera()
             }
         }
+    }
 
+    private fun startMp3Player(){
         if (isIncoming.equals("Out", true)) {
             mp3Player.startMP3(false)
         }
-        mainRepository.onObserveEndCall() { data,status ->
-            Log.d(TAG, "CallAct -> onObserveEndCall: currentuser: ${mainRepository.getUserPhone()} target: ${target!!} status:$status")
-            if (status == "EndCall"){
-                Log.d(TAG, "EndCall => isAttend:$isAttend")
-                isAttend=true
+    }
 
-                mp3Player.stopMP3()
-                mainRepository.setCallStatus(target=target!!, sender = mainRepository.getUserPhone(),""){
-                    serviceRepository.sendEndCall()
-                    //finish()
-                }
-
-            }
-            else if(status=="AcceptCall")
-            {
-                Log.d(TAG, "AcceptCall => isAttend:$isAttend")
-//                    mainRepository.setCallStatus(target=target!!, sender = mainRepository.getUserPhone(),""){
-//
-//                    }
-
-
-                isAttend=true
-                mp3Player.stopMP3()
-                startCallTimer()
-            }
-        }
+    private fun setUpTimerToStop2SecMp3()
+    {
 
         Handler(Looper.getMainLooper()).postDelayed({
             mp3Player.stopMP3()
@@ -180,20 +168,35 @@ class CallActivity : AppCompatActivity(), MainService.EndCallListener {
             {
                 Log.d(TAG, "After Handler => isAttend:$isAttend")
                 isAttend=true
-                    mainRepository.setCallStatus(target=target!!, sender = mainRepository.getUserPhone(),""){
+                mainRepository.setCallStatus(target=target!!, sender = mainRepository.getUserPhone(),""){
                     serviceRepository.sendEndCall()
-
-                    //finish()
-              }
+                }
             }
         }, 20000)
-        setupMicToggleClicked()
-        setupCameraToggleClicked()
-        setupToggleAudioDevice()
-        setupScreenCasting()
-        MainService.endCallListener = this
     }
 
+    private fun observeEndCall(){
+
+        mainRepository.onObserveEndCall() { data,status ->
+            Log.d(TAG, "CallAct -> onObserveEndCall: currentuser: ${mainRepository.getUserPhone()} target: ${target!!} status:$status")
+            if (status == "EndCall")
+            {
+                Log.d(TAG, "EndCall => isAttend:$isAttend")
+                isAttend=true
+                mp3Player.stopMP3()
+                mainRepository.setCallStatus(target=target!!, sender = mainRepository.getUserPhone(),""){
+                    serviceRepository.sendEndCall()
+                }
+            }
+            else if(status=="AcceptCall")
+            {
+                Log.d(TAG, "AcceptCall => isAttend:$isAttend")
+                isAttend=true
+                mp3Player.stopMP3()
+                startCallTimer()
+            }
+        }
+    }
     fun startCallTimer() {
         CoroutineScope(Dispatchers.IO).launch {
             for (i in 0..3600) {
@@ -279,7 +282,9 @@ class CallActivity : AppCompatActivity(), MainService.EndCallListener {
                 isMicrophoneMuted = !isMicrophoneMuted
             }
         }
+
     }
+
 
     override fun onBackPressed() {
         super.onBackPressed()

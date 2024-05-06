@@ -1,23 +1,29 @@
 package com.codewithkael.firebasevideocall.ui
 import android.Manifest
+import android.annotation.SuppressLint
+import android.app.Activity
 import android.app.Dialog
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.database.Cursor
+import android.net.Uri
 import android.net.wifi.WifiManager
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.provider.ContactsContract
+import android.provider.ContactsContract.Contacts
 import android.text.InputFilter
 import android.text.method.DigitsKeyListener
 import android.util.Log
-<<<<<<< HEAD
+
 import android.view.Menu
 import android.view.MenuItem
-=======
+
 import android.util.TypedValue
 import android.view.LayoutInflater
->>>>>>> 3151b8d84f417bc3ed11db49a7e1e57f08f2085d
+
 import android.view.View
 import android.view.WindowManager
 import android.widget.Button
@@ -37,6 +43,7 @@ import com.codewithkael.firebasevideocall.QRCode.WifiPasswordGenerated
 import com.codewithkael.firebasevideocall.R
 import com.codewithkael.firebasevideocall.adapters.MainRecyclerViewAdapter
 import com.codewithkael.firebasevideocall.databinding.ActivityMainBinding
+import com.codewithkael.firebasevideocall.databinding.AddcontactsBinding
 import com.codewithkael.firebasevideocall.repository.MainRepository
 import com.codewithkael.firebasevideocall.service.MainService
 import com.codewithkael.firebasevideocall.service.MainServiceActions
@@ -44,7 +51,12 @@ import com.codewithkael.firebasevideocall.service.MainServiceRepository
 import com.codewithkael.firebasevideocall.utils.ContactInfo
 import com.codewithkael.firebasevideocall.utils.DataModel
 import com.codewithkael.firebasevideocall.utils.DataModelType
+import com.codewithkael.firebasevideocall.utils.MainActivityFields
+import com.codewithkael.firebasevideocall.utils.PickContactContract
 import com.codewithkael.firebasevideocall.utils.ProgressBarUtil
+import com.codewithkael.firebasevideocall.utils.RecyclerViewFields
+import com.codewithkael.firebasevideocall.utils.SnackBarUtils
+import com.codewithkael.firebasevideocall.utils.WifiPassWordGeneratedField
 import com.codewithkael.firebasevideocall.utils.getCameraAndMicPermission
 import com.google.android.material.textfield.TextInputEditText
 import dagger.hilt.android.AndroidEntryPoint
@@ -56,6 +68,9 @@ import kotlin.math.log
 private const val STORAGE_PERMISSION_CODE = 123
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, MainService.Listener {
+    private lateinit var contactBind: AddcontactsBinding
+
+    private lateinit var mDialog: Dialog
     private val TAG = "***>>MainActivity"
 
     private lateinit var views: ActivityMainBinding
@@ -77,18 +92,22 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
     lateinit var mp3Player: Mp3Ring
     lateinit var wifiManager: WifiManager
 
+    private val PICK_CONTACT_REQUEST = 123 // Request code for picking contacts
+    private var selectedContactName:String?=null
+    private var selectedContactNumber:String?=null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         views = ActivityMainBinding.inflate(layoutInflater)
         setContentView(views.root)
-<<<<<<< HEAD
+
         wifiManager=getSystemService(Context.WIFI_SERVICE) as WifiManager
-=======
 
         searchQuery()
->>>>>>> 3151b8d84f417bc3ed11db49a7e1e57f08f2085d
         init()
         logOut()
+
+
     }
 
 
@@ -160,7 +179,6 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
             override fun onQueryTextSubmit(query: String?): Boolean {
                 return false
             }
-
             override fun onQueryTextChange(newText: String?): Boolean// if the text is available in search query box
             {
                 newText?.let {
@@ -171,51 +189,74 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
 
         })
     }
+    private val pickContactLauncher = registerForActivityResult(PickContactContract(this@MainActivity)) { result ->
+        result?.let { (name, phoneNumber) ->
+            Log.d(TAG, "name:$name = phoneNumber:$phoneNumber")
 
+            var ph=phoneNumber
+            if(!phoneNumber.startsWith("+91")){
+                ph="+91${phoneNumber}"
+            }
+            contactBind.addNameid.setText(name.trim().lowercase())
+            contactBind.addPhoneNumberid.setText(ph.trim().replace(" ",""))
+        }
+    }
     private fun addContacts()
     {
-
-        val mDialog= Dialog(this)
-        mDialog.setContentView(R.layout.addcontacts)
+         mDialog= Dialog(this)
+        contactBind=AddcontactsBinding.inflate(layoutInflater)
+        mDialog.setContentView(contactBind.root)
         mDialog.window!!.setLayout(WindowManager.LayoutParams.WRAP_CONTENT,WindowManager.LayoutParams.WRAP_CONTENT)
         mDialog.show()
-        val addName=mDialog.findViewById<TextInputEditText>(R.id.addNameid)
-        val addPhoneNumber=mDialog.findViewById<TextInputEditText>(R.id.addPhoneNumberid)
-        val registerBtn=mDialog.findViewById<CardView>(R.id.registerbutton)
-        val cancelBtn=mDialog.findViewById<CardView>(R.id.cancelBtn)
+        contactBind.pickBtn.setOnClickListener {
 
-        addName.filters= arrayOf(InputFilter.LengthFilter(20))
-        addPhoneNumber.filters= arrayOf(InputFilter.LengthFilter(10),DigitsKeyListener.getInstance("0123456789"))
+           /* val intent = Intent(Intent.ACTION_PICK)
+            intent.type = ContactsContract.CommonDataKinds.Phone.CONTENT_TYPE
+            startActivityForResult(intent, PICK_CONTACT_REQUEST)*/
+            val intent = Intent(Intent.ACTION_PICK)
+            intent.type = ContactsContract.CommonDataKinds.Phone.CONTENT_TYPE
+            pickContactLauncher.launch(intent)
 
-        registerBtn.setOnClickListener {
-
-            val name=addName.text.toString().trim()
-            val phoneNumber=addPhoneNumber.text.toString().trim()
-
-            if (name.isEmpty()||phoneNumber.isEmpty())
-            {
-                Toast.makeText(this, "Field can not be empty", Toast.LENGTH_SHORT).show()
-            }
-            else {
-                mainRepository.addContacts(addName.text.toString(),addPhoneNumber.text.toString()){ isDone, reason ->
-                    if (!isDone){
-                        Toast.makeText(this, reason, Toast.LENGTH_SHORT).show()
-                        mDialog.dismiss()
-                    }else{
-                        Toast.makeText(this,"Contact added Successfully" , Toast.LENGTH_SHORT).show()
-                        mDialog.dismiss()
-                    }
-                }
-            }
         }
 
-        cancelBtn.setOnClickListener {
+        contactBind.cancelBtn.setOnClickListener {
             mDialog.dismiss()
         }
 
+        contactBind.saveBtn.setOnClickListener {
+            mainRepository.addContacts(
+                contactBind.addNameid.text.toString().trim(),
+                contactBind.addPhoneNumberid.text.toString().trim().replace(" ",""))
+            {isDone,reason->
 
+              if(!isDone){
+                  Toast.makeText(this, reason, Toast.LENGTH_SHORT).show()
+                  mDialog.dismiss()
+              }
+              else{
+                  Toast.makeText(this,"Success" , Toast.LENGTH_SHORT).show()
+                  mDialog.dismiss()
+
+              }
+          }
+        }
     }
-
+//    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+//        super.onActivityResult(requestCode, resultCode, data)
+//        if (requestCode == PICK_CONTACT_REQUEST && resultCode == Activity.RESULT_OK) {
+//            val contactUri: Uri = data?.data ?: return
+//            val cols: Array<String> = arrayOf(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME, ContactsContract.CommonDataKinds.Phone.NUMBER)
+//            val rs: Cursor? = contentResolver.query(contactUri, cols, null, null, null)
+//            if (rs?.moveToFirst() == true) {
+//                val mDialog= Dialog(this)
+//                val addName=mDialog.findViewById<TextInputEditText>(R.id.addNameid)
+//                val addPhoneNumber=mDialog.findViewById<TextInputEditText>(R.id.addPhoneNumberid)
+//                addName.setText(rs.getString(0))
+//                addPhoneNumber.setText(rs.getString(1))
+//            }
+//            rs?.close()
+//        }
+//    }
 
     private fun subscribeObservers(){
         setupRecyclerView()
@@ -224,16 +265,8 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
         mainRepository.observeUsersStatus({ userList->
                                           outerList=userList
 
-//            if (userList.isEmpty())
-//            {
-//                views.noContactTV.visibility=View.VISIBLE
-//            }
-//            else{
-//                views.noContactTV.visibility=View.GONE
-//                mainAdapter!!.updateList(userList,innerList?: emptyList())
-//            }
         },{ userList1->
-            //Toast.makeText(this, "${userList1}", Toast.LENGTH_SHORT).show()
+
             if (userList1.isNullOrEmpty()){
                 views.noContactTV.visibility=View.VISIBLE
                 mainAdapter!!.updateList(outerList ?: emptyList(),emptyList())
@@ -277,7 +310,7 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
                     //we have to start video call
                     //we wanna create an intent to move to call activity
                     //here username is phone number
-                  //  mainRepository.getUserNameFB(username){ user_name->
+                    //  mainRepository.getUserNameFB(username){ user_name->
                         startActivity(Intent(this, CallActivity::class.java).apply {
                             putExtra("target", username)
                             putExtra("isVideoCall", true)
@@ -325,6 +358,7 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
         mainServiceRepository.stopService()
     }
 
+    @SuppressLint("SuspiciousIndentation")
     override fun onCallReceived(model: DataModel) {
         mp3Player.startMP3(isIncoming = true)
         runOnUiThread {
@@ -358,23 +392,15 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
                                 putExtra("timer", true)
                                 putExtra("callerName", username)
                             })
-
                     }
-
                     }
-
-
                 }
                 declineButton.setOnClickListener {
                     incomingCallLayout.isVisible = false
                     contactLayout.isVisible=true
                     mp3Player.stopMP3()
-
-//                    Toast.makeText(this@MainActivity, "You declined the call", Toast.LENGTH_LONG).show()
                     decline(model.target,model.sender,"EndCall")
-
                 }
-
                 Handler(Looper.getMainLooper()).postDelayed({
                     mp3Player.stopMP3()
                     incomingCallLayout.isVisible = false
@@ -393,14 +419,11 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
            // serviceRepository.sendEndCall()
 
             views.apply {
-                //Toast.makeText(this@MainActivity, "$sender is cut the call", Toast.LENGTH_LONG).show()
-
                 incomingCallLayout.isVisible = false
                 contactLayout.isVisible = true
             }
             if (message!="")
             {
-
                 mainRepository.setCallStatus(target= target!!,sender=sender!!,message!!){}
             }
             else
@@ -433,8 +456,9 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
                 {
                     val wifiReceiver= WifiPasswordGenerated(this)
                     wifiReceiver.showQRDialog()
-                }else{
-                    Toast.makeText(this, "Please turn on Wifi", Toast.LENGTH_SHORT).show()
+                }else
+                {
+                    SnackBarUtils.showSnackBar(views.root,MainActivityFields.TURN_ON_WIFI)
                 }
 
                 true

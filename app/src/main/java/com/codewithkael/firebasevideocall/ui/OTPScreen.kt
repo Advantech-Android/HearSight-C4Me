@@ -12,6 +12,8 @@ import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
 import com.codewithkael.firebasevideocall.R
+import com.codewithkael.firebasevideocall.utils.OTPFields
+import com.codewithkael.firebasevideocall.utils.SnackBarUtils
 import com.google.firebase.FirebaseException
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.PhoneAuthCredential
@@ -55,7 +57,7 @@ class OTPScreen(private val context: Context) {
 
             override fun onVerificationFailed(error: FirebaseException) {
                 Log.d(TAG, "onVerificationFailed: ${error}")
-                Toast.makeText(context, "${error}", Toast.LENGTH_SHORT).show()
+                SnackBarUtils.showSnackBar(otpButton,"${error}")
 
             }
 
@@ -102,7 +104,7 @@ class OTPScreen(private val context: Context) {
                     context.startActivity(Intent(context, MainActivity::class.java))
                 } else {
                     Log.w(TAG, "signInWithCredential:failure", task.exception)
-                    Toast.makeText(context, "Authentication failed.", Toast.LENGTH_SHORT).show()
+                    SnackBarUtils.showSnackBar(otp,OTPFields.AUTH_FAIL)
                 }
             }
     }

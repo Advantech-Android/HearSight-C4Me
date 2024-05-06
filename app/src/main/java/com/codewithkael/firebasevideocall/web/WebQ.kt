@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.util.Log
 import android.view.MotionEvent
+import android.view.View
 import android.view.WindowManager
 import android.webkit.CookieManager
 import android.webkit.ValueCallback
@@ -17,6 +18,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.codewithkael.firebasevideocall.R
+import com.codewithkael.firebasevideocall.utils.SnackBarUtils
+import com.codewithkael.firebasevideocall.utils.WebQFields
 
 class WebQ(private val context: Context) {
 
@@ -24,6 +27,7 @@ class WebQ(private val context: Context) {
     private val STORAGE_PERMISSION_CODE = 123
     private val FILECHOOSER_RESULTCODE = 1
     var mUploadMessage: ValueCallback<Array<Uri>>? = null
+
 
     fun setupWebView() {
         val dialog = Dialog(context)
@@ -82,9 +86,12 @@ class WebQ(private val context: Context) {
         if (requestCode == STORAGE_PERMISSION_CODE) {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 openFileExplorer()
-                Toast.makeText(context, "Permission granted to read storage", Toast.LENGTH_SHORT).show()
+                //Toast.makeText(context, "Permission granted to read storage", Toast.LENGTH_SHORT).show()
+                SnackBarUtils.showSnackBar(webView,WebQFields.PERMISSION_GRANTED)
+
             } else {
-                Toast.makeText(context, "Permission denied to read storage", Toast.LENGTH_SHORT).show()
+               // Toast.makeText(context, "Permission denied to read storage", Toast.LENGTH_SHORT).show()
+                SnackBarUtils.showSnackBar(webView,WebQFields.PERMISSION_DENIED)
             }
         }
     }

@@ -1,5 +1,6 @@
 package com.codewithkael.firebasevideocall.utils
 
+import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.permissionx.guolindev.PermissionX
@@ -14,8 +15,8 @@ fun AppCompatActivity.getCameraAndMicPermission(success:()->Unit){
             if (allGranted){
                 success()
             } else{
-                Toast.makeText(this, "camera and mic permission is required", Toast.LENGTH_SHORT)
-                    .show()
+                val rootView=findViewById<View>(android.R.id.content)
+                SnackBarUtils.showSnackBar(rootView,"camera and mic permission is required")
             }
         }
 }

@@ -11,7 +11,6 @@ import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.webkit.WebView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -23,16 +22,17 @@ import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import android.os.Handler
 import android.os.Looper
-<<<<<<< HEAD
-=======
 import android.text.Editable
 import android.text.InputFilter
 import android.text.TextWatcher
 import android.text.method.DigitsKeyListener
->>>>>>> 3151b8d84f417bc3ed11db49a7e1e57f08f2085d
+
 import androidx.lifecycle.MutableLiveData
+import com.codewithkael.firebasevideocall.utils.LoginActivityFields
+import com.codewithkael.firebasevideocall.utils.LoginActivityFields.BOTH_USERNAME_PW
+import com.codewithkael.firebasevideocall.utils.LoginActivityFields.PASWORD_INVALID
 import com.codewithkael.firebasevideocall.utils.ProgressBarUtil
-import com.google.android.material.snackbar.Snackbar
+import com.codewithkael.firebasevideocall.utils.SnackBarUtils
 
 private const val TAG = "***LoginActivity"
 private const val STORAGE_PERMISSION_CODE = 123
@@ -61,70 +61,114 @@ class LoginActivity : AppCompatActivity() {
         setContentView(views.root)
         wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
         init()
-      //  loginCredentials()
-        modelDebug()
+      loginCredentials()
+       // modelDebug()
 
     }
 
     private fun loginCredentials(){
         views.apply {
-<<<<<<< HEAD
-            Log.d(TAG, "onCreate: ${Build.BRAND}")
-            if (Build.BRAND.equals("samsung", true)) {
-                usernameEt.setText("sunil")
-                passwordEt.setText("9000")
-=======
+          val userNameWatcher:  TextWatcher=object :TextWatcher{
+              override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
 
-            val usernameText = usernameEt.text.toString()
-            val passwordText = passwordEt.text.toString()
+              }
+
+              override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+
+              }
+
+              override fun afterTextChanged(s: Editable?) {
+                  if (s.toString().trimEnd().isEmpty())
+                      usernameEt.error = BOTH_USERNAME_PW
+              }
+
+          }
+            val passwordWatcher:  TextWatcher=object :TextWatcher{
+                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+
+                }
+
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+
+                }
+
+                override fun afterTextChanged(s: Editable?) {
+                    Log.d(TAG, "afterTextChanged() called with: s = ${s.toString()}")
+                    if (s.toString().trimEnd().length<13)
+                        passwordEt.error = PASWORD_INVALID
+                }
+
+            }
 
             usernameEt.filters= arrayOf(InputFilter.LengthFilter(20))
-            passwordEt.filters= arrayOf(InputFilter.LengthFilter(10),DigitsKeyListener.getInstance("0123456789"))
+            passwordEt.addTextChangedListener(passwordWatcher)
+            usernameEt.addTextChangedListener(userNameWatcher)
 
+            var passwordText = passwordEt.text.toString().trim()
+            val usernameText = usernameEt.text.toString().trimEnd()
+
+            if(!passwordText.startsWith("+91")){
+                passwordText="+91${passwordText}"
+            }
             usernameEt.setText(usernameText)
             passwordEt.setText(passwordText)
+
         }
     }
     private fun modelDebug() {
         views.apply {
-            if (Build.BRAND!!.equals("oppo", true)) {
+            if (Build.BRAND!!.equals("samsung", true)) {
                 //uvc.isUvc.value=true
-                usernameEt.setText("Divya")
-                passwordEt.setText("9843716886")
->>>>>>> 3151b8d84f417bc3ed11db49a7e1e57f08f2085d
-            } else {
-                //Toast.makeText(this@LoginActivity, "UVC is Connected", Toast.LENGTH_SHORT).show()
-                // uvc.isUvc.value=true
-                usernameEt.setText("Pooja")
-                passwordEt.setText("9994639839")
+                usernameEt.setText("bheem")
+                passwordEt.setText("+919994639839")
+            }
+            else
+            {
+                usernameEt.setText("chutki")
+                passwordEt.setText("+919843716886")
             }
         }
     }
 
-    private fun init() {
+    private fun init(){
+        setupButton()
+    }
+    private fun setupButton(){
+        views.apply {
+            btn.isEnabled=true
+            btn.setOnClickListener {
+                handleButtonClick()
+
+            }
+        }
+    }
+
+
+    private fun handleButtonClick() {
 
         views.apply {
             btn.isEnabled = true
             btn.setOnClickListener {
-<<<<<<< HEAD
                 btn.isEnabled = false
-=======
+                val usernameText = usernameEt.text.toString().trim().lowercase().replace(" ","")
+                val passwordText = passwordEt.text.toString().trim()
 
-                val usernameText = usernameEt.text.toString()
-                val passwordText = passwordEt.text.toString()
-//
-                if (usernameText.isEmpty() || passwordText.isEmpty()) {
-                    Toast.makeText(this@LoginActivity, "Enter both username and password", Toast.LENGTH_SHORT).show()
+                if (usernameText.isEmpty()) {
+                    SnackBarUtils.showSnackBar(views.root, LoginActivityFields.BOTH_USERNAME_PW)
+                    return@setOnClickListener
+                }
+                if (passwordText.toString().length<10||passwordText.isEmpty()) {
+                    SnackBarUtils.showSnackBar(views.root, LoginActivityFields.PASWORD_INVALID)
                     return@setOnClickListener
                 }
 
-                btn.isEnabled=false
->>>>>>> 3151b8d84f417bc3ed11db49a7e1e57f08f2085d
+
+                btn.isEnabled = false
+
                 ProgressBarUtil.showProgressBar(this@LoginActivity)
 
                 val run = {
-                    Snackbar.make(it, "Check your Wifi Internet Connection", Snackbar.LENGTH_SHORT)
-                        .show()
+                   // SnackBarUtils.showSnackBar(it, "Check your Wifi Internet Connection")
                     ProgressBarUtil.hideProgressBar(this@LoginActivity)
                     passwordEt.isEnabled = true
                     usernameEt.isEnabled = true
@@ -140,53 +184,45 @@ class LoginActivity : AppCompatActivity() {
                     passwordEt.isEnabled = true
                     usernameEt.isEnabled = true
                     btn.isEnabled = true
-                    Toast.makeText(
-                        this@LoginActivity,
-                        "Check your Internet Connection",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    SnackBarUtils.showSnackBar(it, LoginActivityFields.CHECK_NET_CONNECTION)
                     hand.removeCallbacksAndMessages(null)
                     ProgressBarUtil.hideProgressBar(this@LoginActivity)
                     //return@setOnClickListener
-                } else {
-                    mainRepository.login(
-                        usernameEt.text.toString(), passwordEt.text.toString()
-                    ) { isDone, reason ->
-                        ProgressBarUtil.hideProgressBar(this@LoginActivity)
-                        hand.removeCallbacksAndMessages(null)
-                        passwordEt.isEnabled = true
-                        usernameEt.isEnabled = true
-                        btn.isEnabled = true
-                        if (!isDone) {
-<<<<<<< HEAD
-=======
-
->>>>>>> 3151b8d84f417bc3ed11db49a7e1e57f08f2085d
-                            Toast.makeText(
-                                this@LoginActivity,
-                                "Something went wrong",
-                                Toast.LENGTH_SHORT
-                            ).show()
-<<<<<<< HEAD
-                        } else {
-//                            val otpScreen=OTPScreen(this@LoginActivity)
-//                            otpScreen.getOTP(passwordEt.text.toString())
-                            Toast.makeText(this@LoginActivity, "clicked", Toast.LENGTH_SHORT).show()
-=======
-                        }
-                        else
-                        {
->>>>>>> 3151b8d84f417bc3ed11db49a7e1e57f08f2085d
-                            //start moving to our main activity
-                            startActivity(Intent(this@LoginActivity, MainActivity::class.java).apply { putExtra("username", passwordEt.text.toString()) })
-                        }
-                    }
-
                 }
-
+                else
+                {
+                    performLogin(usernameText,passwordText)
+                }
             }
         }
     }
+
+    private fun performLogin(usernameText: String, passwordText: String) {
+        views.apply {
+            mainRepository.login(
+              usernameText,passwordText
+            ) { isDone, reason ->
+                ProgressBarUtil.hideProgressBar(this@LoginActivity)
+                val hand = Handler(Looper.getMainLooper())
+                hand.removeCallbacksAndMessages(null)
+                passwordEt.isEnabled = true
+                usernameEt.isEnabled = true
+                btn.isEnabled = true
+                if (!isDone) {
+                    SnackBarUtils.showSnackBar(root, LoginActivityFields.UN_PW_INCORRECT)
+                } else {
+                    startActivity(Intent(
+                        this@LoginActivity,
+                        MainActivity::class.java
+                    ).apply {
+                        putExtra("username", usernameText)
+                    })
+                }
+            }
+        }
+    }
+
+
 
 
     private fun startMyService() {

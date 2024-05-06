@@ -21,7 +21,7 @@
   ~  may have a different license, see the respective files.
   -->
 <resources>
-    <string name="app_name">usb camera</string>
+    <string name="app_name" translatable="false">usb camera</string>
     <string name="select">Select USB Web Camera</string>
     <string name="camera">Camera</string>
     <string name="refresh">Refresh</string>

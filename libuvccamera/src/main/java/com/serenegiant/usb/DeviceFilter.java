@@ -111,7 +111,7 @@ public final class DeviceFilter {
 		try {
 			int eventType = parser.getEventType();
 			while (eventType != XmlPullParser.END_DOCUMENT) {
-	            if (eventType == XmlPullParser.START_TAG) {
+	             if (eventType == XmlPullParser.START_TAG) {
 					final DeviceFilter deviceFilter = readEntryOne(context, parser);
 					if (deviceFilter != null) {
 						deviceFilters.add(deviceFilter);
