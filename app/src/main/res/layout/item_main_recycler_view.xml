@@ -5,31 +5,31 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="4dp"
-    android:id="@+id/cardview"
+    android:id="@+id/cardViewVideoCallClick"
     android:elevation="5dp"
     app:cardCornerRadius="10dp"
     app:cardElevation="3dp">
-
-
-    <ImageView
-        android:id="@+id/profileImageView"
-        android:layout_width="50dp"
-        android:layout_height="50dp"
+    <Button
+        android:id="@+id/deleteContactBtn"
+        android:layout_width="110dp"
+        android:layout_height="40dp"
         android:layout_marginStart="15dp"
         android:layout_margin="4dp"
         android:padding="5dp"
-        android:src="@drawable/adminpng"
+        android:text="Delete Contact"
+        android:textSize="12dp"
         android:layout_gravity="right"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/usernameTv"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:textAllCaps="false"
+        />
+
+
+
 
     <LinearLayout
         android:id="@+id/videoCallBtn"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="45dp"
+        android:layout_marginTop="55dp"
         android:layout_marginBottom="10dp"
         android:layout_marginStart="12dp"
         android:orientation="horizontal"
@@ -40,19 +40,21 @@
             android:id="@+id/usernameTv"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Call Manoj : "
+            android:text="Call Manoj"
             android:textColor="@color/black"
-            android:textSize="18sp"
+            android:textSize="15sp"
             android:textStyle="bold" />
 
         <TextView
             android:id="@+id/userNumber"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="10dp"
+            android:layout_marginEnd="8dp"
             android:text="Phone No"
             android:textColor="@color/black"
-            android:textSize="18sp"
+            android:textSize="15sp"
+            android:layout_weight="2"
+            android:gravity="right"
             android:textStyle="bold" />
     </LinearLayout>
 
@@ -64,6 +66,7 @@
         android:orientation="vertical"
         >
 
+
         <TextView
             android:id="@+id/statusTv"
             android:layout_width="match_parent"
@@ -73,7 +76,7 @@
             android:padding="10dp"
             android:text="Manoj is on Online"
             android:textColor="@android:color/holo_green_light"
-            android:textSize="16sp"
+            android:textSize="15sp"
             android:textStyle="bold" />
     </LinearLayout>
 
@@ -109,23 +112,3 @@
         app:layout_constraintStart_toEndOf="@id/usernameTv"
         app:layout_constraintTop_toTopOf="parent" />
 </androidx.cardview.widget.CardView>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

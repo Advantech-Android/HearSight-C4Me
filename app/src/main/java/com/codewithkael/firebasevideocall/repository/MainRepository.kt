@@ -4,8 +4,6 @@ import android.content.Intent
 import android.util.Log
 import com.codewithkael.firebasevideocall.firebaseClient.FirebaseClient
 import com.codewithkael.firebasevideocall.utils.ContactInfo
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import com.codewithkael.firebasevideocall.utils.DataModel
 import com.codewithkael.firebasevideocall.utils.DataModelType.*
 import com.codewithkael.firebasevideocall.utils.UserStatus
@@ -18,6 +16,7 @@ import javax.inject.Singleton
 
 
 private const val TAG = "***>>MainRepository"
+
 @Singleton
 class MainRepository @Inject constructor(
     private val firebaseClient: FirebaseClient,
@@ -25,12 +24,17 @@ class MainRepository @Inject constructor(
     private val gson: Gson
 ) : WebRTCClient.Listener {
 
+    private var callerName: String = ""
     private var target: String? = null
     var listener: Listener? = null
-    private var remoteView:SurfaceViewRenderer?=null
+    private var remoteView: SurfaceViewRenderer? = null
 
     fun login(username: String, phonenumber: String, isDone: (Boolean, String?) -> Unit) {
         firebaseClient.login(username, phonenumber, isDone)
+    }
+
+    fun getUserNameFB(phone:String,result: (String?) -> Unit) {
+        firebaseClient.getUserNameFB(phone,result)
     }
 
     fun addContacts(username: String, phone: String, isDone: (Boolean, String?) -> Unit) {
@@ -38,13 +42,18 @@ class MainRepository @Inject constructor(
     }
 
 
-    fun observeUsersStatus(contactInfoList: (List<ContactInfo>) -> Unit,commonContactInfoList: (List<ContactInfo>) -> Unit) {
-        firebaseClient.observeContactDetails(contactInfoList,commonContactInfoList)
+
+    fun observeUsersStatus(
+        contactInfoList: (List<ContactInfo>) -> Unit,
+        commonContactInfoList: (List<ContactInfo>) -> Unit
+    ) {
+        firebaseClient.observeContactDetails(contactInfoList, commonContactInfoList)
     }
 
-    fun onObserveEndCall(data: (DataModel,String)->Unit){
+    fun onObserveEndCall(data: (DataModel, String) -> Unit) {
         firebaseClient.getEndCallEvent(data)
     }
+
     public fun getUserName(): String {
         return firebaseClient.getUserName()
     }
@@ -58,27 +67,40 @@ class MainRepository @Inject constructor(
             override fun onLatestEventReceived(event: DataModel) {
                 listener?.onLatestEventReceived(event)
                 when (event.type) {
-                    Offer->{
-                        webRTCClient.onRemoteSessionReceived(SessionDescription(SessionDescription.Type.OFFER, event.data.toString()))
+                    Offer -> {
+                        webRTCClient.onRemoteSessionReceived(
+                            SessionDescription(
+                                SessionDescription.Type.OFFER,
+                                event.data.toString()
+                            )
+                        )
                         webRTCClient.answer(target!!)
                     }
-                    Answer->{
+
+                    Answer -> {
                         webRTCClient.onRemoteSessionReceived(
-                            SessionDescription(SessionDescription.Type.ANSWER, event.data.toString()))
+                            SessionDescription(
+                                SessionDescription.Type.ANSWER,
+                                event.data.toString()
+                            )
+                        )
                     }
-                    IceCandidates->{
+
+                    IceCandidates -> {
                         val candidate: IceCandidate? = try {
-                            gson.fromJson(event.data.toString(),IceCandidate::class.java)
-                        }catch (e:Exception){
+                            gson.fromJson(event.data.toString(), IceCandidate::class.java)
+                        } catch (e: Exception) {
                             null
                         }
                         candidate?.let {
                             webRTCClient.addIceCandidateToPeer(it)
                         }
                     }
-                    EndCall->{
+
+                    EndCall -> {
                         listener?.endCall()
                     }
+
                     else -> Unit
                 }
             }
@@ -87,12 +109,21 @@ class MainRepository @Inject constructor(
     }
 
     fun sendConnectionRequest(target: String, isVideoCall: Boolean, success: (Boolean) -> Unit) {
-        firebaseClient.sendMessageToOtherClient(DataModel(type = if (isVideoCall) StartVideoCall else StartAudioCall, target = target), success)
-        Log.d(TAG, "sendConnectionRequest: TARGET \t${target.toString()} isVideoCall::\t${isVideoCall}")
+        firebaseClient.sendMessageToOtherClient(
+            DataModel(
+                type = if (isVideoCall) StartVideoCall else StartAudioCall,
+                target = target
+            ), success
+        )
+        Log.d(
+            TAG,
+            "sendConnectionRequest: TARGET \t${target.toString()} isVideoCall::\t${isVideoCall}"
+        )
     }
 
-    fun setTarget(target: String) {
+    fun setTarget(target: String, callerName: String) {
         this.target = target
+        this.callerName = callerName
     }
 
     interface Listener {
@@ -109,7 +140,7 @@ class MainRepository @Inject constructor(
                 super.onAddStream(p0)
                 try {
                     p0?.videoTracks?.get(0)?.addSink(remoteView)
-                }catch (e:Exception){
+                } catch (e: Exception) {
                     e.printStackTrace()
                 }
 
@@ -157,7 +188,7 @@ class MainRepository @Inject constructor(
         onTransferEventToSocket(
             DataModel(
                 type = EndCall,
-                target = target!!
+                target = target!!, targetName = callerName
             )
         )
     }
@@ -187,19 +218,24 @@ class MainRepository @Inject constructor(
     }
 
     fun toggleScreenShare(isStarting: Boolean) {
-        if (isStarting){
+        if (isStarting) {
             webRTCClient.startScreenCapturing()
-        }else{
+        } else {
             webRTCClient.stopScreenCapturing()
         }
     }
 
     fun logOff(function: () -> Unit) = firebaseClient.logOff(function)
 
-    fun setCallStatus(target:String,sender:String,callLogs:String,callStatus: (String) -> Unit) {
+    fun setCallStatus(
+        target: String,
+        sender: String,
+        callLogs: String,
+        callStatus: (String) -> Unit
+    ) {
         //here sender act as caller change
         //here target act as receiver change
-        firebaseClient.sendCallStatusToOtherClient(target,sender,callLogs,callStatus)
+        firebaseClient.sendCallStatusToOtherClient(target, sender, callLogs, callStatus)
     }
 
 }

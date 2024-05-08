@@ -23,7 +23,7 @@ private const val TAG = "***>>FirebaseClient"
 
 
 @Singleton
-class FirebaseClient @Inject constructor(
+class FirebaseClient  @Inject constructor(
     private val dbRef: DatabaseReference,
     private val gson: Gson
 
@@ -47,6 +47,13 @@ class FirebaseClient @Inject constructor(
     }
     public fun getUserPhone(): String {
         return currentUserPhonenumber.toString()
+    }
+    fun getUserNameFB(phone:String,result: (String?) -> Unit) {
+        dbRef.addValueEventListener(object : MyEventListener() {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                result( snapshot.child(phone).child("user_name").value.toString())
+            }
+        })
     }
 
     fun login(username: String, phonenumber: String, done: (Boolean, String?) -> Unit) {
@@ -356,7 +363,7 @@ class FirebaseClient @Inject constructor(
 
     data class registerContactKeys(val mcontact: String)
 
-    override fun onVideoCallClicked(username: String) {
+    override fun onVideoCallClicked(username: String,user:ContactInfo) {
     }
 
     override fun onAudioCallClicked(username: String) {

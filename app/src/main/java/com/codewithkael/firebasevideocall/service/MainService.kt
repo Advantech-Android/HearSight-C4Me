@@ -12,9 +12,11 @@ import androidx.core.app.NotificationCompat
 import com.codewithkael.firebasevideocall.R
 import com.codewithkael.firebasevideocall.repository.MainRepository
 import com.codewithkael.firebasevideocall.service.MainServiceActions.*
+import com.codewithkael.firebasevideocall.ui.LoginActivity.uvc.isUvc
 import com.codewithkael.firebasevideocall.utils.DataModel
 import com.codewithkael.firebasevideocall.utils.DataModelType
 import com.codewithkael.firebasevideocall.utils.isValid
+import com.codewithkael.firebasevideocall.utils.setViewFields
 import com.codewithkael.firebasevideocall.webrtc.RTCAudioManager
 import dagger.hilt.android.AndroidEntryPoint
 import org.webrtc.SurfaceViewRenderer
@@ -102,15 +104,21 @@ class MainService : Service(), MainRepository.Listener {
     }
 
     private fun handleStopService() {
-        mainRepository.endCall()
-        mainRepository.logOff {
+        if (isUvc.value==true){
             isServiceRunning = false
             stopSelf()
+        }else{
+            mainRepository.endCall()
+            mainRepository.logOff {
+                isServiceRunning = false
+                stopSelf()
+            }
         }
+
     }
 
     private fun handleToggleScreenShare(incomingIntent: Intent) {
-        val isStarting = incomingIntent.getBooleanExtra("isStarting",true)
+        val isStarting = incomingIntent.getBooleanExtra(setViewFields.IS_STARTING,true)
         if (isStarting){
             // we should start screen share
             //but we have to keep it in mind that we first should remove the camera streaming first
@@ -130,7 +138,7 @@ class MainService : Service(), MainRepository.Listener {
     }
 
     private fun handleToggleAudioDevice(incomingIntent: Intent) {
-        val type = when(incomingIntent.getStringExtra("type")){
+        val type = when(incomingIntent.getStringExtra(setViewFields.TYPE)){
             RTCAudioManager.AudioDevice.EARPIECE.name -> RTCAudioManager.AudioDevice.EARPIECE
             RTCAudioManager.AudioDevice.SPEAKER_PHONE.name -> RTCAudioManager.AudioDevice.SPEAKER_PHONE
             else -> null
@@ -146,13 +154,13 @@ class MainService : Service(), MainRepository.Listener {
     }
 
     private fun handleToggleVideo(incomingIntent: Intent) {
-        val shouldBeMuted = incomingIntent.getBooleanExtra("shouldBeMuted",true)
+        val shouldBeMuted = incomingIntent.getBooleanExtra(setViewFields.SHOULD_BE_MUTED,true)
         this.isPreviousCallStateVideo = !shouldBeMuted
         mainRepository.toggleVideo(shouldBeMuted)
     }
 
     private fun handleToggleAudio(incomingIntent: Intent) {
-        val shouldBeMuted = incomingIntent.getBooleanExtra("shouldBeMuted",true)
+        val shouldBeMuted = incomingIntent.getBooleanExtra(setViewFields.SHOULD_BE_MUTED,true)
         mainRepository.toggleAudio(shouldBeMuted)
     }
 
@@ -174,11 +182,12 @@ class MainService : Service(), MainRepository.Listener {
     }
 
     private fun handleSetupViews(incomingIntent: Intent) {
-        val isCaller = incomingIntent.getBooleanExtra("isCaller",false)
-        val isVideoCall = incomingIntent.getBooleanExtra("isVideoCall",true)
-        val target = incomingIntent.getStringExtra("target")
+        val isCaller = incomingIntent.getBooleanExtra(setViewFields.IS_CALLER,false)
+        val isVideoCall = incomingIntent.getBooleanExtra(setViewFields.IS_VIDEO_CALL,true)
+        val target = incomingIntent.getStringExtra(setViewFields.TARGET)
+        val callerName = incomingIntent.getStringExtra(setViewFields.CALLER_NAME)
         this.isPreviousCallStateVideo = isVideoCall
-        mainRepository.setTarget(target!!)
+        mainRepository.setTarget(target!!,callerName!!)
         //initialize our widgets and start streaming our video and audio source
         //and get prepared for call
         mainRepository.initLocalSurfaceView(localSurfaceView!!,isVideoCall)
@@ -196,7 +205,7 @@ class MainService : Service(), MainRepository.Listener {
         //start our foreground service
         if (!isServiceRunning) {
             isServiceRunning = true
-            username = incomingIntent.getStringExtra("username")
+            username = incomingIntent.getStringExtra(setViewFields.USER_NAME)
             startServiceWithNotification()
 
             //setup my clients
@@ -240,7 +249,7 @@ class MainService : Service(), MainRepository.Listener {
             when (data.type) {
                 DataModelType.StartVideoCall,
                 DataModelType.StartAudioCall -> {
-                        listener?.onCallReceived(data)
+                    listener?.onCallReceived(data)
                 }
                 else -> Unit
             }
@@ -259,5 +268,8 @@ class MainService : Service(), MainRepository.Listener {
 
     interface EndCallListener {
         fun onCallEnded()
+
     }
+
+
 }
