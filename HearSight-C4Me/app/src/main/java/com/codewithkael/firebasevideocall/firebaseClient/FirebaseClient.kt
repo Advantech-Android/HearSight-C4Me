@@ -13,6 +13,7 @@ import com.codewithkael.firebasevideocall.utils.FirebaseFieldNames.CALL_EVENT
 import com.codewithkael.firebasevideocall.utils.FirebaseFieldNames.STATUS
 import com.codewithkael.firebasevideocall.utils.MyEventListener
 import com.codewithkael.firebasevideocall.utils.UserStatus
+import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
@@ -32,10 +33,8 @@ class FirebaseClient @Inject constructor(
 ) : MainRecyclerViewAdapter.Listener {
 
     var userContactStatus = MutableLiveData(UserStatus.OFFLINE.name)
-    val registerContactKeysArrayList = ArrayList<registerContactKeys>()
     private var currentUsername: String? = null
     private var currentUserPhonenumber: String? = null
-    private var currentUserPassword: String? = null
     companion object{
         var registerNumber=""
     }
@@ -102,8 +101,7 @@ class FirebaseClient @Inject constructor(
 
     fun observeUsersStatus(
         status: (List<Pair<String, String>>) -> Unit,
-        status1: (List<Pair<String, String>>) -> Unit
-    ) {
+        status1: (List<Pair<String, String>>) -> Unit) {
         dbRef.addValueEventListener(object : MyEventListener() {
             override fun onDataChange(snapshot: DataSnapshot) {
 
@@ -161,6 +159,28 @@ class FirebaseClient @Inject constructor(
 
 
                 })
+            dbRef.child(currentUserPhonenumber!!).child(LATEST_EVENT).addChildEventListener(object :ChildEventListener{
+                override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
+                    Log.d(TAG, "onChildAdded: ")
+                }
+
+                override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {
+                    Log.d(TAG, "onChildChanged: ")
+                }
+
+                override fun onChildRemoved(snapshot: DataSnapshot) {
+                    Log.d(TAG, "onChildRemoved: ")
+                }
+
+                override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {
+                    Log.d(TAG, "onChildMoved: ")
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.d(TAG, "onCancelled: ")
+                }
+
+            })   
 
 
         } catch (e: Exception) {
@@ -168,20 +188,8 @@ class FirebaseClient @Inject constructor(
         }
     }
 
-    fun getUserContactList() {
-        dbRef.addListenerForSingleValueEvent(object : MyEventListener() {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                snapshot.child(currentUsername!!).child("contacts").children.filter { data ->
-                    Log.d(
-                        "***contactlist",
-                        "getUserContactList => onDataChange: ${data.key}:${data.value}:${data.children}"
-                    )
 
-                    true
-                }
-            }
-        })
-    }
+
     fun observeContactDetails(status: (List<ContactInfo>) -> Unit, status2: (List<ContactInfo>) -> Unit) {
         val finalList = mutableListOf<ContactInfo>()
         val outerList = mutableListOf<ContactInfo>()
@@ -230,6 +238,8 @@ class FirebaseClient @Inject constructor(
             }
         })
     }
+
+
     fun subscribeForLatestEvent(listener: Listener) {
         try {
             Log.d(TAG, "subscribeForLatestEvent:currentUsername: $currentUserPhonenumber")
@@ -336,20 +346,6 @@ class FirebaseClient @Inject constructor(
         })
     }
 
-
-    fun getUserContactList(callback: (List<Pair<String, String>>) -> Unit) {
-        dbRef.addListenerForSingleValueEvent(object : MyEventListener() {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                if (snapshot.hasChild(currentUserPhonenumber!!)) {
-                    if (currentUserPhonenumber!!.isNotEmpty()) {
-                        snapshot.child(currentUserPhonenumber!!.filter { data ->
-                            true
-                        })
-                    }
-                }
-            }
-        })
-    }
 
 
     interface Listener {

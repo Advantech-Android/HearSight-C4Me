@@ -3,6 +3,8 @@ package com.codewithkael.firebasevideocall.service
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import com.jiangdg.ausbc.MultiCameraClient
+import com.jiangdg.ausbc.callback.ICameraStateCallBack
 import javax.inject.Inject
 
 class MainServiceRepository @Inject constructor(
@@ -28,7 +30,12 @@ class MainServiceRepository @Inject constructor(
         }
     }
 
-    fun setupViews(videoCall: Boolean, caller: Boolean, target: String) {
+    fun setupViews(
+        videoCall: Boolean,
+        caller: Boolean,
+        target: String,
+
+    ) {
         val intent = Intent(context,MainService::class.java)
         intent.apply {
             action = MainServiceActions.SETUP_VIEWS.name

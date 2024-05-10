@@ -1,4 +1,3 @@
-
 package com.codewithkael.firebasevideocall.ui
 
 import android.app.Activity
@@ -9,6 +8,9 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
@@ -21,19 +23,29 @@ import com.codewithkael.firebasevideocall.service.MainService
 import com.codewithkael.firebasevideocall.service.MainServiceRepository
 import com.codewithkael.firebasevideocall.utils.convertToHumanTime
 import com.codewithkael.firebasevideocall.webrtc.RTCAudioManager
+import com.codewithkael.firebasevideocall.webrtc.UvcCapturerNew
+import com.jiangdg.ausbc.MultiCameraClient
+import com.jiangdg.ausbc.base.CameraActivity
+import com.jiangdg.ausbc.callback.ICameraStateCallBack
+import com.jiangdg.ausbc.callback.IPreviewDataCallBack
+import com.jiangdg.ausbc.widget.IAspectRatio
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.*
-import java.util.Timer
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
+
 @AndroidEntryPoint
-class CallActivity : AppCompatActivity(), MainService.EndCallListener {
-    private  val TAG = "==>>CallActivity"
-    private var timer=false
-    private var target:String?=null
-    private var isIncoming:String?=""
-    private var isVideoCall:Boolean= true
-    private var isCaller:Boolean = true
+class CallActivity : CameraActivity(), MainService.EndCallListener , ICameraStateCallBack{
+    private val TAG = "xxxCallActivity"
+    private var timer = false
+    private var target: String? = null
+    private var isIncoming: String? = ""
+    private var isVideoCall: Boolean = true
+    private var isCaller: Boolean = true
 
     private var isMicrophoneMuted = false
     private var isCameraMuted = false
@@ -45,16 +57,21 @@ class CallActivity : AppCompatActivity(), MainService.EndCallListener {
 
     @Inject
     lateinit var mainRepository: MainRepository
-    @Inject lateinit var serviceRepository: MainServiceRepository
-    private lateinit var requestScreenCaptureLauncher:ActivityResultLauncher<Intent>
 
-    private lateinit var views:ActivityCallBinding
+    @Inject
+    lateinit var serviceRepository: MainServiceRepository
+    private lateinit var requestScreenCaptureLauncher: ActivityResultLauncher<Intent>
 
+    private lateinit var views: ActivityCallBinding
+var handler=Handler(Looper.getMainLooper())
     override fun onStart() {
         super.onStart()
-        requestScreenCaptureLauncher = registerForActivityResult(ActivityResultContracts
-            .StartActivityForResult()) { result ->
-            if (result.resultCode == Activity.RESULT_OK){
+
+        requestScreenCaptureLauncher = registerForActivityResult(
+            ActivityResultContracts
+                .StartActivityForResult()
+        ) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
                 val intent = result.data
                 //its time to give this intent to our service and service passes it to our webrtc client
                 MainService.screenPermissionIntent = intent
@@ -63,7 +80,11 @@ class CallActivity : AppCompatActivity(), MainService.EndCallListener {
                 serviceRepository.toggleScreenShare(true)
             }
         }
+
     }
+
+
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -71,25 +92,27 @@ class CallActivity : AppCompatActivity(), MainService.EndCallListener {
         setContentView(views.root)
         init()
     }
+val runnable={
+    views.progressBar.isVisible=false
+}
 
-
-    private fun init(){
+    private fun init() {
         intent.getStringExtra("target")?.let {
             this.target = it
-        }?: kotlin.run {
+        } ?: kotlin.run {
             finish()
         }
 
-        isVideoCall = intent.getBooleanExtra("isVideoCall",true)
-        isCaller = intent.getBooleanExtra("isCaller",true)
+        isVideoCall = intent.getBooleanExtra("isVideoCall", true)
+        isCaller = intent.getBooleanExtra("isCaller", true)
         isIncoming = intent.getStringExtra("isIncoming").toString()
-        timer = intent.getBooleanExtra("timer",false)
+        timer = intent.getBooleanExtra("timer", false)
         Log.d(TAG, "init: isIncoming=$isIncoming")
         views.apply {
             callTitleTv.text = "In call with $target"
-            if (!isCaller)startCallTimer()
+            if (!isCaller) startCallTimer()
 
-            if (!isVideoCall){
+            if (!isVideoCall) {
                 toggleCameraButton.isVisible = false
                 screenShareButton.isVisible = false
                 switchCameraButton.isVisible = false
@@ -97,14 +120,19 @@ class CallActivity : AppCompatActivity(), MainService.EndCallListener {
             }
             MainService.remoteSurfaceView = remoteView
             MainService.localSurfaceView = localView
-            serviceRepository.setupViews(isVideoCall,isCaller,target!!)
+            serviceRepository.setupViews(isVideoCall, isCaller, target!!)
 
             endCallButton.setOnClickListener {
                 serviceRepository.sendEndCall()
                 //target- receiver
                 //sender-caller
                 Log.d(TAG, "init: EndCall => target :${mainRepository.getUserPhone()}")
-                mainRepository.setCallStatus(target=mainRepository.getUserPhone(), sender = target!!,"EndCall"){
+                uvcPreview?.onCallEnd(mainRepository.getUserPhone())
+                mainRepository.setCallStatus(
+                    target = mainRepository.getUserPhone(),
+                    sender = target!!,
+                    "EndCall"
+                ) {
 
                     mp3Player.stopMP3()
                 }
@@ -118,20 +146,31 @@ class CallActivity : AppCompatActivity(), MainService.EndCallListener {
         if (isIncoming.equals("Out", true)) {
             mp3Player.startMP3(false)
         }
-        mainRepository.onObserveEndCall() { data,status ->
-            Log.d(TAG, "CallAct -> onObserveEndCall: currentuser: ${mainRepository.getUserPhone()} target: ${target!!} status:$status")
-            if (status == "EndCall"){
+        mainRepository.onObserveEndCall() { data, status ->
+            Log.d(
+                TAG,
+                "CallAct -> onObserveEndCall: currentuser: ${mainRepository.getUserPhone()} target: ${target!!} status:$status"
+            )
+
+            if (status == "EndCall") {
                 mp3Player.stopMP3()
-                mainRepository.setCallStatus(target=target!!, sender = mainRepository.getUserPhone(),""){
+                mainRepository.setCallStatus(
+                    target = target!!,
+                    sender = mainRepository.getUserPhone(),
+                    ""
+                ) {
                     serviceRepository.sendEndCall()
                     //finish()
                 }
-            }else if(status=="AcceptCall"){
+            } else if (status == "AcceptCall") {
 //                    mainRepository.setCallStatus(target=target!!, sender = mainRepository.getUserPhone(),""){
 //
 //                    }
                 mp3Player.stopMP3()
                 startCallTimer()
+            }else if (status==""){
+                handler.postDelayed(runnable,3000)
+                views.progressBar.isVisible=true
             }
         }
 
@@ -160,24 +199,24 @@ class CallActivity : AppCompatActivity(), MainService.EndCallListener {
     private fun setupScreenCasting() {
         views.apply {
             screenShareButton.setOnClickListener {
-               if (!isScreenCasting){
-                   //we have to start casting
-                   AlertDialog.Builder(this@CallActivity)
-                       .setTitle("Screen Casting")
-                       .setMessage("You sure to start casting ?")
-                       .setPositiveButton("Yes"){dialog,_ ->
-                           //start screen casting process
-                           startScreenCapture()
-                           dialog.dismiss()
-                       }.setNegativeButton("No") {dialog,_ ->
-                           dialog.dismiss()
-                       }.create().show()
-               }else{
-                   //we have to end screen casting
-                   isScreenCasting = false
-                   updateUiToScreenCaptureIsOff()
-                   serviceRepository.toggleScreenShare(false)
-               }
+                if (!isScreenCasting) {
+                    //we have to start casting
+                    AlertDialog.Builder(this@CallActivity)
+                        .setTitle("Screen Casting")
+                        .setMessage("You sure to start casting ?")
+                        .setPositiveButton("Yes") { dialog, _ ->
+                            //start screen casting process
+                            startScreenCapture()
+                            dialog.dismiss()
+                        }.setNegativeButton("No") { dialog, _ ->
+                            dialog.dismiss()
+                        }.create().show()
+                } else {
+                    //we have to end screen casting
+                    isScreenCasting = false
+                    updateUiToScreenCaptureIsOff()
+                    serviceRepository.toggleScreenShare(false)
+                }
             }
 
         }
@@ -194,7 +233,7 @@ class CallActivity : AppCompatActivity(), MainService.EndCallListener {
 
     }
 
-    private fun updateUiToScreenCaptureIsOn(){
+    private fun updateUiToScreenCaptureIsOn() {
         views.apply {
             localView.isVisible = false
             switchCameraButton.isVisible = false
@@ -203,6 +242,7 @@ class CallActivity : AppCompatActivity(), MainService.EndCallListener {
         }
 
     }
+
     private fun updateUiToScreenCaptureIsOff() {
         views.apply {
             localView.isVisible = true
@@ -211,16 +251,17 @@ class CallActivity : AppCompatActivity(), MainService.EndCallListener {
             screenShareButton.setImageResource(R.drawable.ic_screen_share)
         }
     }
-    private fun setupMicToggleClicked(){
+
+    private fun setupMicToggleClicked() {
         views.apply {
             toggleMicrophoneButton.setOnClickListener {
-                if (!isMicrophoneMuted){
+                if (!isMicrophoneMuted) {
                     //we should mute our mic
                     //1. send a command to repository
                     serviceRepository.toggleAudio(true)
                     //2. update ui to mic is muted
                     toggleMicrophoneButton.setImageResource(R.drawable.ic_mic_on)
-                }else{
+                } else {
                     //we should set it back to normal
                     //1. send a command to repository to make it back to normal status
                     serviceRepository.toggleAudio(false)
@@ -241,17 +282,17 @@ class CallActivity : AppCompatActivity(), MainService.EndCallListener {
     }
 
 
-    private fun setupToggleAudioDevice(){
+    private fun setupToggleAudioDevice() {
         views.apply {
             toggleAudioDevice.setOnClickListener {
-                if (isSpeakerMode){
+                if (isSpeakerMode) {
                     Log.d("ic_speaker", "setupToggleAudioDevice: $isSpeakerMode")
                     //we should set it to earpiece mode
                     toggleAudioDevice.setImageResource(R.drawable.ic_speaker)
                     //we should send a command to our service to switch between devices
                     serviceRepository.toggleAudioDevice(RTCAudioManager.AudioDevice.EARPIECE.name)
 
-                }else{
+                } else {
                     Log.d("ic_speaker", "setupToggleAudioDevice: $isSpeakerMode")
                     //we should set it to speaker mode
                     toggleAudioDevice.setImageResource(R.drawable.ic_ear)
@@ -264,13 +305,13 @@ class CallActivity : AppCompatActivity(), MainService.EndCallListener {
         }
     }
 
-    private fun setupCameraToggleClicked(){
+    private fun setupCameraToggleClicked() {
         views.apply {
             toggleCameraButton.setOnClickListener {
-                if (!isCameraMuted){
+                if (!isCameraMuted) {
                     serviceRepository.toggleVideo(true)
                     toggleCameraButton.setImageResource(R.drawable.ic_camera_on)
-                }else{
+                } else {
                     serviceRepository.toggleVideo(false)
                     toggleCameraButton.setImageResource(R.drawable.ic_camera_off)
                 }
@@ -286,12 +327,60 @@ class CallActivity : AppCompatActivity(), MainService.EndCallListener {
 
     override fun onDestroy() {
         super.onDestroy()
+        handler.removeCallbacks(runnable)
         MainService.remoteSurfaceView?.release()
         MainService.remoteSurfaceView = null
         MainService.localSurfaceView?.release()
-        MainService.localSurfaceView =null
+        MainService.localSurfaceView = null
+//        serviceRepository.sendEndCall()
 
     }
+
+    override fun getRootView(layoutInflater: LayoutInflater): View? {
+        views = ActivityCallBinding.inflate(layoutInflater)
+        setContentView(views.root)
+        return views.root
+    }
+    override fun getCameraView(): IAspectRatio? {
+      return null
+    }
+
+    override fun getCameraViewContainer(): ViewGroup? {
+       return views.root
+    }
+
+
+    override fun onCameraState(
+        self: MultiCameraClient.ICamera,
+        code: ICameraStateCallBack.State,
+        msg: String?
+    ) {
+        Log.d(TAG, "onCameraState: preview-2")
+        uvcPreview?.onUVCPreview(self,code,msg,"call_activity")
+
+      /*  self.addPreviewDataCallBack(object :IPreviewDataCallBack{
+            override fun onPreviewData(
+                data: ByteArray?,
+                width: Int,
+                height: Int,
+                format: IPreviewDataCallBack.DataFormat
+            ) {
+                Log.d(TAG, "onPreviewData() called with: data = $data, width = $width, height = $height, format = $format")
+
+            }
+
+        })*/
+
+    }
+    companion object {
+        var uvcPreview:UVCPreview?=null
+
+    }
+    interface UVCPreview {
+        fun onUVCPreview(iCamera: MultiCameraClient.ICamera, state: ICameraStateCallBack.State, s: String?,callFrom:String)
+   fun onCallEnd(msg:String)
+    }
+
 }
 
 

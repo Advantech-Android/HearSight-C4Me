@@ -16,6 +16,7 @@ import com.codewithkael.firebasevideocall.utils.DataModel
 import com.codewithkael.firebasevideocall.utils.DataModelType
 import com.codewithkael.firebasevideocall.utils.isValid
 import com.codewithkael.firebasevideocall.webrtc.RTCAudioManager
+import com.jiangdg.ausbc.MultiCameraClient
 import dagger.hilt.android.AndroidEntryPoint
 import org.webrtc.SurfaceViewRenderer
 import javax.inject.Inject
@@ -23,7 +24,7 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class MainService : Service(), MainRepository.Listener {
 
-    private val TAG = "MainService"
+    private val TAG = "xxxMainService"
 
     private var isServiceRunning = false
     private var username: String? = null
@@ -34,7 +35,7 @@ class MainService : Service(), MainRepository.Listener {
     private lateinit var notificationManager: NotificationManager
     private lateinit var rtcAudioManager: RTCAudioManager
     private var isPreviousCallStateVideo = true
-
+    private lateinit var self: MultiCameraClient.ICamera
 
     companion object {
         var listener: Listener? = null
@@ -52,6 +53,7 @@ class MainService : Service(), MainRepository.Listener {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        Log.d(TAG, "onStartCommand: ")
         intent?.let { incomingIntent ->
             when (incomingIntent.action) {
                 START_SERVICE.name -> handleStartService(incomingIntent)
@@ -81,7 +83,9 @@ class MainService : Service(), MainRepository.Listener {
             }
             val pendingIntent : PendingIntent = PendingIntent.getBroadcast(this,0 ,intent,PendingIntent.FLAG_IMMUTABLE)
             notificationManager.createNotificationChannel(notificationChannel)
-            val notification = NotificationCompat.Builder(this, "channel2").setSmallIcon(R.mipmap.ic_launcher).addAction(R.drawable.baseline_wifi_24,"Wifi",pendingIntent)
+            val notification = NotificationCompat.Builder(this, "channel2")
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .addAction(R.drawable.baseline_wifi_24,"Wifi",pendingIntent)
             startForeground(1, notification.build())
         }
     }
@@ -93,6 +97,7 @@ class MainService : Service(), MainRepository.Listener {
             stopSelf()
         }
     }
+
 
     private fun handleToggleScreenShare(incomingIntent: Intent) {
         val isStarting = incomingIntent.getBooleanExtra("isStarting",true)
@@ -113,6 +118,7 @@ class MainService : Service(), MainRepository.Listener {
             }
         }
     }
+
 
     private fun handleToggleAudioDevice(incomingIntent: Intent) {
         val type = when(incomingIntent.getStringExtra("type")){
@@ -182,7 +188,7 @@ class MainService : Service(), MainRepository.Listener {
         if (!isServiceRunning) {
             isServiceRunning = true
             username = incomingIntent.getStringExtra("username")
-            //startServiceWithNotification()
+            startServiceWithNotification()
 
             //setup my clients
             mainRepository.listener = this
@@ -206,8 +212,7 @@ class MainService : Service(), MainRepository.Listener {
 
             notificationManager.createNotificationChannel(notificationChannel)
             val notification = NotificationCompat.Builder(
-                this, "channel1"
-            ).setSmallIcon(R.mipmap.ic_launcher)
+                this, "channel1").setSmallIcon(R.mipmap.ic_launcher)
                 .addAction(R.drawable.ic_end_call,"Exit",pendingIntent)
 
             startForeground(1, notification.build())
