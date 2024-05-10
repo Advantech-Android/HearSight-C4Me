@@ -54,9 +54,7 @@ class MainRepository @Inject constructor(
         firebaseClient.getEndCallEvent(data)
     }
 
-    public fun getUserName(): String {
-        return firebaseClient.getUserName()
-    }
+
 
     public fun getUserPhone(): String {
         return firebaseClient.getUserPhone()

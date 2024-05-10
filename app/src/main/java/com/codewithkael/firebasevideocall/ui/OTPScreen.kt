@@ -10,7 +10,7 @@ import android.view.View
 import android.view.WindowManager
 import android.widget.Button
 import android.widget.TextView
-import android.widget.Toast
+
 import com.codewithkael.firebasevideocall.R
 import com.codewithkael.firebasevideocall.utils.OTPFields
 import com.codewithkael.firebasevideocall.utils.SnackBarUtils
@@ -30,7 +30,8 @@ class OTPScreen(private val context: Context) {
     lateinit var callbacks: PhoneAuthProvider.OnVerificationStateChangedCallbacks
 
 
-    fun getOTP(phoneNumber: String) {
+    fun getOTP(phoneNumber: String)
+    {
         val otpDialog = Dialog(context)
         otpDialog.setContentView(R.layout.otp_verify_layout)
         otpDialog.window!!.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.WRAP_CONTENT)

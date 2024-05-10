@@ -1,20 +1,13 @@
 
 package com.codewithkael.firebasevideocall.ui
 
-import android.annotation.SuppressLint
+
 import android.app.Activity
-import android.app.PendingIntent
-import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
-import android.hardware.camera2.CameraDevice
-import android.hardware.camera2.CameraManager
-import android.hardware.usb.UsbDevice
-import android.hardware.usb.UsbDeviceConnection
-import android.hardware.usb.UsbManager
+
 import android.media.projection.MediaProjectionManager
-import android.os.Build
+
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -23,14 +16,14 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
+
 import androidx.core.view.isVisible
 import com.codewithkael.firebasevideocall.R
 import com.codewithkael.firebasevideocall.databinding.ActivityCallBinding
 import com.codewithkael.firebasevideocall.repository.MainRepository
 import com.codewithkael.firebasevideocall.service.MainService
 import com.codewithkael.firebasevideocall.service.MainServiceRepository
-import com.codewithkael.firebasevideocall.ui.LoginActivity.uvc.isUvc
+
 import com.codewithkael.firebasevideocall.utils.convertToHumanTime
 import com.codewithkael.firebasevideocall.utils.setViewFields
 import com.codewithkael.firebasevideocall.webrtc.RTCAudioManager
@@ -42,7 +35,7 @@ import javax.inject.Inject
 
 @AndroidEntryPoint
 class CallActivity : AppCompatActivity(), MainService.EndCallListener {
-    private var isCameraOpen=false
+
     private  val TAG = "###CallActivity"
     private var timer=false
     private var target:String?=null

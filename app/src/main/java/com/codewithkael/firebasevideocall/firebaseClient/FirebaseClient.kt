@@ -30,10 +30,10 @@ class FirebaseClient  @Inject constructor(
 ) : MainRecyclerViewAdapter.Listener {
 
     var userContactStatus = MutableLiveData(UserStatus.OFFLINE.name)
-    val registerContactKeysArrayList = ArrayList<registerContactKeys>()
+
     private var currentUsername: String? = null
     private var currentUserPhonenumber: String? = null
-    private var currentUserPassword: String? = null
+
     companion object{
         var registerNumber=""
     }
@@ -105,36 +105,7 @@ class FirebaseClient  @Inject constructor(
     }
 
 
-    fun observeUsersStatus(
-        status: (List<Pair<String, String>>) -> Unit,
-        status1: (List<Pair<String, String>>) -> Unit
-    ) {
-        dbRef.addValueEventListener(object : MyEventListener() {
-            override fun onDataChange(snapshot: DataSnapshot) {
 
-                Log.d(TAG, "observeUsersStatus => onDataChange: ")
-
-                val list = snapshot.children.filter {
-                    it.key != currentUsername
-                }.map {
-                    // Log.d(TAG, "onDataChange: ")
-
-                    it.key!! to it.child(STATUS).value.toString()
-                }
-                status(list)
-
-                val list1 = snapshot.children.filter {
-                    it.key != currentUsername
-                }.map {
-
-
-                    it.key!! to it.child(PASSWORD).value.toString()
-                }
-                status1(list1)
-
-            }
-        })
-    }
 
     fun getEndCallEvent(data: (DataModel,String) -> Unit) {
         try {
@@ -173,20 +144,7 @@ class FirebaseClient  @Inject constructor(
         }
     }
 
-    fun getUserContactList() {
-        dbRef.addListenerForSingleValueEvent(object : MyEventListener() {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                snapshot.child(currentUsername!!).child("contacts").children.filter { data ->
-                    Log.d(
-                        "***contactlist",
-                        "getUserContactList => onDataChange: ${data.key}:${data.value}:${data.children}"
-                    )
 
-                    true
-                }
-            }
-        })
-    }
     fun observeContactDetails(status: (List<ContactInfo>) -> Unit, status2: (List<ContactInfo>) -> Unit) {
         val finalList = mutableListOf<ContactInfo>()
         val outerList = mutableListOf<ContactInfo>()
@@ -342,26 +300,14 @@ class FirebaseClient  @Inject constructor(
     }
 
 
-    fun getUserContactList(callback: (List<Pair<String, String>>) -> Unit) {
-        dbRef.addListenerForSingleValueEvent(object : MyEventListener() {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                if (snapshot.hasChild(currentUserPhonenumber!!)) {
-                    if (currentUserPhonenumber!!.isNotEmpty()) {
-                        snapshot.child(currentUserPhonenumber!!.filter { data ->
-                            true
-                        })
-                    }
-                }
-            }
-        })
-    }
+
 
 
     interface Listener {
         fun onLatestEventReceived(event: DataModel)
     }
 
-    data class registerContactKeys(val mcontact: String)
+
 
     override fun onVideoCallClicked(username: String,user:ContactInfo) {
     }

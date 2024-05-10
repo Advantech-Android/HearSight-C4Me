@@ -15,7 +15,6 @@ class MainServiceRepository @Inject constructor(
         Thread{
             val intent = Intent(context, MainService::class.java)
             intent.putExtra(setViewFields.USER_NAME,username)
-            //intent.action = MainServiceActions.START_SERVICE.name
             intent.action = intentAction
             startServiceIntent(intent)
         }.start()

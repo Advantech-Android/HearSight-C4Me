@@ -1,21 +1,22 @@
 package com.codewithkael.firebasevideocall.ui
 import android.Manifest
 import android.annotation.SuppressLint
-import android.app.Activity
+
 import android.app.Dialog
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.database.Cursor
-import android.net.Uri
+import android.media.MediaPlayer
+
+
 import android.net.wifi.WifiManager
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.provider.ContactsContract
-import android.provider.ContactsContract.Contacts
-import android.text.InputFilter
-import android.text.method.DigitsKeyListener
+import android.provider.Settings
+import android.text.TextWatcher
+
 import com.codewithkael.firebasevideocall.utils.SnackBarUtils
 import android.util.Log
 
@@ -23,7 +24,7 @@ import android.view.Menu
 import android.view.MenuItem
 
 import android.util.TypedValue
-import android.view.LayoutInflater
+
 
 import android.view.View
 import android.view.WindowManager
@@ -33,10 +34,11 @@ import android.widget.EditText
 
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.view.ContextThemeWrapper
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.appcompat.widget.SearchView
-import androidx.cardview.widget.CardView
+
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.codewithkael.firebasevideocall.QRCode.WifiPasswordGenerated
@@ -52,19 +54,17 @@ import com.codewithkael.firebasevideocall.service.MainServiceRepository
 import com.codewithkael.firebasevideocall.utils.ContactInfo
 import com.codewithkael.firebasevideocall.utils.DataModel
 import com.codewithkael.firebasevideocall.utils.DataModelType
+import com.codewithkael.firebasevideocall.utils.LoginActivityFields
 import com.codewithkael.firebasevideocall.utils.MainActivityFields
 import com.codewithkael.firebasevideocall.utils.PickContactContract
-import com.codewithkael.firebasevideocall.utils.ProgressBarUtil
-import com.codewithkael.firebasevideocall.utils.RecyclerViewFields
 
-import com.codewithkael.firebasevideocall.utils.WifiPassWordGeneratedField
 import com.codewithkael.firebasevideocall.utils.getCameraAndMicPermission
 import com.codewithkael.firebasevideocall.utils.setViewFields
-import com.google.android.material.textfield.TextInputEditText
+
 import dagger.hilt.android.AndroidEntryPoint
-import java.nio.channels.AlreadyBoundException
+
 import javax.inject.Inject
-import kotlin.math.log
+
 
 
 
@@ -73,6 +73,7 @@ private const val STORAGE_PERMISSION_CODE = 123
 class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, MainService.Listener
 {
     private lateinit var contactBind: AddcontactsBinding
+
 
     private lateinit var mDialog: Dialog
     private val TAG = "***>>MainActivity"
@@ -88,7 +89,7 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
     @Inject
     lateinit var serviceRepository: MainServiceRepository
     private var mainAdapter: MainRecyclerViewAdapter? = null
-    private var callerName:String?=""
+
     @Inject
     lateinit var context: Context
 
@@ -96,14 +97,12 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
     lateinit var mp3Player: Mp3Ring
     lateinit var wifiManager: WifiManager
 
-    private val PICK_CONTACT_REQUEST = 123 // Request code for picking contacts
-    private var selectedContactName:String?=null
-    private var selectedContactNumber:String?=null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         views = ActivityMainBinding.inflate(layoutInflater)
         setContentView(views.root)
+
 
         wifiManager=getSystemService(Context.WIFI_SERVICE) as WifiManager
 
@@ -197,12 +196,14 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
             contactBind.addPhoneNumberid.setText(ph.trim().replace(" ",""))
         }
     }
-    private fun addContacts()
-    {
-        mDialog= Dialog(this)
-        contactBind=AddcontactsBinding.inflate(layoutInflater)
+    private fun addContacts() {
+        mDialog = Dialog(this)
+        contactBind = AddcontactsBinding.inflate(layoutInflater)
         mDialog.setContentView(contactBind.root)
-        mDialog.window!!.setLayout(WindowManager.LayoutParams.WRAP_CONTENT,WindowManager.LayoutParams.WRAP_CONTENT)
+        mDialog.window!!.setLayout(
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            WindowManager.LayoutParams.WRAP_CONTENT
+        )
         mDialog.show()
         contactBind.pickBtn.setOnClickListener {
 
@@ -220,26 +221,62 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
         }
 
         contactBind.saveBtn.setOnClickListener {
-            mainRepository.addContacts(
-                contactBind.addNameid.text.toString().trim(),
-                contactBind.addPhoneNumberid.text.toString().trim().replace(" ",""))
-            {isDone,reason->
+//            mainRepository.addContacts(
+//                contactBind.addNameid.text.toString().trim(),
+//                contactBind.addPhoneNumberid.text.toString().trim().replace(" ",""))
+//
+//
+//
+//            {isDone,reason->
+//
+//                if(!isDone){
+//
+//                    SnackBarUtils.showSnackBar(contactBind.root,"$reason")
+//                    mDialog.dismiss()
+//                }
+//                else{
+//
+//                    SnackBarUtils.showSnackBar(contactBind.root,MainActivityFields.CONTACT_ADD_SUCCESS)
+//                    mDialog.dismiss()
+//
+//                }
+//            }
+//        }
 
+
+            val name = contactBind.addNameid.text.toString().trim().lowercase()
+            var phoneNumber = contactBind.addPhoneNumberid.text.toString().trim().replace("", "")
+
+//            if (name.isEmpty()) {
+//                SnackBarUtils.showSnackBar(views.root, LoginActivityFields.BOTH_USERNAME_PW)
+//                return@setOnClickListener
+//            }
+//            if (phoneNumber.length!=10 ||phoneNumber.isEmpty()) {
+//                SnackBarUtils.showSnackBar(views.root, LoginActivityFields.PASWORD_INVALID)
+//                return@setOnClickListener
+//            }
+
+            if(!phoneNumber.startsWith("+91")){
+                phoneNumber="+91$phoneNumber"
+            }
+
+            contactBind.addNameid.setText(name)
+            contactBind.addPhoneNumberid.setText(phoneNumber)
+
+
+
+            mainRepository.addContacts(name,phoneNumber){isDone,reason->
                 if(!isDone){
-
-                    SnackBarUtils.showSnackBar(contactBind.root,"$reason")
+                    SnackBarUtils.showSnackBar(contactBind.root, LoginActivityFields.UN_PW_INCORRECT)
+                    mDialog.dismiss()
+                }else{
+                    SnackBarUtils.showSnackBar(contactBind.root, MainActivityFields.CONTACT_ADD_SUCCESS)
                     mDialog.dismiss()
                 }
-                else{
 
-                    SnackBarUtils.showSnackBar(contactBind.root,MainActivityFields.CONTACT_ADD_SUCCESS)
-                    mDialog.dismiss()
-
-                }
             }
         }
     }
-
 
     private fun subscribeObservers(){
         setupRecyclerView()
@@ -293,7 +330,7 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
                     //we have to start video call
                     //we wanna create an intent to move to call activity
                     //here username is phone number
-                    //  mainRepository.getUserNameFB(username){ user_name->
+
                     startActivity(Intent(this, CallActivity::class.java).apply {
                         putExtra(setViewFields.TARGET, username)
                         putExtra(setViewFields.IS_VIDEO_CALL, true)
@@ -302,7 +339,7 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
                         putExtra(setViewFields.TIMER, false)
                         putExtra(setViewFields.CALLER_NAME, user.userName)
                     })
-                    //  }
+
 
                 }
             }
@@ -363,6 +400,7 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
                         mp3Player.stopMP3()
                         mainRepository.setCallStatus(model.target,model.sender!!,"AcceptCall"){
                             mp3Player.stopMP3()
+
                             incomingCallLayout.isVisible = false
                             contactLayout.isVisible=true
 
@@ -396,11 +434,9 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
 
     fun decline(target: String?,sender:String?,message:String?) {
         Log.d(TAG, "decline: target = $target, sender = $sender, message = $message")
+
         mp3Player.stopMP3()
         runOnUiThread {
-            //  mainRepository.setTarget(target!!)
-            // serviceRepository.sendEndCall()
-
             views.apply {
                 incomingCallLayout.isVisible = false
                 contactLayout.isVisible = true
@@ -426,16 +462,19 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.qr_codeid -> {
-                Log.d(TAG, "onOptionsItemSelected: ===>>>")
-                isPermissionGrand()
-                ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-                    555
-                )
+               // Log.d(TAG, "onOptionsItemSelected: ===>>>")
+//
+//                if(isDeveloperModeEnabled()){
+//                    navigateToWifiThrotllingSettings()
+//                }
+//                else{
+//                    showEnableDeveloperModeDialog()
+//                }
+                
+              isPermissionGrand()
+                ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 555)
                 isCheckHotspot()
-
-                if (wifiManager.isWifiEnabled )
+                if (wifiManager.isWifiEnabled)
                 {
                     val wifiReceiver= WifiPasswordGenerated(this)
                     wifiReceiver.showQRDialog()
@@ -455,6 +494,28 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
         }
 
 
+    }
+
+    private fun showEnableDeveloperModeDialog() {
+       AlertDialog.Builder(ContextThemeWrapper(this, androidx.appcompat.R.style.Theme_AppCompat)).setTitle("Enable Developer Mode in your Mobile phone")
+           .setMessage("To access Wi-Fi throttling settings, please enable Developer Mode.")
+           .setPositiveButton("Enable"){dialog,which->
+               val intent=Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS)
+               intent.flags=Intent.FLAG_ACTIVITY_NEW_TASK
+              startActivity(intent)
+           }
+           .setNegativeButton("Cancel",null)
+           .show()
+    }
+
+    private fun navigateToWifiThrotllingSettings() {
+        val intent=Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS)
+        intent.flags=Intent.FLAG_ACTIVITY_NEW_TASK
+        startActivity(intent)
+    }
+
+    private fun isDeveloperModeEnabled(): Boolean {
+    return Settings.Secure.getInt(contentResolver,Settings.Global.DEVELOPMENT_SETTINGS_ENABLED,0)!=0
     }
 
 

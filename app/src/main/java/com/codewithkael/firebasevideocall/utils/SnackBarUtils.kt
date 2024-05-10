@@ -23,8 +23,8 @@ object WifiPassWordGeneratedField
     const val WIFI_NAME_MIS="Wifi name missing"
 }
 object LoginActivityFields{
-    val PASWORD_INVALID: String="Enter valid password"
-    const val BOTH_USERNAME_PW="Enter valid username"
+    val PASWORD_INVALID: String="Enter valid username or password"
+    const val BOTH_USERNAME_PW="Enter valid username or password"
     const val CHECK_NET_CONNECTION="Check your Internet Connection"
     const val UN_PW_INCORRECT="Username and Password incorrect.."
 }
