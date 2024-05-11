@@ -20,6 +20,7 @@ import android.os.Looper
 import android.text.Editable
 import android.text.InputFilter
 import android.text.TextWatcher
+import android.widget.Toast
 
 
 import androidx.lifecycle.MutableLiveData
@@ -147,6 +148,7 @@ class LoginActivity : AppCompatActivity() {
         views.apply {
             btn.isEnabled = true
             btn.setOnClickListener {
+
                 btn.isEnabled = false
                 val usernameText = usernameEt.text.toString().trim().lowercase().replace(" ","")
                 val passwordText = passwordEt.text.toString().trim()
@@ -178,7 +180,8 @@ class LoginActivity : AppCompatActivity() {
                 passwordEt.isEnabled = false
                 usernameEt.isEnabled = false
 
-                if (!ProgressBarUtil.checkInternetConnection(this@LoginActivity)) {
+                if (!ProgressBarUtil.checkInternetConnection(this@LoginActivity))
+                {
                     passwordEt.isEnabled = true
                     usernameEt.isEnabled = true
                     btn.isEnabled = true
@@ -200,6 +203,7 @@ class LoginActivity : AppCompatActivity() {
             mainRepository.login(
                 usernameText,passwordText
             ) { isDone, reason ->
+                Log.d(TAG, "Login attempt result: $isDone, Reason: $reason")
                 ProgressBarUtil.hideProgressBar(this@LoginActivity)
                 val hand = Handler(Looper.getMainLooper())
                 hand.removeCallbacksAndMessages(null)
@@ -207,25 +211,17 @@ class LoginActivity : AppCompatActivity() {
                 usernameEt.isEnabled = true
                 btn.isEnabled = true
                 if (!isDone) {
+                    Log.d(TAG, "Login failed: $reason")
                     SnackBarUtils.showSnackBar(root, LoginActivityFields.UN_PW_INCORRECT)
                 } else {
-                    startActivity(Intent(
-                        this@LoginActivity,
-                        MainActivity::class.java
-                    ).apply {
+                    Log.d(TAG, "Login successful. Starting MainActivity.")
+                    startActivity(Intent(this@LoginActivity, MainActivity::class.java).apply {
                         putExtra("username", usernameText)
                     })
                 }
             }
         }
     }
-
-
-
-
-
-
-
 
     override fun onRequestPermissionsResult(
         requestCode: Int,

@@ -30,6 +30,7 @@ import android.view.View
 import android.view.WindowManager
 import android.widget.Button
 import android.widget.EditText
+import android.widget.Toast
 
 
 import androidx.appcompat.app.AlertDialog
@@ -247,14 +248,14 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
             val name = contactBind.addNameid.text.toString().trim().lowercase()
             var phoneNumber = contactBind.addPhoneNumberid.text.toString().trim().replace("", "")
 
-//            if (name.isEmpty()) {
-//                SnackBarUtils.showSnackBar(views.root, LoginActivityFields.BOTH_USERNAME_PW)
-//                return@setOnClickListener
-//            }
-//            if (phoneNumber.length!=10 ||phoneNumber.isEmpty()) {
-//                SnackBarUtils.showSnackBar(views.root, LoginActivityFields.PASWORD_INVALID)
-//                return@setOnClickListener
-//            }
+            if (name.isEmpty()) {
+                SnackBarUtils.showSnackBar(views.root, LoginActivityFields.BOTH_USERNAME_PW)
+                return@setOnClickListener
+            }
+            if (phoneNumber.length!=13 ||phoneNumber.isEmpty()) {
+                SnackBarUtils.showSnackBar(views.root, LoginActivityFields.PASWORD_INVALID)
+                return@setOnClickListener
+            }
 
             if(!phoneNumber.startsWith("+91")){
                 phoneNumber="+91$phoneNumber"
@@ -270,7 +271,8 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
                     SnackBarUtils.showSnackBar(contactBind.root, LoginActivityFields.UN_PW_INCORRECT)
                     mDialog.dismiss()
                 }else{
-                    SnackBarUtils.showSnackBar(contactBind.root, MainActivityFields.CONTACT_ADD_SUCCESS)
+                    Toast.makeText(this@MainActivity, "Contact added Successfully", Toast.LENGTH_SHORT).show()
+                    //SnackBarUtils.showSnackBar(contactBind.root, MainActivityFields.CONTACT_ADD_SUCCESS)
                     mDialog.dismiss()
                 }
 

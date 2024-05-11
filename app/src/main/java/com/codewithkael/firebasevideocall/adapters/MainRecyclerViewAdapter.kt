@@ -154,17 +154,9 @@ class MainRecyclerViewAdapter(private val listener: Listener) :
                     val yesBtn = deleteDialog.findViewById<Button>(R.id.yesId)
                     deleteDialog.show()
                     yesBtn.setOnClickListener {
-                        Log.d(
-                            TAG,
-                            "deleteContacts:ContactNumber: ${user.contactNumber.toString()}\t,UserName${user.userName.toString()}"
-                        )
-                        deleteContacts(
-                            deleteDialog,
-                            user.contactNumber,
-                            user.userName,
-                            listener,
-                            pos
-                        )
+                        Log.d(TAG, "deleteContacts:ContactNumber: ${user.contactNumber.toString()}\t,UserName${user.userName.toString()}")
+                        deleteContacts(deleteDialog, user.contactNumber, user.userName, listener, pos)
+
                     }
                     noBtn.setOnClickListener { deleteDialog.dismiss() }
 
@@ -190,9 +182,9 @@ class MainRecyclerViewAdapter(private val listener: Listener) :
             val hastContactRef =
                 ref.child(registerNumber).child("contacts").child(contactNumber)
             hastContactRef.removeValue().addOnSuccessListener {
-
-                SnackBarUtils.showSnackBar(binding.deleteContactBtn, RecyclerViewFields.REMOVED_CONTACT.replace("-",userName))
-                //Toast.makeText(context, "deleted", Toast.LENGTH_SHORT).show()
+//               // val yesBtn = deleteDialog.findViewById<Button>(R.id.yesId)
+//                SnackBarUtils.showSnackBar(deleteDialog.findViewById(R.id.yesId), RecyclerViewFields.REMOVED_CONTACT.replace("-",userName))
+                Toast.makeText(context, "Contact ${userName} deleted Successfully", Toast.LENGTH_SHORT).show()
 
                 val mainRecyclerViewAdapter = MainRecyclerViewAdapter(listener)
                 mainRecyclerViewAdapter.notifyItemChanged(pos)

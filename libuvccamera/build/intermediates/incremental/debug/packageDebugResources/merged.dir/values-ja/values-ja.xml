@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="camera">カメラ</string>
+    <string name="error_busy_need_replug">デバイスが占有されています。 もう一度デバイスを抜き差ししてください！ </string>
+    <string name="error_messge_camera_open_busy">不明なエラーが発生しました。</string>
+    <string name="error_messge_camera_open_unknown">デバイスが占有されています。 </string>
+    <string name="error_unknown_need_replug">不明なエラーが発生しました。 もう一度デバイスを抜き差ししてください！</string>
+    <string name="no_device">USBカメラが見つかりません</string>
+    <string name="permission_audio">録音許可がありません。\n音声機能を使用できません。</string>
+    <string name="permission_audio_recording_request">音声付きで録画するには録音許可が必要です。</string>
+    <string name="permission_camera">内蔵カメラへのアクセス許可がありません。</string>
+    <string name="permission_camera_request">内蔵カメラへのアクセス許可が必要です</string>
+    <string name="permission_ext_storage">外部ストレージへの書き込み許可がありません。静止画・動画保存できません。</string>
+    <string name="permission_ext_storage_request">静止画・動画を保存するには外部ストレージへの書き込み許可が必要です。</string>
+    <string name="permission_network">ネットワークへのアクセス許可がありません。</string>
+    <string name="permission_network_request">ストリーミングを行うにはネットワークへのアクセス許可が必要です。</string>
+    <string name="permission_title">アクセス許可について</string>
+    <string name="refresh">更新</string>
+    <string name="select">USB カメラを選択してください</string>
+</resources>
