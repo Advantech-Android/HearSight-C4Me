@@ -16,14 +16,13 @@ import org.webrtc.*
 import javax.inject.Inject
 import javax.inject.Singleton
 
-
+//
 private const val TAG = "***>>MainRepository"
 @Singleton
 class MainRepository @Inject constructor(
     private val firebaseClient: FirebaseClient,
     private val webRTCClient: WebRTCClient,
-    private val gson: Gson
-) : WebRTCClient.Listener {
+    private val gson: Gson) : WebRTCClient.Listener {
 
     private var target: String? = null
     var listener: Listener? = null

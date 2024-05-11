@@ -38,7 +38,7 @@
                 android:paddingStart="3dp"
                 android:paddingEnd="3dp"
                 android:layout_gravity="right"
-                android:background="@color/BLUE"
+                android:background="@color/light_green"
                 android:layout_margin="10dp"
                 android:textColor="@color/white"/>
 

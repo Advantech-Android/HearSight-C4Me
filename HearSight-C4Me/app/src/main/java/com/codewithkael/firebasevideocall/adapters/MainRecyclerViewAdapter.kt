@@ -85,13 +85,11 @@ class MainRecyclerViewAdapter(private val listener: Listener) :
                         }*/
                         handler.postDelayed(kotlinx.coroutines.Runnable {
                             cardview.isEnabled=true
-                            cardview.setBackgroundColor(context.resources.getColor(R.color.light_green))
                         },3000)
                         cardview.setOnClickListener {
                             cardview.isEnabled=false
                             Toast.makeText(context, "Please wait while your call is being connected", Toast.LENGTH_LONG).show()
                             videoCallClicked.invoke(user.contactNumber)//represents username
-
                         }
 
                         audioCallBtn.setOnClickListener {

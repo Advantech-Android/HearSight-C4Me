@@ -285,8 +285,6 @@ try {
         }
     }
 
-
-
     private fun isPermissionGrand() {
         if (ContextCompat.checkSelfPermission(
                 this,

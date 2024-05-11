@@ -19,9 +19,9 @@ import javax.inject.Singleton
 private const val TAG = "xxx--->>>WebRTCClient"
 @Singleton
 class WebRTCClient @Inject constructor(private val context: Context, private val gson: Gson) {
-    private var isUvc = false
+    private var isUvc = true
     //class variables
-   lateinit var uvcCapturer:CameraVideoCapturer
+    lateinit var uvcCapturer:CameraVideoCapturer
     var listener: Listener? = null
     private lateinit var username: String
     private lateinit var usbCapturer: CameraVideoCapturer
@@ -64,11 +64,11 @@ class WebRTCClient @Inject constructor(private val context: Context, private val
     private var localScreenShareVideoTrack: VideoTrack? = null
     //installing requirements section
     init {
-       /* if (Build.BRAND.equals("samsung", true)){
-            isUvc=false
-        }else{
-            isUvc=true
-        }*/
+        /* if (Build.BRAND.equals("samsung", true)){
+             isUvc=false
+         }else{
+             isUvc=true
+         }*/
         initPeerConnectionFactory()
     }
 
@@ -255,7 +255,8 @@ class WebRTCClient @Inject constructor(private val context: Context, private val
             Toast.makeText(context, "uvc support=${Camera2Enumerator.isSupported(context)}", Toast.LENGTH_SHORT).show()
             Log.d(TAG, "startCapturingCamera: ${Camera2Enumerator(context).deviceNames}")
 // create USBCapturer (USB Camera)
-            uvcCapturer = UvcCapturer(context, localView) as CameraVideoCapturer
+            // uvcCapturer = UvcCapturer(context, localView) as CameraVideoCapturer
+            uvcCapturer = UvcCapturerNew(context, localView) as CameraVideoCapturer
             var localVideoSource = peerConnectionFactory.createVideoSource(uvcCapturer.isScreencast)
             uvcCapturer.initialize(
                 surfaceTextureHelper,
@@ -288,7 +289,7 @@ class WebRTCClient @Inject constructor(private val context: Context, private val
         if (isUvc) {
 
             // create USBCapturer (USB Camera)
-         null
+            null
         } else {
             Camera2Enumerator(context).run {
                 deviceNames.find {

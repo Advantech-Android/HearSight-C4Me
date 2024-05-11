@@ -35,7 +35,6 @@ class WifiPasswordGenerated(private val context: Context)
 {
 
 
-    private var wifiList: ListView? = null
     private var wifiManager: WifiManager? =null
     fun showQRDialog()
     {
