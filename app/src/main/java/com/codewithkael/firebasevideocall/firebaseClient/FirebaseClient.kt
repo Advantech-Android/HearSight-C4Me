@@ -1,6 +1,8 @@
 package com.codewithkael.firebasevideocall.firebaseClient
 
+import android.app.Activity
 import android.util.Log
+import android.widget.Toast
 import androidx.lifecycle.MutableLiveData
 import com.codewithkael.firebasevideocall.adapters.MainRecyclerViewAdapter
 import com.codewithkael.firebasevideocall.utils.ContactInfo
@@ -11,6 +13,7 @@ import com.codewithkael.firebasevideocall.utils.FirebaseFieldNames.CALL_EVENT
 import com.codewithkael.firebasevideocall.utils.FirebaseFieldNames.STATUS
 import com.codewithkael.firebasevideocall.utils.MyEventListener
 import com.codewithkael.firebasevideocall.utils.UserStatus
+import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
@@ -23,17 +26,15 @@ private const val TAG = "***>>FirebaseClient"
 
 
 @Singleton
-class FirebaseClient  @Inject constructor(
+class FirebaseClient @Inject constructor(
     private val dbRef: DatabaseReference,
     private val gson: Gson
 
 ) : MainRecyclerViewAdapter.Listener {
 
     var userContactStatus = MutableLiveData(UserStatus.OFFLINE.name)
-    val registerContactKeysArrayList = ArrayList<registerContactKeys>()
     private var currentUsername: String? = null
     private var currentUserPhonenumber: String? = null
-    private var currentUserPassword: String? = null
     companion object{
         var registerNumber=""
     }
@@ -48,40 +49,34 @@ class FirebaseClient  @Inject constructor(
     public fun getUserPhone(): String {
         return currentUserPhonenumber.toString()
     }
-    fun getUserNameFB(phone:String,result: (String?) -> Unit) {
-        dbRef.addValueEventListener(object : MyEventListener() {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                result( snapshot.child(phone).child("user_name").value.toString())
-            }
-        })
-    }
 
     fun login(username: String, phonenumber: String, done: (Boolean, String?) -> Unit) {
 
         try {
             dbRef.addListenerForSingleValueEvent(object : MyEventListener() {
                 override fun onDataChange(snapshot: DataSnapshot) {
-                    //if the current user exists
+                    var childKey = ""
                     if (snapshot.hasChild(phonenumber)) {
-                        //user exists , its time to check the phone_number
-                        val dbUsername = snapshot.child(phonenumber).child("user_name").value
-                        if (username == dbUsername) {
-                            //username is correct and sign in
-                            registerNumber = phonenumber
-                            dbRef.child(phonenumber).child(STATUS).setValue(UserStatus.ONLINE)
-                                .addOnCompleteListener {
-                                    setUsername(username, phonenumber)
-                                    done(true, null)
-                                }.addOnFailureListener {
-                                    done(false, "${it.message}")
-                                }
-                        } else {
-                            //password is wrong, notify user
-                            done(false, "Password is wrong")
+                        for (childSnapshot in snapshot.children) {
+                            childKey = childSnapshot.key.toString()
+                            if (phonenumber == childKey) {
+                                // Username is correct, sign in
+                                registerNumber = phonenumber
+                                dbRef.child(phonenumber).child(STATUS).setValue(UserStatus.ONLINE)
+                                    .addOnCompleteListener {
+                                        setUsername(username, registerNumber)
+                                        done(true, null)
+                                    }.addOnFailureListener {
+                                        Log.d(TAG, "onDataChange: ${it.message}")
+                                        done(false, "${it.message}")
+                                    }
+                                return // Exit the loop once the user is found
+                            }
                         }
-
+                        // If loop completes without finding the user, notify that the password is wrong
+                        done(false, "Password is wrong")
                     } else {
-                        //user doesnt exist, register the user
+                        // User doesn't exist, register the user
                         dbRef.child(phonenumber).child("user_name").setValue(username)
                             .addOnCompleteListener {
                                 dbRef.child(phonenumber).child(STATUS).setValue(UserStatus.ONLINE)
@@ -94,7 +89,6 @@ class FirebaseClient  @Inject constructor(
                             }.addOnFailureListener {
                                 done(false, it.message)
                             }
-
                     }
                 }
             })
@@ -107,8 +101,7 @@ class FirebaseClient  @Inject constructor(
 
     fun observeUsersStatus(
         status: (List<Pair<String, String>>) -> Unit,
-        status1: (List<Pair<String, String>>) -> Unit
-    ) {
+        status1: (List<Pair<String, String>>) -> Unit) {
         dbRef.addValueEventListener(object : MyEventListener() {
             override fun onDataChange(snapshot: DataSnapshot) {
 
@@ -166,6 +159,28 @@ class FirebaseClient  @Inject constructor(
 
 
                 })
+            dbRef.child(currentUserPhonenumber!!).child(LATEST_EVENT).addChildEventListener(object :ChildEventListener{
+                override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
+                    Log.d(TAG, "onChildAdded: ")
+                }
+
+                override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {
+                    Log.d(TAG, "onChildChanged: ")
+                }
+
+                override fun onChildRemoved(snapshot: DataSnapshot) {
+                    Log.d(TAG, "onChildRemoved: ")
+                }
+
+                override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {
+                    Log.d(TAG, "onChildMoved: ")
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.d(TAG, "onCancelled: ")
+                }
+
+            })   
 
 
         } catch (e: Exception) {
@@ -173,20 +188,8 @@ class FirebaseClient  @Inject constructor(
         }
     }
 
-    fun getUserContactList() {
-        dbRef.addListenerForSingleValueEvent(object : MyEventListener() {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                snapshot.child(currentUsername!!).child("contacts").children.filter { data ->
-                    Log.d(
-                        "***contactlist",
-                        "getUserContactList => onDataChange: ${data.key}:${data.value}:${data.children}"
-                    )
 
-                    true
-                }
-            }
-        })
-    }
+
     fun observeContactDetails(status: (List<ContactInfo>) -> Unit, status2: (List<ContactInfo>) -> Unit) {
         val finalList = mutableListOf<ContactInfo>()
         val outerList = mutableListOf<ContactInfo>()
@@ -235,6 +238,8 @@ class FirebaseClient  @Inject constructor(
             }
         })
     }
+
+
     fun subscribeForLatestEvent(listener: Listener) {
         try {
             Log.d(TAG, "subscribeForLatestEvent:currentUsername: $currentUserPhonenumber")
@@ -342,20 +347,6 @@ class FirebaseClient  @Inject constructor(
     }
 
 
-    fun getUserContactList(callback: (List<Pair<String, String>>) -> Unit) {
-        dbRef.addListenerForSingleValueEvent(object : MyEventListener() {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                if (snapshot.hasChild(currentUserPhonenumber!!)) {
-                    if (currentUserPhonenumber!!.isNotEmpty()) {
-                        snapshot.child(currentUserPhonenumber!!.filter { data ->
-                            true
-                        })
-                    }
-                }
-            }
-        })
-    }
-
 
     interface Listener {
         fun onLatestEventReceived(event: DataModel)
@@ -363,7 +354,7 @@ class FirebaseClient  @Inject constructor(
 
     data class registerContactKeys(val mcontact: String)
 
-    override fun onVideoCallClicked(username: String,user:ContactInfo) {
+    override fun onVideoCallClicked(username: String) {
     }
 
     override fun onAudioCallClicked(username: String) {

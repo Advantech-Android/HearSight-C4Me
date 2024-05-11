@@ -17,3 +17,6 @@ dependencyResolutionManagement {
 rootProject.name = "FirebaseVideoCall"
 include ':app'
 //include ':libuvccamera'
+include ':libuvc'
+include ':libnative'
+include ':libausbc'

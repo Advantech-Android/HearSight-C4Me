@@ -8,9 +8,7 @@ data class DataModel(
     val target:String,
     val type:DataModelType,
     val data:String?=null,
-    val timeStamp:Long = System.currentTimeMillis(),
-    val senderName:String = "",
-    val targetName:String =""
+    val timeStamp:Long = System.currentTimeMillis()
 )
 
 

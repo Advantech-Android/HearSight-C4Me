@@ -14,10 +14,8 @@ fun AppCompatActivity.getCameraAndMicPermission(success:()->Unit){
             if (allGranted){
                 success()
             } else{
-
                 Toast.makeText(this, "camera and mic permission is required", Toast.LENGTH_SHORT)
                     .show()
-
             }
         }
 }

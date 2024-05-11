@@ -2,9 +2,5 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/qr_codeid"
-        android:title="Wifi QR Code">
-
-    </item>
-    <item android:id="@+id/logOut"
-        android:title="Log out"></item>
+        android:title="Wifi QR Code"/>
 </menu>

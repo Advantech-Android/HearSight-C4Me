@@ -18,35 +18,22 @@ import javax.inject.Singleton
 
 private const val TAG = "xxx--->>>WebRTCClient"
 @Singleton
-class WebRTCClient @Inject constructor(
-    private val context: Context,
-    private val gson: Gson
-) {
-    private var isUvc = true;
+class WebRTCClient @Inject constructor(private val context: Context, private val gson: Gson) {
+    private var isUvc = true
     //class variables
-   lateinit var uvcCapturer:CameraVideoCapturer
+    lateinit var uvcCapturer:CameraVideoCapturer
     var listener: Listener? = null
     private lateinit var username: String
-
     private lateinit var usbCapturer: CameraVideoCapturer
     //webrtc variables
     private val eglBaseContext = EglBase.create().eglBaseContext
     private val peerConnectionFactory by lazy { createPeerConnectionFactory() }
     private var peerConnection: PeerConnection? = null
     private val iceServer = listOf(PeerConnection.IceServer.builder("turn:a.relay.metered.ca:443?transport=tcp").setUsername("83eebabf8b4cce9d5dbcb649").setPassword("2D7JvfkOQtBdYW3R").createIceServer(),
-        PeerConnection.IceServer("turn:openrelay.metered.ca:80",
-            "openrelayproject",
-            "openrelayproject"),
-        PeerConnection.IceServer(
-            "turn:openrelay.metered.ca:443",
-            "openrelayproject",
-            "openrelayproject"
-        ),
-        PeerConnection.IceServer.builder("stun:iphone-stun.strato-iphone.de:3478")
-            .setUsername("83eebabf8b4cce9d5dbcb612")
-            .setPassword("2D7JvfkOQtBdYW5t").createIceServer(),
-        PeerConnection.IceServer("stun:openrelay.metered.ca:80"),
-    )
+        PeerConnection.IceServer("turn:openrelay.metered.ca:80", "openrelayproject", "openrelayproject"),
+        PeerConnection.IceServer("turn:openrelay.metered.ca:443", "openrelayproject", "openrelayproject"),
+        PeerConnection.IceServer.builder("stun:iphone-stun.strato-iphone.de:3478").setUsername("83eebabf8b4cce9d5dbcb612").setPassword("2D7JvfkOQtBdYW5t").createIceServer(),
+        PeerConnection.IceServer("stun:openrelay.metered.ca:80"),)
 
     private val localVideoSource by lazy {
         if (isUvc)
@@ -70,20 +57,18 @@ class WebRTCClient @Inject constructor(
     private var localStreamId = ""
     private var localAudioTrack: AudioTrack? = null
     private var localVideoTrack: VideoTrack? = null
-
     //screen casting
     private var permissionIntent: Intent? = null
     private var screenCapturer: VideoCapturer? = null
     private val localScreenVideoSource by lazy { peerConnectionFactory.createVideoSource(false) }
     private var localScreenShareVideoTrack: VideoTrack? = null
-
     //installing requirements section
     init {
-       /* if (Build.BRAND.equals("samsung", true)){
-            isUvc=false
-        }else{
-            isUvc=true
-        }*/
+        /* if (Build.BRAND.equals("samsung", true)){
+             isUvc=false
+         }else{
+             isUvc=true
+         }*/
         initPeerConnectionFactory()
     }
 
@@ -108,9 +93,7 @@ class WebRTCClient @Inject constructor(
             }).createPeerConnectionFactory()
     }
 
-    fun initializeWebrtcClient(
-        username: String, observer: PeerConnection.Observer
-    ) {
+    fun initializeWebrtcClient(username: String, observer: PeerConnection.Observer) {
         this.username = username
         localTrackId = "${username}_track"
         localStreamId = "${username}_stream"
@@ -135,9 +118,7 @@ class WebRTCClient @Inject constructor(
                                 type = DataModelType.Offer,
                                 sender = username,
                                 target = target,
-                                data = desc?.description
-                            )
-                        )
+                                data = desc?.description))
                     }
                 }, desc)
             }
@@ -154,13 +135,7 @@ class WebRTCClient @Inject constructor(
                     override fun onSetSuccess() {
                         super.onSetSuccess()
                         listener?.onTransferEventToSocket(
-                            DataModel(
-                                type = DataModelType.Answer,
-                                sender = username,
-                                target = target,
-                                data = desc?.description
-                            )
-                        )
+                            DataModel(type = DataModelType.Answer, sender = username, target = target, data = desc?.description))
                     }
                 }, desc)
             }
@@ -280,7 +255,8 @@ class WebRTCClient @Inject constructor(
             Toast.makeText(context, "uvc support=${Camera2Enumerator.isSupported(context)}", Toast.LENGTH_SHORT).show()
             Log.d(TAG, "startCapturingCamera: ${Camera2Enumerator(context).deviceNames}")
 // create USBCapturer (USB Camera)
-            uvcCapturer = UvcCapturer(context, localView) as CameraVideoCapturer
+            // uvcCapturer = UvcCapturer(context, localView) as CameraVideoCapturer
+            uvcCapturer = UvcCapturerNew(context, localView) as CameraVideoCapturer
             var localVideoSource = peerConnectionFactory.createVideoSource(uvcCapturer.isScreencast)
             uvcCapturer.initialize(
                 surfaceTextureHelper,
@@ -313,7 +289,7 @@ class WebRTCClient @Inject constructor(
         if (isUvc) {
 
             // create USBCapturer (USB Camera)
-         null
+            null
         } else {
             Camera2Enumerator(context).run {
                 deviceNames.find {
@@ -355,9 +331,7 @@ class WebRTCClient @Inject constructor(
             surfaceTextureHelper, context, localScreenVideoSource.capturerObserver
         )
         screenCapturer!!.startCapture(screenWidthPixels, screenHeightPixels, 15)
-
         localScreenShareVideoTrack = peerConnectionFactory.createVideoTrack(localTrackId + "_video", localScreenVideoSource)
-
         localScreenShareVideoTrack?.addSink(localSurfaceView)
         localStream?.addTrack(localScreenShareVideoTrack)
         peerConnection?.addStream(localStream)

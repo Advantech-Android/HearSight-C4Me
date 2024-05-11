@@ -3,7 +3,8 @@ package com.codewithkael.firebasevideocall.service
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import com.codewithkael.firebasevideocall.utils.setViewFields
+import com.jiangdg.ausbc.MultiCameraClient
+import com.jiangdg.ausbc.callback.ICameraStateCallBack
 import javax.inject.Inject
 
 class MainServiceRepository @Inject constructor(
@@ -14,7 +15,7 @@ class MainServiceRepository @Inject constructor(
     fun startService(username:String,intentAction:String){
         Thread{
             val intent = Intent(context, MainService::class.java)
-            intent.putExtra(setViewFields.USER_NAME,username)
+            intent.putExtra("username",username)
             //intent.action = MainServiceActions.START_SERVICE.name
             intent.action = intentAction
             startServiceIntent(intent)
@@ -28,14 +29,19 @@ class MainServiceRepository @Inject constructor(
             context.startService(intent)
         }
     }
-    fun setupViews(videoCall: Boolean, caller: Boolean, target: String, callerName: String) {
+
+    fun setupViews(
+        videoCall: Boolean,
+        caller: Boolean,
+        target: String,
+
+    ) {
         val intent = Intent(context,MainService::class.java)
         intent.apply {
             action = MainServiceActions.SETUP_VIEWS.name
-            putExtra(setViewFields.IS_VIDEO_CALL,videoCall)
-            putExtra(setViewFields.TARGET,target)
-            putExtra(setViewFields.IS_CALLER,caller)
-            putExtra(setViewFields.CALLER_NAME,callerName)
+            putExtra("isVideoCall",videoCall)
+            putExtra("target",target)
+            putExtra("isCaller",caller)
         }
         startServiceIntent(intent)
     }
@@ -55,28 +61,28 @@ class MainServiceRepository @Inject constructor(
     fun toggleAudio(shouldBeMuted: Boolean) {
         val intent = Intent(context, MainService::class.java)
         intent.action = MainServiceActions.TOGGLE_AUDIO.name
-        intent.putExtra(setViewFields.SHOULD_BE_MUTED,shouldBeMuted)
+        intent.putExtra("shouldBeMuted",shouldBeMuted)
         startServiceIntent(intent)
     }
 
     fun toggleVideo(shouldBeMuted: Boolean) {
         val intent = Intent(context, MainService::class.java)
         intent.action = MainServiceActions.TOGGLE_VIDEO.name
-        intent.putExtra(setViewFields.SHOULD_BE_MUTED,shouldBeMuted)
+        intent.putExtra("shouldBeMuted",shouldBeMuted)
         startServiceIntent(intent)
     }
 
     fun toggleAudioDevice(type: String) {
         val intent = Intent(context, MainService::class.java)
         intent.action = MainServiceActions.TOGGLE_AUDIO_DEVICE.name
-        intent.putExtra(setViewFields.TYPE,type)
+        intent.putExtra("type",type)
         startServiceIntent(intent)
     }
 
     fun toggleScreenShare(isStarting: Boolean) {
         val intent = Intent(context,MainService::class.java)
         intent.action = MainServiceActions.TOGGLE_SCREEN_SHARE.name
-        intent.putExtra(setViewFields.IS_STARTING,isStarting)
+        intent.putExtra("isStarting",isStarting)
         startServiceIntent(intent)
     }
 

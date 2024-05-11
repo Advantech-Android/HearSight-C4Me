@@ -21,10 +21,7 @@ import android.widget.ListView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
-import com.codewithkael.firebasevideocall.utils.SnackBarUtils
-import com.google.android.material.snackbar.Snackbar
 import com.codewithkael.firebasevideocall.R
-import com.codewithkael.firebasevideocall.utils.WifiPassWordGeneratedField
 import com.google.android.material.textfield.TextInputEditText
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.MultiFormatWriter
@@ -38,7 +35,6 @@ class WifiPasswordGenerated(private val context: Context)
 {
 
 
-    private var wifiList: ListView? = null
     private var wifiManager: WifiManager? =null
     fun showQRDialog()
     {
@@ -59,8 +55,7 @@ class WifiPasswordGenerated(private val context: Context)
 
         wifiListShow(wifiListView,createBtn,wifieEditxt,wifiePassword,availableWifilistContainer,qrCodeGenerateContainer,mImage)
         refresh.setOnClickListener {
-
-            SnackBarUtils.showSnackBar(wifiListView, WifiPassWordGeneratedField.SCANNING)
+            Toast.makeText(context, "Scanning...", Toast.LENGTH_SHORT).show()
            wifiListShow(wifiListView, createBtn, wifieEditxt, wifiePassword, availableWifilistContainer, qrCodeGenerateContainer, mImage)
         }
 
@@ -76,7 +71,7 @@ class WifiPasswordGenerated(private val context: Context)
                         generateQRCodeBitmap(combinedData,mImage)
                 }
                 else{
-                    SnackBarUtils.showSnackBar(wifiListView,WifiPassWordGeneratedField.FILED_MIS)
+                    Toast.makeText(context, "Field missing", Toast.LENGTH_SHORT).show()
                 }
             }
 
@@ -161,12 +156,12 @@ class WifiPasswordGenerated(private val context: Context)
                                 val combinedData: String = wifieEditxt.text.toString()+"|"+mpassword
                                 generateQRCodeBitmap(combinedData,mImage)
                             }else{
-                                SnackBarUtils.showSnackBar(wifiListView,WifiPassWordGeneratedField.WIFI_PW_MIS)
+                                Toast.makeText(context, "Wifi password missing", Toast.LENGTH_SHORT).show()
                             }
 
                         }
                         else{
-                            SnackBarUtils.showSnackBar(wifiListView,WifiPassWordGeneratedField.WIFI_NAME_MIS)
+                            Toast.makeText(context, "Wifi name missing", Toast.LENGTH_SHORT).show()
                         }
                     }
                 }
@@ -212,11 +207,11 @@ class WifiPasswordGenerated(private val context: Context)
                            val combinedData: String = wifieEditxt.text.toString()+"|"+mpassword
                            generateQRCodeBitmap(combinedData,mImage)
                        }else{
-                           SnackBarUtils.showSnackBar(wifiListView,WifiPassWordGeneratedField.WIFI_PW_MIS)
+                           Toast.makeText(context, "Wifi password missing", Toast.LENGTH_SHORT).show()
                        }
                    }
                    else{
-                       SnackBarUtils.showSnackBar(wifiListView,WifiPassWordGeneratedField.WIFI_NAME_MIS)
+                       Toast.makeText(context, "Wifi name missing", Toast.LENGTH_SHORT).show()
                    }
                }
            }
