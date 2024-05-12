@@ -1,6 +1,7 @@
 package com.codewithkael.firebasevideocall.QRCode
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.ActionBar
 import android.app.Activity
 import android.app.Dialog
@@ -119,6 +120,7 @@ class WifiPasswordGenerated(private val context: Context)
 
 
 
+    @SuppressLint("MissingPermission")
     private fun scanSuccess(
         wifiListView: ListView,
         createBtn: Button,
@@ -173,6 +175,7 @@ class WifiPasswordGenerated(private val context: Context)
 
 
 
+    @SuppressLint("MissingPermission")
     private fun scanFailure(
         wifiListView: ListView,
         createBtn: Button,

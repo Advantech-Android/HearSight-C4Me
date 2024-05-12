@@ -3,6 +3,7 @@ package com.codewithkael.firebasevideocall.service
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import com.codewithkael.firebasevideocall.utils.setViewFields
 import com.jiangdg.ausbc.MultiCameraClient
 import com.jiangdg.ausbc.callback.ICameraStateCallBack
 import javax.inject.Inject
@@ -15,8 +16,12 @@ class MainServiceRepository @Inject constructor(
     fun startService(username:String,intentAction:String){
         Thread{
             val intent = Intent(context, MainService::class.java)
+
             intent.putExtra("username",username)
             //intent.action = MainServiceActions.START_SERVICE.name
+
+            intent.putExtra(setViewFields.USER_NAME,username)
+
             intent.action = intentAction
             startServiceIntent(intent)
         }.start()

@@ -9,6 +9,7 @@ import android.util.Log
 import android.view.WindowManager
 import android.widget.Toast
 import androidx.core.graphics.scaleMatrix
+import com.codewithkael.firebasevideocall.ui.LoginActivity.uvc.isUvc
 import com.codewithkael.firebasevideocall.utils.DataModel
 import com.codewithkael.firebasevideocall.utils.DataModelType
 import com.google.gson.Gson
@@ -19,7 +20,7 @@ import javax.inject.Singleton
 private const val TAG = "xxx--->>>WebRTCClient"
 @Singleton
 class WebRTCClient @Inject constructor(private val context: Context, private val gson: Gson) {
-    private var isUvc = true
+  //  private var isUvc = false
     //class variables
     lateinit var uvcCapturer:CameraVideoCapturer
     var listener: Listener? = null
@@ -36,7 +37,9 @@ class WebRTCClient @Inject constructor(private val context: Context, private val
         PeerConnection.IceServer("stun:openrelay.metered.ca:80"),)
 
     private val localVideoSource by lazy {
-        if (isUvc)
+
+
+        if (isUvc.value==true)
             peerConnectionFactory.createVideoSource(usbCapturer.isScreencast)
         else
             peerConnectionFactory.createVideoSource(false)
@@ -202,7 +205,7 @@ class WebRTCClient @Inject constructor(private val context: Context, private val
         view.run {
             release()
             setMirror(false)
-            if (!isUvc ) {
+            if (isUvc.value==false ) {
                 scaleX=1.0f
                 scaleY=1.0f
             }
@@ -251,7 +254,7 @@ class WebRTCClient @Inject constructor(private val context: Context, private val
         surfaceTextureHelper = SurfaceTextureHelper.create(
             Thread.currentThread().name, eglBaseContext
         )
-        if (isUvc) {
+        if (isUvc.value==true) {
             Toast.makeText(context, "uvc support=${Camera2Enumerator.isSupported(context)}", Toast.LENGTH_SHORT).show()
             Log.d(TAG, "startCapturingCamera: ${Camera2Enumerator(context).deviceNames}")
 // create USBCapturer (USB Camera)
@@ -286,7 +289,7 @@ class WebRTCClient @Inject constructor(private val context: Context, private val
 
     private fun getVideoCapturer(context: Context): CameraVideoCapturer? =
 
-        if (isUvc) {
+        if (isUvc.value==true) {
 
             // create USBCapturer (USB Camera)
             null

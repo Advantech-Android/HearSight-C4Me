@@ -32,24 +32,28 @@ class MainRepository @Inject constructor(
         firebaseClient.login(username, phonenumber, isDone)
     }
 
+    fun getUserNameFB(phone:String,result:(String?)->Unit){
+        firebaseClient.getUserNameFB(phone,result)
+    }
     fun addContacts(username: String, phone: String, isDone: (Boolean, String?) -> Unit) {
         firebaseClient.addContacts(username, phone, isDone)
     }
 
 
-    fun observeUsersStatus(contactInfoList: (List<ContactInfo>) -> Unit,commonContactInfoList: (List<ContactInfo>) -> Unit) {
-        firebaseClient.observeContactDetails(contactInfoList,commonContactInfoList)
+    suspend fun observeUsersStatus(contactInfoList: (List<ContactInfo>) -> Unit,commonContactInfoList: (List<ContactInfo>) -> Unit,noAccountContactInfoList: (List<ContactInfo>) -> Unit) {
+        firebaseClient.observeContactDetails(contactInfoList,commonContactInfoList,noAccountContactInfoList)
     }
 
     fun onObserveEndCall(data: (DataModel,String)->Unit){
         firebaseClient.getEndCallEvent(data)
     }
-    public fun getUserName(): String {
-        return firebaseClient.getUserName()
-    }
+
 
     public fun getUserPhone(): String {
         return firebaseClient.getUserPhone()
+    }
+    public fun setUsernameAndPhone(username: String, phonenumber: String){
+        firebaseClient.setUsername(username, phonenumber)
     }
 
     fun initFirebase() {

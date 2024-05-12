@@ -13,6 +13,7 @@ import android.view.WindowManager
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
+
 import com.codewithkael.firebasevideocall.R
 import com.google.firebase.FirebaseException
 import com.google.firebase.auth.FirebaseAuth
@@ -32,9 +33,10 @@ class OTPScreen(private val context: Context) {
     private lateinit var verificationId:String
     private lateinit var smsCode:String
 
-    fun getOTP(phoneNumber: String, result: (Boolean, String) -> Unit) {
-        resultCallback = result
-        otpPhoneNumber = phoneNumber
+
+    fun getOTP(phoneNumber: String)
+    {
+
         val otpDialog = Dialog(context)
         otpDialog.setContentView(R.layout.otp_verify_layout)
         otpDialog.window?.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.WRAP_CONTENT)

@@ -22,7 +22,7 @@ class Mp3Ring @Inject constructor(private val context:Context)
     fun startMP3(isIncoming: Boolean) {
         val mp3Resource = if (isIncoming) mp3ResourceIncoming else mp3ResourceOutgoing
     if(mediaPlayer==null)  mediaPlayer = MediaPlayer.create(context, mp3Resource)
-       //mediaPlayer?.setDataSource(path)
+
         mediaPlayer?.start()
 
 
@@ -33,7 +33,5 @@ class Mp3Ring @Inject constructor(private val context:Context)
         mediaPlayer?.release()
         mediaPlayer = null
     }
-    fun isRunning():Boolean?
-       = mediaPlayer?.isPlaying
 
 }

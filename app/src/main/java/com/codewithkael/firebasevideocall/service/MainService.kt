@@ -28,6 +28,7 @@ class MainService : Service(), MainRepository.Listener {
 
     private var isServiceRunning = false
     private var username: String? = null
+    private var userphone: String? = null
 
     @Inject
     lateinit var mainRepository: MainRepository
@@ -39,10 +40,10 @@ class MainService : Service(), MainRepository.Listener {
 
     companion object {
         var listener: Listener? = null
-        var endCallListener:EndCallListener?=null
-        var localSurfaceView: SurfaceViewRenderer?=null
-        var remoteSurfaceView: SurfaceViewRenderer?=null
-        var screenPermissionIntent : Intent?=null
+        var endCallListener: EndCallListener? = null
+        var localSurfaceView: SurfaceViewRenderer? = null
+        var remoteSurfaceView: SurfaceViewRenderer? = null
+        var screenPermissionIntent: Intent? = null
     }
 
     override fun onCreate() {
@@ -74,18 +75,19 @@ class MainService : Service(), MainRepository.Listener {
     }
 
 
-    fun handleStartWifiScan()
-    {
+    fun handleStartWifiScan() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val notificationChannel = NotificationChannel("channel2", "foreground1", NotificationManager.IMPORTANCE_HIGH)
-            val intent = Intent(this,MainServiceReceiver::class.java).apply {
+            val notificationChannel =
+                NotificationChannel("channel2", "foreground1", NotificationManager.IMPORTANCE_HIGH)
+            val intent = Intent(this, MainServiceReceiver::class.java).apply {
                 action = "ACTION_WIFI_SCAN"
             }
-            val pendingIntent : PendingIntent = PendingIntent.getBroadcast(this,0 ,intent,PendingIntent.FLAG_IMMUTABLE)
+            val pendingIntent: PendingIntent =
+                PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_IMMUTABLE)
             notificationManager.createNotificationChannel(notificationChannel)
             val notification = NotificationCompat.Builder(this, "channel2")
                 .setSmallIcon(R.mipmap.ic_launcher)
-                .addAction(R.drawable.baseline_wifi_24,"Wifi",pendingIntent)
+                .addAction(R.drawable.baseline_wifi_24, "Wifi", pendingIntent)
             startForeground(1, notification.build())
         }
     }
@@ -100,20 +102,20 @@ class MainService : Service(), MainRepository.Listener {
 
 
     private fun handleToggleScreenShare(incomingIntent: Intent) {
-        val isStarting = incomingIntent.getBooleanExtra("isStarting",true)
-        if (isStarting){
+        val isStarting = incomingIntent.getBooleanExtra("isStarting", true)
+        if (isStarting) {
             // we should start screen share
             //but we have to keep it in mind that we first should remove the camera streaming first
-            if (isPreviousCallStateVideo){
+            if (isPreviousCallStateVideo) {
                 mainRepository.toggleVideo(true)
             }
             mainRepository.setScreenCaptureIntent(screenPermissionIntent!!)
             mainRepository.toggleScreenShare(true)
 
-        }else{
+        } else {
             //we should stop screen share and check if camera streaming was on so we should make it on back again
             mainRepository.toggleScreenShare(false)
-            if (isPreviousCallStateVideo){
+            if (isPreviousCallStateVideo) {
                 mainRepository.toggleVideo(false)
             }
         }
@@ -121,7 +123,7 @@ class MainService : Service(), MainRepository.Listener {
 
 
     private fun handleToggleAudioDevice(incomingIntent: Intent) {
-        val type = when(incomingIntent.getStringExtra("type")){
+        val type = when (incomingIntent.getStringExtra("type")) {
             RTCAudioManager.AudioDevice.EARPIECE.name -> RTCAudioManager.AudioDevice.EARPIECE
             RTCAudioManager.AudioDevice.SPEAKER_PHONE.name -> RTCAudioManager.AudioDevice.SPEAKER_PHONE
             else -> null
@@ -137,13 +139,13 @@ class MainService : Service(), MainRepository.Listener {
     }
 
     private fun handleToggleVideo(incomingIntent: Intent) {
-        val shouldBeMuted = incomingIntent.getBooleanExtra("shouldBeMuted",true)
+        val shouldBeMuted = incomingIntent.getBooleanExtra("shouldBeMuted", true)
         this.isPreviousCallStateVideo = !shouldBeMuted
         mainRepository.toggleVideo(shouldBeMuted)
     }
 
     private fun handleToggleAudio(incomingIntent: Intent) {
-        val shouldBeMuted = incomingIntent.getBooleanExtra("shouldBeMuted",true)
+        val shouldBeMuted = incomingIntent.getBooleanExtra("shouldBeMuted", true)
         mainRepository.toggleAudio(shouldBeMuted)
     }
 
@@ -158,25 +160,25 @@ class MainService : Service(), MainRepository.Listener {
         endCallAndRestartRepository()
     }
 
-    private fun endCallAndRestartRepository(){
+    private fun endCallAndRestartRepository() {
         mainRepository.endCall()
         endCallListener?.onCallEnded()
         mainRepository.initWebrtcClient(username!!)
     }
 
     private fun handleSetupViews(incomingIntent: Intent) {
-        val isCaller = incomingIntent.getBooleanExtra("isCaller",false)
-        val isVideoCall = incomingIntent.getBooleanExtra("isVideoCall",true)
+        val isCaller = incomingIntent.getBooleanExtra("isCaller", false)
+        val isVideoCall = incomingIntent.getBooleanExtra("isVideoCall", true)
         val target = incomingIntent.getStringExtra("target")
         this.isPreviousCallStateVideo = isVideoCall
         mainRepository.setTarget(target!!)
         //initialize our widgets and start streaming our video and audio source
         //and get prepared for call
-        mainRepository.initLocalSurfaceView(localSurfaceView!!,isVideoCall)
+        mainRepository.initLocalSurfaceView(localSurfaceView!!, isVideoCall)
         mainRepository.initRemoteSurfaceView(remoteSurfaceView!!)
 
 
-        if (!isCaller){
+        if (!isCaller) {
             //start the video call
             mainRepository.startCall()
         }
@@ -188,10 +190,13 @@ class MainService : Service(), MainRepository.Listener {
         if (!isServiceRunning) {
             isServiceRunning = true
             username = incomingIntent.getStringExtra("username")
+            userphone = incomingIntent.getStringExtra("userphone")
             startServiceWithNotification()
 
             //setup my clients
             mainRepository.listener = this
+            if (username != null && userphone != null)
+                mainRepository.setUsernameAndPhone(username!!, userphone!!)
             mainRepository.initFirebase()
             mainRepository.initWebrtcClient(username!!)
 
@@ -204,16 +209,17 @@ class MainService : Service(), MainRepository.Listener {
                 "channel1", "foreground", NotificationManager.IMPORTANCE_HIGH
             )
 
-            val intent = Intent(this,MainServiceReceiver::class.java).apply {
+            val intent = Intent(this, MainServiceReceiver::class.java).apply {
                 action = "ACTION_EXIT"
             }
-            val pendingIntent : PendingIntent =
-                PendingIntent.getBroadcast(this,0 ,intent,PendingIntent.FLAG_IMMUTABLE)
+            val pendingIntent: PendingIntent =
+                PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_IMMUTABLE)
 
             notificationManager.createNotificationChannel(notificationChannel)
             val notification = NotificationCompat.Builder(
-                this, "channel1").setSmallIcon(R.mipmap.ic_launcher)
-                .addAction(R.drawable.ic_end_call,"Exit",pendingIntent)
+                this, "channel1"
+            ).setSmallIcon(R.mipmap.ic_launcher)
+                .addAction(R.drawable.ic_end_call, "Exit", pendingIntent)
 
             startForeground(1, notification.build())
 
@@ -230,8 +236,9 @@ class MainService : Service(), MainRepository.Listener {
             when (data.type) {
                 DataModelType.StartVideoCall,
                 DataModelType.StartAudioCall -> {
-                        listener?.onCallReceived(data)
+                    listener?.onCallReceived(data)
                 }
+
                 else -> Unit
             }
         }

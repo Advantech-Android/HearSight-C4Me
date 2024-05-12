@@ -1,9 +1,11 @@
 package com.codewithkael.firebasevideocall.ui
 
+
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.media.projection.MediaProjectionManager
+
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -15,12 +17,15 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+
 import androidx.core.view.isVisible
 import com.codewithkael.firebasevideocall.R
+import com.codewithkael.firebasevideocall.adapters.MainRecyclerViewAdapter
 import com.codewithkael.firebasevideocall.databinding.ActivityCallBinding
 import com.codewithkael.firebasevideocall.repository.MainRepository
 import com.codewithkael.firebasevideocall.service.MainService
 import com.codewithkael.firebasevideocall.service.MainServiceRepository
+
 import com.codewithkael.firebasevideocall.utils.convertToHumanTime
 import com.codewithkael.firebasevideocall.webrtc.RTCAudioManager
 import com.codewithkael.firebasevideocall.webrtc.UvcCapturerNew
@@ -39,14 +44,18 @@ import javax.inject.Inject
 
 
 @AndroidEntryPoint
-class CallActivity : CameraActivity(), MainService.EndCallListener , ICameraStateCallBack{
-    private val TAG = "xxxCallActivity"
+
+
+class CallActivity : CameraActivity(), MainService.EndCallListener {
+
+    private val handler: Handler = Handler(Looper.getMainLooper())
+    private val TAG = "###CallActivity"
     private var timer = false
     private var target: String? = null
     private var isIncoming: String? = ""
+    private var callerName: String? = ""
     private var isVideoCall: Boolean = true
     private var isCaller: Boolean = true
-
     private var isMicrophoneMuted = false
     private var isCameraMuted = false
     private var isSpeakerMode = true
@@ -63,10 +72,9 @@ class CallActivity : CameraActivity(), MainService.EndCallListener , ICameraStat
     private lateinit var requestScreenCaptureLauncher: ActivityResultLauncher<Intent>
 
     private lateinit var views: ActivityCallBinding
-var handler=Handler(Looper.getMainLooper())
+
     override fun onStart() {
         super.onStart()
-
         requestScreenCaptureLauncher = registerForActivityResult(
             ActivityResultContracts
                 .StartActivityForResult()
@@ -84,17 +92,16 @@ var handler=Handler(Looper.getMainLooper())
     }
 
 
-
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         views = ActivityCallBinding.inflate(layoutInflater)
         setContentView(views.root)
         init()
     }
-val runnable={
-    views.progressBar.isVisible=false
-}
+
+    val runnable = {
+        views.progressBar.isVisible = false
+    }
 
     private fun init() {
         intent.getStringExtra("target")?.let {
@@ -168,9 +175,9 @@ val runnable={
 //                    }
                 mp3Player.stopMP3()
                 startCallTimer()
-            }else if (status==""){
-                handler.postDelayed(runnable,3000)
-                views.progressBar.isVisible=true
+            } else if (status == "") {
+                handler.postDelayed(runnable, 3000)
+                views.progressBar.isVisible = true
             }
         }
 
@@ -327,6 +334,7 @@ val runnable={
 
     override fun onDestroy() {
         super.onDestroy()
+
         handler.removeCallbacks(runnable)
         MainService.remoteSurfaceView?.release()
         MainService.remoteSurfaceView = null
@@ -341,12 +349,13 @@ val runnable={
         setContentView(views.root)
         return views.root
     }
+
     override fun getCameraView(): IAspectRatio? {
-      return null
+        return null
     }
 
     override fun getCameraViewContainer(): ViewGroup? {
-       return views.root
+        return views.root
     }
 
 
@@ -356,29 +365,37 @@ val runnable={
         msg: String?
     ) {
         Log.d(TAG, "onCameraState: preview-2")
-        uvcPreview?.onUVCPreview(self,code,msg,"call_activity")
+        uvcPreview?.onUVCPreview(self, code, msg, "call_activity")
 
-      /*  self.addPreviewDataCallBack(object :IPreviewDataCallBack{
-            override fun onPreviewData(
-                data: ByteArray?,
-                width: Int,
-                height: Int,
-                format: IPreviewDataCallBack.DataFormat
-            ) {
-                Log.d(TAG, "onPreviewData() called with: data = $data, width = $width, height = $height, format = $format")
+        /*  self.addPreviewDataCallBack(object :IPreviewDataCallBack{
+              override fun onPreviewData(
+                  data: ByteArray?,
+                  width: Int,
+                  height: Int,
+                  format: IPreviewDataCallBack.DataFormat
+              ) {
+                  Log.d(TAG, "onPreviewData() called with: data = $data, width = $width, height = $height, format = $format")
 
-            }
+              }
 
-        })*/
+          })*/
 
     }
+
     companion object {
-        var uvcPreview:UVCPreview?=null
+        var uvcPreview: UVCPreview? = null
 
     }
+
     interface UVCPreview {
-        fun onUVCPreview(iCamera: MultiCameraClient.ICamera, state: ICameraStateCallBack.State, s: String?,callFrom:String)
-   fun onCallEnd(msg:String)
+        fun onUVCPreview(
+            iCamera: MultiCameraClient.ICamera,
+            state: ICameraStateCallBack.State,
+            s: String?,
+            callFrom: String
+        )
+
+        fun onCallEnd(msg: String)
     }
 
 }

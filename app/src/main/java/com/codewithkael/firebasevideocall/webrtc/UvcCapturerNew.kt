@@ -115,12 +115,7 @@ fun createUVCInstance(){
                         if (uvcCamera == null) {
                             uvcCamera = CameraUVC(context, device)
                             uvcCamera?.setAutoFocus(true)
-                            uvcCamera?.setZoom(-1)
-                            uvcCamera?.setGain(0)
-                            uvcCamera?.setBrightness(2)
-                            uvcCamera?.setContrast(2)
-                            uvcCamera?.setAutoWhiteBalance(true)
-                            uvcCamera?.setSharpness(0)
+
                         }
                         if (!isDetach) {
                             isDetach=true
@@ -215,7 +210,7 @@ fun createUVCInstance(){
     }
 
     private val cameraRequest: CameraRequest
-        private get() = CameraRequest.Builder()
+        get() = CameraRequest.Builder()
             .setFrontCamera(true)
             .setAspectRatioShow(true)
             .setRenderMode(CameraRequest.RenderMode.OPENGL)
@@ -254,7 +249,7 @@ fun createUVCInstance(){
         self = iCamera
         code = state
         msg = s
-        Log.d(TAG, "onUVCPreview: $isExecute")
+        Log.d(TAG, "onUVCPreview: isExecute=>$isExecute ,isDetach=$isDetach")
 
         if (!isExecute) {
             isExecute = true
