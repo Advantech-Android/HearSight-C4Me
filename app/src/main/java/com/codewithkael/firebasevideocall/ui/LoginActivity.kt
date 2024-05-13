@@ -1,7 +1,10 @@
 package com.codewithkael.firebasevideocall.ui
 
+import WebQ
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.net.wifi.WifiManager
 import android.os.Build
@@ -17,16 +20,21 @@ import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import android.os.Handler
 import android.os.Looper
+import android.telecom.TelecomManager
+import android.telephony.TelephonyManager
 import android.text.Editable
 import android.text.InputFilter
 import android.text.TextWatcher
 import android.widget.Toast
+import androidx.core.app.ActivityCompat
 
 
 import androidx.lifecycle.MutableLiveData
+
 import com.codewithkael.firebasevideocall.utils.LoginActivityFields
 import com.codewithkael.firebasevideocall.utils.LoginActivityFields.BOTH_USERNAME_PW
 import com.codewithkael.firebasevideocall.utils.LoginActivityFields.PASWORD_INVALID
+import com.codewithkael.firebasevideocall.utils.MySMSBroadcastReceiver
 import com.codewithkael.firebasevideocall.utils.ProgressBarUtil
 import com.codewithkael.firebasevideocall.utils.SnackBarUtils
 
@@ -45,16 +53,30 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var views: ActivityLoginBinding
     @Inject
     lateinit var mainRepository: MainRepository
-
+    lateinit var webQ: WebQ
     lateinit var wifiManager: WifiManager
-
+    lateinit var sharedPref: SharedPreferences
+    lateinit var shEdit:SharedPreferences.Editor
     @Inject
     lateinit var mainServiceRepository: MainServiceRepository
+    var mySMSBroadcastReceiver: MySMSBroadcastReceiver = MySMSBroadcastReceiver()
+    companion object{
+        var sms_otp=""
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         views = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(views.root)
+
+        sharedPref = this.getSharedPreferences("save_login", MODE_PRIVATE)
+        shEdit=sharedPref.edit()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            registerReceiver(
+                mySMSBroadcastReceiver, IntentFilter("com.google.android.gms.auth.api.phone.SMS_RETRIEVED"), RECEIVER_VISIBLE_TO_INSTANT_APPS
+            )
+        }
+
         wifiManager = applicationContext.getSystemService(
             Context.WIFI_SERVICE) as WifiManager
         init()
@@ -144,7 +166,6 @@ class LoginActivity : AppCompatActivity() {
 
 
     private fun handleButtonClick() {
-
         views.apply {
             btn.isEnabled = true
             btn.setOnClickListener {
@@ -154,11 +175,11 @@ class LoginActivity : AppCompatActivity() {
                 val passwordText = passwordEt.text.toString().trim()
 
                 if (usernameText.isEmpty()) {
-                    SnackBarUtils.showSnackBar(views.root, LoginActivityFields.BOTH_USERNAME_PW)
+                    SnackBarUtils.showSnackBar(views.root, BOTH_USERNAME_PW)
                     return@setOnClickListener
                 }
                 if (passwordText.toString().length<10||passwordText.isEmpty()) {
-                    SnackBarUtils.showSnackBar(views.root, LoginActivityFields.PASWORD_INVALID)
+                    SnackBarUtils.showSnackBar(views.root, PASWORD_INVALID)
                     return@setOnClickListener
                 }
 
@@ -218,6 +239,7 @@ class LoginActivity : AppCompatActivity() {
                     startActivity(Intent(this@LoginActivity, MainActivity::class.java).apply {
                         putExtra("username", usernameText)
                     })
+
                 }
             }
         }
