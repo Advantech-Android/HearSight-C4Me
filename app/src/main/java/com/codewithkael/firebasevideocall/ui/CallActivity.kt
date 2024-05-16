@@ -71,7 +71,7 @@ class CallActivity : CameraActivity(), MainService.EndCallListener {
     lateinit var serviceRepository: MainServiceRepository
     private lateinit var requestScreenCaptureLauncher: ActivityResultLauncher<Intent>
 
-    private lateinit var views: ActivityCallBinding
+    private var views: ActivityCallBinding?=null
 
     override fun onStart() {
         super.onStart()
@@ -95,12 +95,12 @@ class CallActivity : CameraActivity(), MainService.EndCallListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         views = ActivityCallBinding.inflate(layoutInflater)
-        setContentView(views.root)
+        setContentView(views?.root)
         init()
     }
 
     val runnable = {
-        views.progressBar.isVisible = false
+        views?.progressBar?.isVisible = false
     }
 
     private fun init() {
@@ -115,7 +115,7 @@ class CallActivity : CameraActivity(), MainService.EndCallListener {
         isIncoming = intent.getStringExtra("isIncoming").toString()
         timer = intent.getBooleanExtra("timer", false)
         Log.d(TAG, "init: isIncoming=$isIncoming")
-        views.apply {
+        views?.apply {
             callTitleTv.text = "In call with $target"
             if (!isCaller) startCallTimer()
 
@@ -177,7 +177,7 @@ class CallActivity : CameraActivity(), MainService.EndCallListener {
                 startCallTimer()
             } else if (status == "") {
                 handler.postDelayed(runnable, 3000)
-                views.progressBar.isVisible = true
+                views?.progressBar?.isVisible = true
             }
         }
 
@@ -197,14 +197,14 @@ class CallActivity : CameraActivity(), MainService.EndCallListener {
                 delay(1000)
                 withContext(Dispatchers.Main) {
                     //convert this int to human readable time
-                    views.callTimerTv.text = i.convertToHumanTime()
+                    views?.callTimerTv?.text = i.convertToHumanTime()
                 }
             }
         }
     }
 
     private fun setupScreenCasting() {
-        views.apply {
+        views?.apply {
             screenShareButton.setOnClickListener {
                 if (!isScreenCasting) {
                     //we have to start casting
@@ -241,7 +241,7 @@ class CallActivity : CameraActivity(), MainService.EndCallListener {
     }
 
     private fun updateUiToScreenCaptureIsOn() {
-        views.apply {
+        views?.apply {
             localView.isVisible = false
             switchCameraButton.isVisible = false
             toggleCameraButton.isVisible = false
@@ -251,7 +251,7 @@ class CallActivity : CameraActivity(), MainService.EndCallListener {
     }
 
     private fun updateUiToScreenCaptureIsOff() {
-        views.apply {
+        views?.apply {
             localView.isVisible = true
             switchCameraButton.isVisible = true
             toggleCameraButton.isVisible = true
@@ -260,7 +260,7 @@ class CallActivity : CameraActivity(), MainService.EndCallListener {
     }
 
     private fun setupMicToggleClicked() {
-        views.apply {
+        views?.apply {
             toggleMicrophoneButton.setOnClickListener {
                 if (!isMicrophoneMuted) {
                     //we should mute our mic
@@ -290,7 +290,7 @@ class CallActivity : CameraActivity(), MainService.EndCallListener {
 
 
     private fun setupToggleAudioDevice() {
-        views.apply {
+        views?.apply {
             toggleAudioDevice.setOnClickListener {
                 if (isSpeakerMode) {
                     Log.d("ic_speaker", "setupToggleAudioDevice: $isSpeakerMode")
@@ -313,7 +313,7 @@ class CallActivity : CameraActivity(), MainService.EndCallListener {
     }
 
     private fun setupCameraToggleClicked() {
-        views.apply {
+        views?.apply {
             toggleCameraButton.setOnClickListener {
                 if (!isCameraMuted) {
                     serviceRepository.toggleVideo(true)
@@ -340,14 +340,16 @@ class CallActivity : CameraActivity(), MainService.EndCallListener {
         MainService.remoteSurfaceView = null
         MainService.localSurfaceView?.release()
         MainService.localSurfaceView = null
+        mp3Player.stopMP3()
 //        serviceRepository.sendEndCall()
+        views=null
 
     }
 
     override fun getRootView(layoutInflater: LayoutInflater): View? {
         views = ActivityCallBinding.inflate(layoutInflater)
-        setContentView(views.root)
-        return views.root
+        setContentView(views?.root)
+        return views?.root
     }
 
     override fun getCameraView(): IAspectRatio? {
@@ -355,7 +357,7 @@ class CallActivity : CameraActivity(), MainService.EndCallListener {
     }
 
     override fun getCameraViewContainer(): ViewGroup? {
-        return views.root
+        return views?.root
     }
 
 

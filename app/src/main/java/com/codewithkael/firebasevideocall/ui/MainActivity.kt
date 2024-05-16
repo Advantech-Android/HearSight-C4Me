@@ -12,7 +12,6 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.ContactsContract
 import android.provider.Settings
-import android.text.TextWatcher
 import com.codewithkael.firebasevideocall.utils.SnackBarUtils
 import android.util.Log
 import android.view.Menu
@@ -30,7 +29,6 @@ import androidx.appcompat.view.ContextThemeWrapper
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.appcompat.widget.SearchView
-import androidx.cardview.widget.CardView
 
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -49,14 +47,12 @@ import com.codewithkael.firebasevideocall.utils.DataModel
 import com.codewithkael.firebasevideocall.utils.DataModelType
 
 import com.codewithkael.firebasevideocall.utils.getCameraAndMicPermission
-import com.google.android.material.textfield.TextInputEditText
 import com.codewithkael.firebasevideocall.utils.LoginActivityFields
 import com.codewithkael.firebasevideocall.utils.MainActivityFields
 
 import com.codewithkael.firebasevideocall.utils.PickContactContract
 import com.codewithkael.firebasevideocall.utils.setViewFields
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.runBlocking
 
 import javax.inject.Inject
@@ -71,11 +67,11 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
     private var recentContactPhone: String = ""
     private lateinit var contactBind: AddcontactsBinding
 
-
+private val MAX_LENGTH_PHONE=5
     private lateinit var mDialog: Dialog
     private val TAG = "***>>MainActivity"
 
-    private lateinit var views: ActivityMainBinding
+    private var views: ActivityMainBinding? = null
     private var username: String? = null
     private var userphone: String? = null
 
@@ -100,7 +96,7 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         views = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(views.root)
+        setContentView(views?.root)
         wifiManager = getSystemService(Context.WIFI_SERVICE) as WifiManager
         runBlocking { init() }
         searchQuery()
@@ -141,7 +137,7 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
         username = intent.getStringExtra(setViewFields.USER_NAME)
         userphone = intent.getStringExtra(setViewFields.USER_PHONE)
         if (username == null) finish()
-        views.addContact.setOnClickListener {
+        views?.addContact?.setOnClickListener {
             addContacts()
         }
         //1. observe other users status
@@ -151,18 +147,18 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
     }
 
     private fun searchQuery() {
-        views.searchView.queryHint = "Search Contacts"
+        views?.searchView?.queryHint = "Search Contacts"
 
         // Find the EditText inside the SearchView
-        val searchEditText = views.searchView.findViewById<EditText>(
+        val searchEditText = views?.searchView?.findViewById<EditText>(
             androidx.appcompat.R.id.search_src_text
         )
 
         // Set the text size of the query hint
-        searchEditText.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 15f)
+        searchEditText?.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 15f)
 
 
-        views.searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+        views?.searchView?.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {
                 return false
             }
@@ -223,11 +219,11 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
                 phoneNumber = "+91$phoneNumber"
             }
             if (name.isEmpty()) {
-                SnackBarUtils.showSnackBar(views.root, LoginActivityFields.USERNAME_INVALID)
+                SnackBarUtils.showSnackBar(views!!.root, LoginActivityFields.USERNAME_INVALID)
                 return@setOnClickListener
             }
-            if (phoneNumber.length < 13 || phoneNumber.isEmpty()) {
-                SnackBarUtils.showSnackBar(views.root, LoginActivityFields.PASWORD_INVALID)
+            if (phoneNumber.length < MAX_LENGTH_PHONE || phoneNumber.isEmpty()) {
+                SnackBarUtils.showSnackBar(views!!.root, LoginActivityFields.PASWORD_INVALID)
                 return@setOnClickListener
             }
             recentContactPhone = phoneNumber
@@ -263,34 +259,52 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
     private suspend fun subscribeObservers() {
         setupRecyclerView()
         MainService.listener = this
-        var outerList: List<ContactInfo>? = null
-        mainRepository.observeUsersStatus({ userList ->
-            outerList = userList
+        var allContact: List<ContactInfo>? = null
+        var registerCommonList: List<ContactInfo>? = null
+        var unregisterList: List<ContactInfo>? = null
+        mainRepository.observeUsersStatus(this,
+            { registerContact ->
+                Log.d(TAG, "All_Contacts: ${registerContact.filter {
+                    it.userName
+                    false
+                }}")
+                allContact = registerContact
+            },
+            { onlineContactList ->
+                if (onlineContactList.isEmpty()) {
+                    Log.d(TAG, "Available Contact: ${onlineContactList.filter { 
+                        it.userName
+                        false
+                    }}")
+                    views?.noContactTV?.visibility = View.VISIBLE
+                    //mainAdapter!!.updateList(allContact ?: emptyList(), emptyList())
+                } else {
+                    views?.noContactTV?.visibility = View.GONE
+                   // mainAdapter!!.updateList(allContact ?: emptyList(), onlineContactList!!)
+                    registerCommonList = onlineContactList
+                }
+            }
+        ) { newContact ->
+            Log.d(TAG, "subscribeObservers: ${newContact.size}")
 
-        }, { userList1 ->
 
-            if (userList1.isEmpty()) {
-                views.noContactTV.visibility = View.VISIBLE
-                mainAdapter!!.updateList(outerList ?: emptyList(), emptyList())
+            if (newContact.isEmpty()) {
+                views?.noContactTV?.visibility = View.VISIBLE
+                //mainAdapter!!.updateList(allContact ?: emptyList(), emptyList())
             } else {
-                views.noContactTV.visibility = View.GONE
-                mainAdapter!!.updateList(outerList ?: emptyList(), userList1)
+                views?.noContactTV?.visibility = View.GONE
+                mainAdapter!!.updateList(allContact ?: emptyList(), newContact!!)
             }
-        }, { addContact ->
-            val result = addContact.filter {
-                Log.d(
-                    TAG,
-                    "subscribeObservers: addContactFirePh=${it.contactNumber} : recentContactPhone =$recentContactPhone"
-                )
-                it.contactNumber == recentContactPhone
-            }.map {
-                if (!recentContactPhone.isNullOrEmpty())
-                    SnackBarUtils.showSnackBar(
-                        views.root,
-                        "No See for me account to ${it.userName}"
-                    )
-            }
-        })
+//            newContact.filter {
+//                it.contactNumber == recentContactPhone
+//            }.map {
+//                if (!recentContactPhone.isNullOrEmpty())
+//                    Log.d(TAG, "--->unregisterContact_two:${it.userName} ")
+//                 SnackBarUtils.showSnackBar(views!!.root, "No See for me account to ${it.userName}")
+//                recentContactPhone=""
+//            }
+//            mainRepository.removeContactListener()
+        }
 
         mainRepository.onObserveEndCall() { data, callStatus ->
             Log.d(
@@ -308,7 +322,7 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
     private fun setupRecyclerView() {
         mainAdapter = MainRecyclerViewAdapter(this)
         val layoutManager = LinearLayoutManager(this)
-        views.mainRecyclerView.apply {
+        views!!.mainRecyclerView.apply {
             setLayoutManager(layoutManager)
             adapter = mainAdapter
         }
@@ -369,6 +383,8 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
     override fun onDestroy() {
         super.onDestroy()
         mp3Player.stopMP3()
+        wifiManager.disconnect()
+        views = null
     }
 
 
@@ -381,7 +397,7 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
     override fun onCallReceived(model: DataModel) {
         mp3Player.startMP3(isIncoming = true)
         runOnUiThread {
-            views.apply {
+            views?.apply {
                 Log.d(TAG, "onCallReceived: sender:${model.sender}, target: ${model.target}")
                 var username = ""
                 val isVideoCall = model.type == DataModelType.StartVideoCall
@@ -440,7 +456,7 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
 
         mp3Player.stopMP3()
         runOnUiThread {
-            views.apply {
+            views?.apply {
                 incomingCallLayout.isVisible = false
                 contactLayout.isVisible = true
             }
@@ -462,14 +478,13 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.qr_codeid -> {
-                // Log.d(TAG, "onOptionsItemSelected: ===>>>")
-//
-//                if(isDeveloperModeEnabled()){
-//                    navigateToWifiThrotllingSettings()
-//                }
-//                else{
-//                    showEnableDeveloperModeDialog()
-//                }
+                Log.d(TAG, "onOptionsItemSelected: ===>>> ${isDeveloperModeEnabled()}")
+
+                if (isDeveloperModeEnabled()) {
+                    navigateToWifiThrotllingSettings()
+                } else {
+                    showEnableDeveloperModeDialog()
+                }
 
                 isPermissionGrand()
                 ActivityCompat.requestPermissions(
@@ -477,12 +492,14 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
                     arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
                     555
                 )
+
+
                 isCheckHotspot()
                 if (wifiManager.isWifiEnabled) {
                     val wifiReceiver = WifiPasswordGenerated(this)
                     wifiReceiver.showQRDialog()
                 } else {
-                    SnackBarUtils.showSnackBar(views.root, MainActivityFields.TURN_ON_WIFI)
+                    SnackBarUtils.showSnackBar(views!!.root, MainActivityFields.TURN_ON_WIFI)
                 }
 
                 true

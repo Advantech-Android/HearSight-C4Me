@@ -37,11 +37,7 @@ class MainRecyclerViewAdapter(private val listener: Listener) :
 
     fun filterList(query: String) {
         filteredContactList = onlineContactList?.filter {
-
-            it.userName.contains(query, ignoreCase = true) || it.contactNumber.contains(
-                query,
-                ignoreCase = true
-            )
+            it.userName.contains(query, ignoreCase = true) || it.contactNumber.contains(query, ignoreCase = true)
 
         }
         filteredContactList?.filter {
@@ -53,8 +49,7 @@ class MainRecyclerViewAdapter(private val listener: Listener) :
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MainRecyclerViewHolder {
-        val binding =
-            ItemMainRecyclerViewBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+        val binding = ItemMainRecyclerViewBinding.inflate(LayoutInflater.from(parent.context), parent, false)
         return MainRecyclerViewHolder(binding, listener)
     }
 
@@ -82,10 +77,7 @@ class MainRecyclerViewAdapter(private val listener: Listener) :
     }
 
 
-    class MainRecyclerViewHolder(
-        private val binding: ItemMainRecyclerViewBinding,
-        private val listener: Listener
-    ) :
+    class MainRecyclerViewHolder(private val binding: ItemMainRecyclerViewBinding, private val listener: Listener) :
         RecyclerView.ViewHolder(binding.root) {
         val handler = android.os.Handler(Looper.getMainLooper())
         private val context = binding.root.context
@@ -105,17 +97,17 @@ class MainRecyclerViewAdapter(private val listener: Listener) :
                     "ONLINE" -> {
                         videoCallBtn.isVisible = true
                         audioCallBtn.isVisible = false
-                        cardview.isEnabled = true
+                        cardViewVideoCallClick.isEnabled = true
                         /*videoCallBtn.setOnClickListener {
                             Toast.makeText(context, "Please wait while your call is being connected", Toast.LENGTH_LONG).show()
 
                             videoCallClicked.invoke(user.first)//represents username
                         }*/
                         handler.postDelayed(kotlinx.coroutines.Runnable {
-                            cardview.isEnabled = true
+                            cardViewVideoCallClick.isEnabled = true
                         }, 3000)
-                        cardview.setOnClickListener {
-                            cardview.isEnabled = false
+                        cardViewVideoCallClick.setOnClickListener {
+                            cardViewVideoCallClick.isEnabled = false
                             Toast.makeText(
                                 context,
                                 "Please wait while your call is being connected",
@@ -129,14 +121,30 @@ class MainRecyclerViewAdapter(private val listener: Listener) :
                         }
                         statusTv.setTextColor(context.resources.getColor(R.color.light_green, null))
                         statusTv.text = "${user.userName} is Online"
+                        usernameTv.text = "Call ${user.userName}"
+                        userNumber.text = ": ${user.contactNumber}"
                     }
 
 
                     "OFFLINE" -> {
-                        videoCallBtn.isVisible = false
-                        audioCallBtn.isVisible = false
-                        statusTv.setTextColor(context.resources.getColor(R.color.red, null))
-                        statusTv.text = "${user.userName} is Offline"
+
+                        if (user.isCforMeAcc) {
+                            videoCallBtn.isVisible = true
+                            audioCallBtn.isVisible = false
+                            cardViewVideoCallClick.isEnabled = false
+                            statusTv.setTextColor(context.resources.getColor(R.color.red, null))
+                            statusTv.text = "${user.userName} is Offline"
+                            usernameTv.text = "You cant connect ${user.userName}"
+                            userNumber.text = ": ${user.contactNumber}"
+                        }else{
+                            videoCallBtn.isVisible = true
+                            audioCallBtn.isVisible = false
+                            cardViewVideoCallClick.isEnabled = false
+                            statusTv.setTextColor(context.resources.getColor(R.color.blue_dark, null))
+                            statusTv.text = "${user.userName} is Unregister"
+                            usernameTv.text = "Invite ${user.userName}"
+                            userNumber.text = ": ${user.contactNumber}"
+                        }
                     }
 
                     "IN_CALL" -> {
@@ -144,27 +152,22 @@ class MainRecyclerViewAdapter(private val listener: Listener) :
                         audioCallBtn.isVisible = false
                         statusTv.setTextColor(context.resources.getColor(R.color.yellow, null))
                         statusTv.text = "${user.userName} is In call"
+                        usernameTv.text = "Call ${user.userName}"
+                        userNumber.text = ": ${user.contactNumber}"
                     }
                 }
 
-                usernameTv.text = "Call ${user.userName}"
-                userNumber.text = ": ${user.contactNumber}"
 
-                profileImageView.setOnClickListener {
+
+                deleteContactBtn.setOnClickListener {
                     val deleteDialog = Dialog(context)
                     deleteDialog.setContentView(R.layout.deletelayout)
-                    deleteDialog.window!!.setLayout(
-                        WindowManager.LayoutParams.MATCH_PARENT,
-                        WindowManager.LayoutParams.WRAP_CONTENT
-                    )
+                    //deleteDialog.window!!.setLayout(WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.WRAP_CONTENT)
                     val noBtn = deleteDialog.findViewById<Button>(R.id.noId)
                     val yesBtn = deleteDialog.findViewById<Button>(R.id.yesId)
                     deleteDialog.show()
                     yesBtn.setOnClickListener {
-                        Log.d(
-                            TAG,
-                            "deleteContacts:ContactNumber: ${user.contactNumber.toString()}\t,UserName${user.userName.toString()}"
-                        )
+                        Log.d(TAG, "deleteContacts:ContactNumber: ${user.contactNumber.toString()}\t,UserName${user.userName.toString()}")
                         deleteContacts(
                             deleteDialog,
                             user.contactNumber,
@@ -204,7 +207,6 @@ class MainRecyclerViewAdapter(private val listener: Listener) :
                     "Contact ${userName} deleted Successfully",
                     Toast.LENGTH_SHORT
                 ).show()
-
                 val mainRecyclerViewAdapter = MainRecyclerViewAdapter(listener)
                 mainRecyclerViewAdapter.notifyItemChanged(pos)
                 deleteDialog.dismiss()

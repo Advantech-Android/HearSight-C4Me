@@ -50,6 +50,7 @@ class WifiPasswordGenerated(private val context: Context)
         val wifiListView=wifiDialog.findViewById<ListView>(R.id.wifiLV)
         val refresh=wifiDialog.findViewById<TextView>(R.id.refresh)
         val createNewid=wifiDialog.findViewById<TextView>(R.id.createNewid)
+
         wifiDialog.show()
         val availableWifilistContainer=wifiDialog.findViewById<ImageView>(R.id.availableWifilistContainer) as LinearLayout
         val qrCodeGenerateContainer=wifiDialog.findViewById<ImageView>(R.id.qrCodeGenerateContainer) as LinearLayout

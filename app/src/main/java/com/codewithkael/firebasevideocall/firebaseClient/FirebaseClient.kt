@@ -1,7 +1,12 @@
 package com.codewithkael.firebasevideocall.firebaseClient
+
+import android.content.Context
+import android.content.SharedPreferences
 import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import com.codewithkael.firebasevideocall.adapters.MainRecyclerViewAdapter
+import com.codewithkael.firebasevideocall.ui.LoginActivity
+import com.codewithkael.firebasevideocall.ui.MainActivity
 import com.codewithkael.firebasevideocall.utils.ContactInfo
 import com.codewithkael.firebasevideocall.utils.DataModel
 import com.codewithkael.firebasevideocall.utils.FirebaseFieldNames.LATEST_EVENT
@@ -26,13 +31,14 @@ private const val TAG = "***>>FirebaseClient"
 @Singleton
 class FirebaseClient @Inject constructor(
     private val dbRef: DatabaseReference,
-    private val gson: Gson
+    private val gson: Gson,
+    private val context: Context
 
 ) : MainRecyclerViewAdapter.Listener {
 
-    private  var noAccountUserList: List<ContactInfo> = emptyList()
+    private var noAccountUserList: List<ContactInfo> = emptyList()
     var userContactStatus = MutableLiveData(UserStatus.OFFLINE.name)
-
+    var myListener: ValueEventListener? = null
     private var currentUsername: String? = null
     private var currentUserPhonenumber: String? = null
 
@@ -40,9 +46,20 @@ class FirebaseClient @Inject constructor(
         var registerNumber = ""
     }
 
-     fun setUsername(username: String, phonenumber: String) {
-        this.currentUsername = username
-        this.currentUserPhonenumber = phonenumber
+    fun setUsername(username: String, phonenumber: String) {
+        if (!username.isNullOrEmpty()) {
+            this.currentUsername = username
+        } else {
+            val userName = LoginActivity.Share.liveShare.value?.getString("user_name", "")
+            this.currentUsername = userName
+        }
+        if (!phonenumber.isNullOrEmpty()) {
+            this.currentUserPhonenumber = phonenumber
+
+        } else {
+            val userPhoneNUmber = LoginActivity.Share.liveShare.value?.getString("user_phone", "")
+            this.currentUserPhonenumber = userPhoneNUmber
+        }
 
     }
 
@@ -72,13 +89,16 @@ class FirebaseClient @Inject constructor(
                     //if the current user exists
                     if (snapshot.hasChild(phonenumber)) {
                         //user exists , its time to check the phone_number
-                        val dbUsername = snapshot.child(phonenumber).child("user_name").value
-                        if (username == dbUsername) {
+                        // val dbUsername = snapshot.child(phonenumber).child("user_name").value
+                        val dbPhonenumber = snapshot.child(phonenumber).key.toString()
+                        if (phonenumber == dbPhonenumber) {
                             //username is correct and sign in
                             registerNumber = phonenumber
+                            val dbUsername = snapshot.child(phonenumber).child("user_name").value
                             dbRef.child(phonenumber).child(STATUS).setValue(UserStatus.ONLINE)
                                 .addOnCompleteListener {
-                                    setUsername(username, phonenumber)
+                                    setUsername(dbUsername.toString(), phonenumber)
+
                                     done(true, null)
                                 }.addOnFailureListener {
                                     done(false, "${it.message}")
@@ -159,96 +179,131 @@ class FirebaseClient @Inject constructor(
 
 
     suspend fun observeContactDetails(
+        ctx: MainActivity,
         status: (List<ContactInfo>) -> Unit,
         status2: (List<ContactInfo>) -> Unit,
         status3: (List<ContactInfo>) -> Unit,
     ) {
-        val finalList = mutableListOf<ContactInfo>()
         val outerList = mutableListOf<ContactInfo>()
-        val noAccList = mutableListOf<ContactInfo>()
-        Log.d(TAG, "observeContactDetails: ")
+        val withAcc = mutableListOf<ContactInfo>()
+        val withAcc1 = MutableLiveData<List<ContactInfo>>(mutableListOf<ContactInfo>())
+        val innerList = mutableListOf<ContactInfo>()
+        val unregisteredContacts = mutableListOf<ContactInfo>()
 
-        dbRef.addValueEventListener(object : ValueEventListener {
+        myListener = dbRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                finalList.clear()
+                withAcc.clear()
                 outerList.clear()
-                noAccList.clear()
-                // Extract outer contacts
+                innerList.clear()
+                unregisteredContacts.clear()
+
+                // Process all users except the current user
                 snapshot.children.filter { it.key != currentUserPhonenumber }
-                    .forEach { currentUser ->
-                        val currentUserInfo = ContactInfo(
-                            currentUser.key.toString(),
-                            currentUser.child("user_name").value.toString(),
-                            currentUser.child(STATUS).value.toString()
+                    .forEach { userSnapshot ->
+                        val userInfo = ContactInfo(
+                            userSnapshot.key.toString(),
+                            userSnapshot.child("user_name").value.toString(),
+                            userSnapshot.child(STATUS).value.toString(),
+                            isCforMeAcc = true
                         )
-                        outerList.add(currentUserInfo)
+                        outerList.add(userInfo)
                     }
-                status(outerList)
+
+                // Process current user's contacts
                 snapshot.children.filter { it.key == currentUserPhonenumber }
-                    .forEach { currentUser ->
-                        currentUser.child("contacts").children.filter { it.key != currentUserPhonenumber }
-                            .forEach { innerContact ->
-                                val innerContactInfo = ContactInfo(
-                                    innerContact.key.toString(),
-                                    innerContact.child("user_name").value.toString(),
-                                    innerContact.child(STATUS).value.toString()
+                    .forEach { currentUserSnapshot ->
+                        currentUserSnapshot.child("contacts")
+                            .children.filter { it.key != currentUserPhonenumber }
+                            .forEach { contactSnapshot ->
+                                val contactInfo = ContactInfo(
+                                    contactSnapshot.key.toString(),
+                                    contactSnapshot.child("user_name").value.toString(),
+                                    contactSnapshot.child(STATUS).value.toString(),
+                                    isCforMeAcc = false
                                 )
-                                val matchingContact =
-                                    outerList.find { it.contactNumber == innerContactInfo.contactNumber }
-                                val noAccountUserList=
-                                outerList.filter {
-
-                                    it.contactNumber != innerContactInfo.contactNumber
-                                }.map {
-
-//                                    noAccList.add(innerContactInfo)
-                                }
-
-
-                                if (matchingContact != null) {
-                                    finalList.add(innerContactInfo.copy(status = matchingContact.status))
-                                    val statusUpdateTask = dbRef.child(currentUserPhonenumber!!)
-                                        .child("contacts")
-                                        .child(innerContactInfo.contactNumber)
-                                        .child(STATUS)
-                                        .setValue(matchingContact.status)
-
-                                    statusUpdateTask.addOnCompleteListener { task ->
-                                        if (task.isSuccessful) {
-                                            Log.d(
-                                                TAG,
-                                                "Successfully updated status for contact: ${innerContactInfo.contactNumber}"
-                                            )
-                                        } else {
-                                            Log.e(
-                                                TAG,
-                                                "Failed to update status for contact: ${innerContactInfo.contactNumber}",
-                                                task.exception
-                                            )
-                                        }
-                                    }
-                                    statusUpdateTask.addOnFailureListener { exception ->
-                                        Log.e(
-                                            TAG,
-                                            "Failed to update status for contact: ${innerContactInfo.contactNumber}",
-                                            exception
-                                        )
-                                    }
-                                }
+                                innerList.add(contactInfo)
                             }
                     }
-                status2(finalList)
-                status3(noAccList)
+
+                Log.d("***TAG", "All contacts: $outerList")
+                Log.d("***TAG", "Current user contacts: $innerList")
+
+                // Use a map for quick lookup of registered contacts
+                val outerContactMap = outerList.associateBy { it.contactNumber.trim() }
+                Log.d(TAG, "onDataChange: outerContactMap =$outerContactMap")
+
+                innerList.forEach { innerContact ->
+                    val matchedOuterContact = outerContactMap[innerContact.contactNumber.trim()]
+                    matchedOuterContact?.let { outerContact ->
+                        innerContact.isCforMeAcc = true
+                        innerContact.status = outerContact.status
+                    } ?: run {
+                        innerContact.status = UserStatus.OFFLINE.name
+                        unregisteredContacts.add(innerContact)
+                    }
+                    withAcc.add(innerContact)
+                }
+
+                withAcc1.value = withAcc.toSet().toList()
+                if (withAcc1.value != null)
+                    status3(withAcc1.value!!)
+                else
+                    status3(withAcc.toSet().toList())
+                Log.d("***TAG", "Updated contacts with status: $withAcc")
+                Log.d("***TAG", "Unregistered contacts: $unregisteredContacts")
+
+                // Optionally, you can call a different status function for unregistered contacts
+                status(unregisteredContacts)
             }
 
             override fun onCancelled(error: DatabaseError) {
-                // Handle onCancelled event if needed
+                Log.e("***TAG", "Error: $error")
             }
         })
+
+        withAcc1.observe(ctx) { data ->
+            data.forEach { innerContact ->
+                val statusUpdateTask = dbRef.child(currentUserPhonenumber!!)
+                    .child("contacts")
+                    .child(innerContact.contactNumber)
+                    .child(STATUS)
+                    .setValue(innerContact.status)
+                statusUpdateTask.addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        Log.d(
+                            "***TAG",
+                            "Successfully updated status for contact: ${innerContact.contactNumber}"
+                        )
+                    } else {
+                        Log.e(
+                            "***TAG",
+                            "Failed to update status for contact: ${innerContact.contactNumber}",
+                            task.exception
+                        )
+                    }
+                }
+                statusUpdateTask.addOnFailureListener { exception ->
+                    Log.e(
+                        "***TAG",
+                        "Failed to update status for contact: ${innerContact.contactNumber}",
+                        exception
+                    )
+                }
+            }
+        }
+    }
+
+
+    fun removeContactListener() {
+        if (dbRef != null && myListener != null) {
+            dbRef.child(currentUserPhonenumber!!)
+                .removeEventListener(myListener!!)
+        }
+
     }
 
     private fun setNoAccountUserList(noAccountUserList: List<ContactInfo>) {
-       this.noAccountUserList=noAccountUserList
+        this.noAccountUserList = noAccountUserList
         Log.d(TAG, "setNoAccountUserList: ${noAccountUserList.get(0).contactNumber}")
     }
 
@@ -372,9 +427,7 @@ class FirebaseClient @Inject constructor(
     }
 
 
-
-
-    override fun onVideoCallClicked(username: String,user:ContactInfo) {
+    override fun onVideoCallClicked(username: String, user: ContactInfo) {
 
     }
 
