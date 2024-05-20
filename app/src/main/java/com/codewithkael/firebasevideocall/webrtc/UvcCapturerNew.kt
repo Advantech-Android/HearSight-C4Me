@@ -91,11 +91,6 @@ fun createUVCInstance(){
                  */
                 override fun onDisConnectDec(device: UsbDevice?, ctrlBlock: UsbControlBlock?) {
                     Log.d(TAG, "onDisConnectDec: $isExecute :isCheck-->$isCheck -->isDetach:$isDetach")
-                    isDetach=false
-                    isExecute = false
-                    isCheck=false
-
-                    Log.d(TAG, "onDisConnectDec: $isExecute :isCheck-->$isCheck -->isDetach:$isDetach")
                     isDetach = true
                     isExecute = false
                     isCheck = false
