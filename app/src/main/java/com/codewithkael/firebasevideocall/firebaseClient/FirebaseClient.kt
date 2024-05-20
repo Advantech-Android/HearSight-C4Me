@@ -74,8 +74,9 @@ class FirebaseClient @Inject constructor(
 
     fun getUserNameFB(phone: String, result: (String?) -> Unit)//Called in Main Repository
     {
-        dbRef.addValueEventListener(object : MyEventListener() {
+        dbRef.addListenerForSingleValueEvent(object : MyEventListener() {
             override fun onDataChange(snapshot: DataSnapshot) {
+
                 result(snapshot.child(phone).child("user_name").value.toString())
             }
         })
@@ -140,7 +141,7 @@ class FirebaseClient @Inject constructor(
                 "getEndCallEvent: currentUsername =$currentUsername -> CALL_EVENT=$CALL_EVENT"
             )
             dbRef.child(currentUserPhonenumber!!).child(LATEST_EVENT)
-                .addValueEventListener(object : MyEventListener() {
+                .addListenerForSingleValueEvent(object : MyEventListener() {
                     override fun onDataChange(snapshot: DataSnapshot) {
                         super.onDataChange(snapshot)
 
@@ -196,7 +197,6 @@ class FirebaseClient @Inject constructor(
                 outerList.clear()
                 innerList.clear()
                 unregisteredContacts.clear()
-
                 // Process all users except the current user
                 snapshot.children.filter { it.key != currentUserPhonenumber }
                     .forEach { userSnapshot ->

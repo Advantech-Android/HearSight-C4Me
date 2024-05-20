@@ -55,7 +55,7 @@ class UvcCapturerNew(context: Context, svVideoRender: SurfaceViewRenderer) :
     var isDetach = true
 
     companion object {
-        private const val TAG = "xxxCallUvcCapturer"
+        private const val TAG = "###CallUvcCapturer"
 
     }
 fun createUVCInstance(){
@@ -191,6 +191,7 @@ fun createUVCInstance(){
     }
 
     private fun createCapture(i: Int, i1: Int, i2: Int) {
+        Log.d(TAG, "createCapture: ")
         if (mUvcStrategy != null) {
             UVC_PREVIEW_WIDTH = i
             UVC_PREVIEW_HEIGHT = i1
@@ -216,8 +217,11 @@ fun createUVCInstance(){
     override fun changeCaptureFormat(i: Int, i1: Int, i2: Int) {}
     override fun dispose() {
         Log.d(TAG, "dispose: ******************************************")
+
+        svVideoRender.release()
         surfaceTextureHelper!!.dispose()
         multicam!!.unRegister()
+
     }
 
     override fun isScreencast(): Boolean {
@@ -291,16 +295,32 @@ fun createUVCInstance(){
 
     override fun onCallEnd(msg: String) {
         Log.d(TAG, "onCallEnd: ************************************$msg")
-        Log.d(TAG, "onCallEnd: ************************************$msg")
-        mUvcStrategy?.stopPreview()
-        mUvcStrategy?.unRegister()
+
+
+        svVideoRender.holder.removeCallback(svVideoRender)
+        self?.removePreviewDataCallBack(iPreviewDataCallBack)
+        svVideoRender.removeCallbacks {
+            Log.d(TAG, "onCallEnd: ---------")
+        }
+        if (mUvcStrategy!=null)
+        {
+            mUvcStrategy?.stopPreview()
+            mUvcStrategy?.removePreviewDataCallBack(iPreviewDataCallBack)
+            mUvcStrategy?.unRegister()
+        }
+
+
         multicam?.unRegister()
         isExecute = false
         isDetach = true
 //        uvcCamera?.captureVideoStop()
-        uvcCamera?.captureStreamStop()
-        uvcCamera?.closeCamera()
-        uvcCamera = null
+        if (uvcCamera!=null)
+        {
+            uvcCamera?.captureStreamStop()
+            uvcCamera?.closeCamera()
+            uvcCamera = null
+        }
+
     }
 }
 

@@ -75,6 +75,7 @@ class CallActivity : CameraActivity(), MainService.EndCallListener {
 
     override fun onStart() {
         super.onStart()
+        Log.d(TAG, "onStart: ")
         requestScreenCaptureLauncher = registerForActivityResult(
             ActivityResultContracts
                 .StartActivityForResult()
@@ -91,12 +92,34 @@ class CallActivity : CameraActivity(), MainService.EndCallListener {
 
     }
 
+    override fun onPause() {
+        super.onPause()
+        Log.d(TAG, "onPause: ")
+    }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
+    override fun onStop() {
+        super.onStop()
+        Log.d(TAG, "onStop: ")
+    }
+
+
+  override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Log.d(TAG, "onCreate: ")
         views = ActivityCallBinding.inflate(layoutInflater)
         setContentView(views?.root)
         init()
+    }
+
+
+    override fun onResume() {
+        super.onResume()
+        Log.d(TAG, "onResume: ")
+    }
+
+    override fun onRestart() {
+        super.onRestart()
+        Log.d(TAG, "onRestart: ")
     }
 
     val runnable = {
@@ -263,17 +286,19 @@ class CallActivity : CameraActivity(), MainService.EndCallListener {
         views?.apply {
             toggleMicrophoneButton.setOnClickListener {
                 if (!isMicrophoneMuted) {
-                    //we should mute our mic
-                    //1. send a command to repository
-                    serviceRepository.toggleAudio(true)
-                    //2. update ui to mic is muted
-                    toggleMicrophoneButton.setImageResource(R.drawable.ic_mic_on)
-                } else {
+
                     //we should set it back to normal
                     //1. send a command to repository to make it back to normal status
                     serviceRepository.toggleAudio(false)
                     //2. update ui
                     toggleMicrophoneButton.setImageResource(R.drawable.ic_mic_off)
+
+                } else {
+                    //we should mute our mic
+                    //1. send a command to repository
+                    serviceRepository.toggleAudio(true)
+                    //2. update ui to mic is muted
+                    toggleMicrophoneButton.setImageResource(R.drawable.ic_mic_on)
                 }
                 isMicrophoneMuted = !isMicrophoneMuted
             }
@@ -293,18 +318,18 @@ class CallActivity : CameraActivity(), MainService.EndCallListener {
         views?.apply {
             toggleAudioDevice.setOnClickListener {
                 if (isSpeakerMode) {
-                    Log.d("ic_speaker", "setupToggleAudioDevice: $isSpeakerMode")
-                    //we should set it to earpiece mode
-                    toggleAudioDevice.setImageResource(R.drawable.ic_speaker)
-                    //we should send a command to our service to switch between devices
-                    serviceRepository.toggleAudioDevice(RTCAudioManager.AudioDevice.EARPIECE.name)
 
-                } else {
-                    Log.d("ic_speaker", "setupToggleAudioDevice: $isSpeakerMode")
+                    Log.d("ic_speaker", "setupToggleAudioDevice: wired $isSpeakerMode")
                     //we should set it to speaker mode
                     toggleAudioDevice.setImageResource(R.drawable.ic_ear)
                     serviceRepository.toggleAudioDevice(RTCAudioManager.AudioDevice.SPEAKER_PHONE.name)
 
+                } else {
+                    Log.d("ic_speaker", "setupToggleAudioDevice: isSpeakerMode  $isSpeakerMode")
+                    //we should set it to earpiece mode
+                    toggleAudioDevice.setImageResource(R.drawable.ic_speaker)
+                    //we should send a command to our service to switch between devices
+                    serviceRepository.toggleAudioDevice(RTCAudioManager.AudioDevice.EARPIECE.name)
                 }
                 isSpeakerMode = !isSpeakerMode
             }
@@ -334,7 +359,7 @@ class CallActivity : CameraActivity(), MainService.EndCallListener {
 
     override fun onDestroy() {
         super.onDestroy()
-
+        Log.d(TAG, "onDestroy: ")
         handler.removeCallbacks(runnable)
         MainService.remoteSurfaceView?.release()
         MainService.remoteSurfaceView = null
