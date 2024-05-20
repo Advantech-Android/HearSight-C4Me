@@ -79,6 +79,7 @@ class FirebaseClient @Inject constructor(
     fun getUserNameFB(phone: String, result: (String?) -> Unit)//Called in Main Repository
     {
         dbRef.addListenerForSingleValueEvent(object : MyEventListener() {
+
             override fun onDataChange(snapshot: DataSnapshot) {
                 result(snapshot.child(phone).child("user_name").value.toString())
             }
@@ -190,6 +191,7 @@ class FirebaseClient @Inject constructor(
         status3: (List<ContactInfo>) -> Unit,
     ) {
         val finalList = mutableListOf<ContactInfo>()
+
         val outerList = mutableListOf<ContactInfo>()
         val withAcc = mutableListOf<ContactInfo>()
         val withAcc1 = MutableLiveData<List<ContactInfo>>(mutableListOf<ContactInfo>())
@@ -259,62 +261,6 @@ class FirebaseClient @Inject constructor(
 
                 // Optionally, you can call a different status function for unregistered contacts
                 status(unregisteredContacts)
-
-                // Extract outer contacts
-                snapshot.children.filter { it.key != currentUserPhonenumber }
-                    .forEach { currentUser ->
-                        val currentUserInfo = ContactInfo(
-                            currentUser.key.toString(),
-                            currentUser.child("user_name").value.toString(),
-                            currentUser.child(STATUS).value.toString(),false
-                        )
-                        outerList.add(currentUserInfo)
-                    }
-                status(outerList)
-                snapshot.children.filter { it.key == currentUserPhonenumber }
-                    .forEach { currentUser ->
-                        currentUser.child("contacts").children.filter { it.key != currentUserPhonenumber }
-                            .forEach { innerContact ->
-                                val innerContactInfo = ContactInfo(
-                                    innerContact.key.toString(),
-                                    innerContact.child("user_name").value.toString(),
-                                    innerContact.child(STATUS).value.toString(),false
-                                )
-                                val matchingContact =
-                                    outerList.find { it.contactNumber == innerContactInfo.contactNumber }
-                                if (matchingContact != null) {
-                                    finalList.add(innerContactInfo.copy(status = matchingContact.status))
-                                    val statusUpdateTask = dbRef.child(currentUserPhonenumber!!)
-                                        .child("contacts")
-                                        .child(innerContactInfo.contactNumber)
-                                        .child(STATUS)
-                                        .setValue(matchingContact.status)
-
-                                    statusUpdateTask.addOnCompleteListener { task ->
-                                        if (task.isSuccessful) {
-                                            Log.d(
-                                                TAG,
-                                                "Successfully updated status for contact: ${innerContactInfo.contactNumber}"
-                                            )
-                                        } else {
-                                            Log.e(
-                                                TAG,
-                                                "Failed to update status for contact: ${innerContactInfo.contactNumber}",
-                                                task.exception
-                                            )
-                                        }
-                                    }
-                                    statusUpdateTask.addOnFailureListener { exception ->
-                                        Log.e(
-                                            TAG,
-                                            "Failed to update status for contact: ${innerContactInfo.contactNumber}",
-                                            exception
-                                        )
-                                    }
-                                }
-                            }
-                    }
-                status2(finalList)
             }
 
             override fun onCancelled(error: DatabaseError) {
@@ -368,7 +314,6 @@ class FirebaseClient @Inject constructor(
         this.noAccountUserList = noAccountUserList
         Log.d(TAG, "setNoAccountUserList: ${noAccountUserList.get(0).contactNumber}")
     }
-
 
     fun subscribeForLatestEvent(listener: Listener) {
         try {

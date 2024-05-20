@@ -35,7 +35,6 @@ import com.codewithkael.firebasevideocall.utils.LoginActivityFields.PASWORD_INVA
 import com.codewithkael.firebasevideocall.utils.ProgressBarUtil
 import com.codewithkael.firebasevideocall.utils.SnackBarUtils
 import dagger.hilt.android.AndroidEntryPoint
-import java.util.Formatter
 import java.util.Locale
 import java.util.regex.Pattern
 import javax.inject.Inject
@@ -59,6 +58,8 @@ class LoginActivity : AppCompatActivity() {
     @Inject
     lateinit var mainRepository: MainRepository
 
+    lateinit var webQ: WebQ
+
     lateinit var wifiManager: WifiManager
     lateinit var sharedPref: SharedPreferences
     lateinit var shEdit: SharedPreferences.Editor
@@ -72,7 +73,6 @@ class LoginActivity : AppCompatActivity() {
     @Inject
     lateinit var mainServiceRepository: MainServiceRepository
     var mySMSBroadcastReceiver: MySMSBroadcastReceiver = MySMSBroadcastReceiver()
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -123,21 +123,6 @@ class LoginActivity : AppCompatActivity() {
 
 
     }
-
-
-    private fun modelDebug() {
-        views?.apply {
-            if (Build.BRAND!!.equals("samsung", true)) {
-                //uvc.isUvc.value=true
-                usernameEt.setText("bheem")
-                passwordEt.setText("+919994639839")
-            } else {
-                usernameEt.setText("chutki")
-                passwordEt.setText("+919843716886")
-            }
-        }
-    }
-
     private fun init() {
         setUserData()
         handleButtonClick()
@@ -151,7 +136,6 @@ class LoginActivity : AppCompatActivity() {
             passwordEt.setText(getData("user_phone"))
         }
     }
-
     fun clearData() {
         views?.apply {
             clearData.setOnCheckedChangeListener() { buttonView, isChecked ->
@@ -165,7 +149,6 @@ class LoginActivity : AppCompatActivity() {
             }
         }
     }
-
     fun uvcVI_Control() {
         views?.apply {
             checkVi.setOnCheckedChangeListener() { buttonView, isChecked ->
@@ -240,7 +223,21 @@ class LoginActivity : AppCompatActivity() {
 
         }
     }
-
+    private fun clearAppData() {
+        try {
+            // clearing app data
+            if (Build.VERSION_CODES.KITKAT <= Build.VERSION.SDK_INT) {
+                (getSystemService(ACTIVITY_SERVICE) as ActivityManager).clearApplicationUserData() // note: it has a return value!
+            } else {
+                val packageName = applicationContext.packageName
+                val runtime = Runtime.getRuntime()
+                runtime.exec("pm clear $packageName")
+                triggerRebirth(applicationContext, intent)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
 
     private fun performLogin(usernameText: String, passwordText: String) {
         views?.apply {
@@ -264,34 +261,47 @@ class LoginActivity : AppCompatActivity() {
                         putExtra("username", usernameText)
                         putExtra("userphone", passwordText)
                     })
-
                 }
             }
         }
     }
 
 
-    private fun clearAppData() {
-        try {
-            // clearing app data
-            if (Build.VERSION_CODES.KITKAT <= Build.VERSION.SDK_INT) {
-                (getSystemService(ACTIVITY_SERVICE) as ActivityManager).clearApplicationUserData() // note: it has a return value!
-            } else {
-                val packageName = applicationContext.packageName
-                val runtime = Runtime.getRuntime()
-                runtime.exec("pm clear $packageName")
-                triggerRebirth(applicationContext, intent)
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == STORAGE_PERMISSION_CODE) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Log.d(TAG, "scanSuccess:onRequestPermissionsResult")
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
+        } else if (requestCode == 1000) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Log.d(TAG, "scanSuccess:onRequestPermissionsResult")
+            }
         }
     }
+
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, intent)
+        if (requestCode == FILECHOOSER_RESULTCODE) {
+            // Handle file chooser result
+        }
+    }
+
+
+
+
 
 
     fun triggerRebirth(context: Context, nextIntent: Intent?) {
         val intent = Intent(context, LoginActivity::class.java)
         intent.addFlags(FLAG_ACTIVITY_NEW_TASK)
-        intent.putExtra("Restart", Intent(this, LoginActivity::class.java))
+        intent.putExtra("Restart", Intent(this@LoginActivity, LoginActivity::class.java))
         context.startActivity(intent)
         if (context is Activity) {
             context.finish()
@@ -337,30 +347,6 @@ class LoginActivity : AppCompatActivity() {
         startActivityForResult(Intent.createChooser(intent, "File Chooser"), FILECHOOSER_RESULTCODE)
     }
 
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == STORAGE_PERMISSION_CODE) {
-            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Log.d(TAG, "scanSuccess:onRequestPermissionsResult")
-            }
-        } else if (requestCode == 1000) {
-            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Log.d(TAG, "scanSuccess:onRequestPermissionsResult")
-            }
-        }
-    }
-
-    @Deprecated("Deprecated in Java")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, intent)
-        if (requestCode == FILECHOOSER_RESULTCODE) {
-            // Handle file chooser result
-        }
-    }
 
 
     private fun isPermissionGrand() {

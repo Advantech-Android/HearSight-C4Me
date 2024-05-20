@@ -54,6 +54,7 @@ import com.codewithkael.firebasevideocall.utils.PickContactContract
 import com.codewithkael.firebasevideocall.utils.setViewFields
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.runBlocking
+import androidx.activity.result.contract.ActivityResultContracts
 
 import javax.inject.Inject
 
@@ -174,8 +175,7 @@ private val MAX_LENGTH_PHONE=5
         })
     }
 
-    private val pickContactLauncher =
-        registerForActivityResult(PickContactContract(this@MainActivity)) { result ->
+    private val pickContactLauncher = registerForActivityResult(PickContactContract(this@MainActivity)) { result ->
             result?.let { (name, phoneNumber) ->
                 Log.d(TAG, "name:$name = phoneNumber:$phoneNumber")
 
