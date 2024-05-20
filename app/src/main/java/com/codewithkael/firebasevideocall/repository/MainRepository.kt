@@ -48,7 +48,8 @@ class MainRepository @Inject constructor(
         commonContactInfoList: (List<ContactInfo>) -> Unit,
         noAccountContactInfoList: (List<ContactInfo>) -> Unit
     ) {
-        firebaseClient.observeContactDetails(ctx,
+        firebaseClient.observeContactDetails(
+            ctx,
             contactInfoList,
             commonContactInfoList,
             noAccountContactInfoList
@@ -114,7 +115,7 @@ class MainRepository @Inject constructor(
         })
     }
 
-    fun removeContactListener()=
+    fun removeContactListener() =
         firebaseClient.removeContactListener()
 
     fun sendConnectionRequest(target: String, isVideoCall: Boolean, success: (Boolean) -> Unit) {
@@ -197,7 +198,7 @@ class MainRepository @Inject constructor(
                 DataModel(type = EndCall, target = target!!)
             )
 
-        }else{
+        } else {
             onTransferEventToSocket(
                 DataModel(type = EndCall, target = "")
             )

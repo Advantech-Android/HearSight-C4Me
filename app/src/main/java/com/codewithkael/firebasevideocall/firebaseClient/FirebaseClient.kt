@@ -46,6 +46,7 @@ class FirebaseClient @Inject constructor(
         var registerNumber = ""
     }
 
+
     fun setUsername(username: String, phonenumber: String) {
         if (!username.isNullOrEmpty()) {
             this.currentUsername = username
@@ -61,11 +62,13 @@ class FirebaseClient @Inject constructor(
             this.currentUserPhonenumber = userPhoneNUmber
         }
 
+
     }
 
     public fun getUserName(): String {
         return currentUsername.toString()
     }
+
 
     public fun getUserPhone(): String//called in main repository
     {
@@ -74,6 +77,7 @@ class FirebaseClient @Inject constructor(
 
     fun getUserNameFB(phone: String, result: (String?) -> Unit)//Called in Main Repository
     {
+
         dbRef.addValueEventListener(object : MyEventListener() {
             override fun onDataChange(snapshot: DataSnapshot) {
                 result(snapshot.child(phone).child("user_name").value.toString())
@@ -178,6 +182,7 @@ class FirebaseClient @Inject constructor(
     }
 
 
+
     suspend fun observeContactDetails(
         ctx: MainActivity,
         status: (List<ContactInfo>) -> Unit,
@@ -196,6 +201,7 @@ class FirebaseClient @Inject constructor(
                 outerList.clear()
                 innerList.clear()
                 unregisteredContacts.clear()
+
 
                 // Process all users except the current user
                 snapshot.children.filter { it.key != currentUserPhonenumber }
@@ -254,6 +260,7 @@ class FirebaseClient @Inject constructor(
 
                 // Optionally, you can call a different status function for unregistered contacts
                 status(unregisteredContacts)
+
             }
 
             override fun onCancelled(error: DatabaseError) {
@@ -292,6 +299,7 @@ class FirebaseClient @Inject constructor(
             }
         }
     }
+
 
 
     fun removeContactListener() {

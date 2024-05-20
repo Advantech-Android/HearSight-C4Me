@@ -1,11 +1,9 @@
 package com.codewithkael.firebasevideocall.webrtc
 
 import android.content.Context
-import android.graphics.SurfaceTexture
 import android.hardware.usb.UsbDevice
 import android.util.Log
 import android.widget.Toast
-import com.codewithkael.firebasevideocall.service.MainService
 import com.codewithkael.firebasevideocall.ui.CallActivity
 import com.codewithkael.firebasevideocall.ui.CallActivity.Companion.uvcPreview
 import com.jiangdg.ausbc.MultiCameraClient
@@ -16,9 +14,7 @@ import com.jiangdg.ausbc.callback.IPreviewDataCallBack
 import com.jiangdg.ausbc.camera.CameraUVC
 import com.jiangdg.ausbc.camera.CameraUvcStrategy
 import com.jiangdg.ausbc.camera.bean.CameraRequest
-import com.jiangdg.ausbc.render.RenderManager.CameraSurfaceTextureListener
 import com.jiangdg.usb.USBMonitor.UsbControlBlock
-import com.jiangdg.uvc.UVCCamera
 import com.journeyapps.barcodescanner.camera.CameraInstance
 import org.webrtc.CameraVideoCapturer
 import org.webrtc.CameraVideoCapturer.CameraSwitchHandler
@@ -247,8 +243,8 @@ fun createUVCInstance(){
             data: ByteArray?,
             width: Int,
             height: Int,
-            format: IPreviewDataCallBack.DataFormat
-        ) {
+            format: IPreviewDataCallBack.DataFormat)
+        {
             if (!isCheck) {
 
                 Log.d(
@@ -303,31 +299,3 @@ fun createUVCInstance(){
         uvcCamera = null
     }
 }
-
-
-
-/*
-xxxCallActivity         com.codewithkael.firebasevideocall   D  init: isIncoming=Out
-xxxCallUvcCapturer      com.codewithkael.firebasevideocall   D  UvcCapturer:
-xxxCallUvcCapturer      com.codewithkael.firebasevideocall   D  initialize:
-xxxCallUvcCapturer      com.codewithkael.firebasevideocall   D  startCapture:
-xxxCallActivity         com.codewithkael.firebasevideocall   D  CallAct -> onObserveEndCall: currentuser:
-xxxCallUvcCapturer      com.codewithkael.firebasevideocall   D  onAttachDev: false
-xxxCallUvcCapturer      com.codewithkael.firebasevideocall   D  onConnectDev:
-xxxCallUvcCapturer      com.codewithkael.firebasevideocall   D  onPreviewData() called with: data = [B@c3
-xxxCallActivity         com.codewithkael.firebasevideocall   D  onCameraState: preview-2
-xxxCallUvcCapturer      com.codewithkael.firebasevideocall   D  onUVCPreview: true
-xxxCallActivity         com.codewithkael.firebasevideocall   D  onCameraState: preview-2
-xxxCallUvcCapturer      com.codewithkael.firebasevideocall   D  onUVCPreview: true
-xxxCallActivity         com.codewithkael.firebasevideocall   D  onCameraState: preview-2
-xxxCallUvcCapturer      com.codewithkael.firebasevideocall   D  onUVCPreview: true
-
-xxxCallUvcCapturer      com.codewithkael.firebasevideocall   D  onDisConnectDec:
-xxxCallUvcCapturer      com.codewithkael.firebasevideocall   D  onDetachDec:
-
-xxxCallUvcCapturer      com.codewithkael.firebasevideocall   D  onAttachDev: false
-xxxCallUvcCapturer      com.codewithkael.firebasevideocall   D  onAttachDev: true
-xxxCallUvcCapturer      com.codewithkael.firebasevideocall   D  onAttachDev: true
-xxxCallActivity         com.codewithkael.firebasevideocall   D  onCameraState: preview-2
-xxxCallUvcCapturer      com.codewithkael.firebasevideocall   D  onUVCPreview: true
-*/
