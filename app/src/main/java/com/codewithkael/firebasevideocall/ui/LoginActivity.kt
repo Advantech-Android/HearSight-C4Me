@@ -14,6 +14,7 @@ import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.net.ConnectivityManager
 import android.net.wifi.WifiManager
+import android.os.BatteryManager
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -66,6 +67,7 @@ class LoginActivity : AppCompatActivity() {
 
     companion object Share {
         var liveShare = MutableLiveData<SharedPreferences>()
+        val tempLiveData=MutableLiveData<String>("-0.0f")
     }
 
     var sms_otp = ""
@@ -121,6 +123,13 @@ class LoginActivity : AppCompatActivity() {
             }
         }
 
+
+    }
+    fun getBatteryTemprature():Float{
+        val intent=registerReceiver(null,
+            IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+        val temprature=intent?.getIntExtra(BatteryManager.EXTRA_TEMPERATURE,0)?:0
+        return temprature/10F
 
     }
     private fun init() {
@@ -377,6 +386,16 @@ class LoginActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        if(tempLiveData!=null && !tempLiveData.value.equals("-0.0f"))
+        {
+            views?.temperatureTextView?.text="Mobile Temprature:${tempLiveData.value} °C"
+        }
+        else
+        {
+            val batteryTemprature=getBatteryTemprature()
+            tempLiveData.value=batteryTemprature.toString()
+            views?.temperatureTextView?.text="Mobile Temperature: $batteryTemprature °C"
+        }
     }
 
     override fun onDestroy() {

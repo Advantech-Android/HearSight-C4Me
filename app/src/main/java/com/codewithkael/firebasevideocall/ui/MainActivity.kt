@@ -478,30 +478,7 @@ private val MAX_LENGTH_PHONE=5
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.qr_codeid -> {
-                Log.d(TAG, "onOptionsItemSelected: ===>>> ${isDeveloperModeEnabled()}")
-
-                if (isDeveloperModeEnabled()) {
-                    navigateToWifiThrotllingSettings()
-                } else {
-                    showEnableDeveloperModeDialog()
-                }
-
-                isPermissionGrand()
-                ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-                    555
-                )
-
-
-                isCheckHotspot()
-                if (wifiManager.isWifiEnabled) {
-                    val wifiReceiver = WifiPasswordGenerated(this)
-                    wifiReceiver.showQRDialog()
-                } else {
-                    SnackBarUtils.showSnackBar(views!!.root, MainActivityFields.TURN_ON_WIFI)
-                }
-
+                showEnableDeveloperModeDialog()
                 true
             }
 
@@ -516,32 +493,31 @@ private val MAX_LENGTH_PHONE=5
 
     }
 
-    private fun showEnableDeveloperModeDialog() {
+    private fun showEnableDeveloperModeDialog(){
         AlertDialog.Builder(ContextThemeWrapper(this, androidx.appcompat.R.style.Theme_AppCompat))
-            .setTitle("Enable Developer Mode in your Mobile phone")
-            .setMessage("To access Wi-Fi throttling settings, please enable Developer Mode.")
-            .setPositiveButton("Enable") { dialog, which ->
-                val intent = Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS)
-                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                startActivity(intent)
+            .setTitle("Enable Developer Mode/Wi-Fi Throttling")
+            .setMessage("To access available network settings, please follow these steps:\n\n1. Go to Settings.\n2. Scroll down and tap on 'About phone'.\n3. Find 'Build number' and tap it seven times to enable Developer Mode.\n4. Go back to the main Settings menu.\n5. Tap on 'System' and then 'Developer options'.\n6. Find and enable 'Wi-Fi throttling'.\n\nIf you have already enabled Developer Mode, you can ignore this and click Cancel.\n\n*Note:Options name may differ in models but procedures are same")
+            .setPositiveButton("Ok"){dialog,which->
+                dialog.dismiss()
             }
-            .setNegativeButton("Cancel", null)
-            .show()
+            .setNegativeButton("Cancel"){dialog,which->
+                isPermissionGrand()
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                    555
+                )
+                isCheckHotspot()
+                if (wifiManager.isWifiEnabled) {
+                    val wifiReceiver = WifiPasswordGenerated(this)
+                    wifiReceiver.showQRDialog()
+                } else {
+                    SnackBarUtils.showSnackBar(views!!.root, MainActivityFields.TURN_ON_WIFI)
+                }
+            }.show()
     }
 
-    private fun navigateToWifiThrotllingSettings() {
-        val intent = Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS)
-        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-        startActivity(intent)
-    }
 
-    private fun isDeveloperModeEnabled(): Boolean {
-        return Settings.Secure.getInt(
-            contentResolver,
-            Settings.Global.DEVELOPMENT_SETTINGS_ENABLED,
-            0
-        ) != 0
-    }
 
 
     private fun isCheckHotspot(): Boolean {

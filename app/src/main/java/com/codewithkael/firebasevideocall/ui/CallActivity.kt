@@ -60,6 +60,7 @@ class CallActivity : CameraActivity(), MainService.EndCallListener {
     private var isCameraMuted = false
     private var isSpeakerMode = true
     private var isScreenCasting = false
+    var isAttend=false
 
     @Inject
     lateinit var mp3Player: Mp3Ring
@@ -72,6 +73,7 @@ class CallActivity : CameraActivity(), MainService.EndCallListener {
     private lateinit var requestScreenCaptureLauncher: ActivityResultLauncher<Intent>
 
     private var views: ActivityCallBinding?=null
+    private lateinit var loginActivity:LoginActivity
 
     override fun onStart() {
         super.onStart()
@@ -109,12 +111,15 @@ class CallActivity : CameraActivity(), MainService.EndCallListener {
         views = ActivityCallBinding.inflate(layoutInflater)
         setContentView(views?.root)
         init()
+
     }
 
 
     override fun onResume() {
         super.onResume()
         Log.d(TAG, "onResume: ")
+        loginActivity=LoginActivity()
+        updateBatteryTemperature()
     }
 
     override fun onRestart() {
@@ -140,7 +145,10 @@ class CallActivity : CameraActivity(), MainService.EndCallListener {
         Log.d(TAG, "init: isIncoming=$isIncoming")
         views?.apply {
             callTitleTv.text = "In call with $target"
-            if (!isCaller) startCallTimer()
+            if (!isCaller) {
+                isAttend=true
+                startCallTimer()
+            }
 
             if (!isVideoCall) {
                 toggleCameraButton.isVisible = false
@@ -183,6 +191,7 @@ class CallActivity : CameraActivity(), MainService.EndCallListener {
             )
 
             if (status == "EndCall") {
+                //isAttend=true
                 mp3Player.stopMP3()
                 mainRepository.setCallStatus(
                     target = target!!,
@@ -196,9 +205,11 @@ class CallActivity : CameraActivity(), MainService.EndCallListener {
 //                    mainRepository.setCallStatus(target=target!!, sender = mainRepository.getUserPhone(),""){
 //
 //                    }
+                isAttend=true
                 mp3Player.stopMP3()
                 startCallTimer()
             } else if (status == "") {
+
                 handler.postDelayed(runnable, 3000)
                 views?.progressBar?.isVisible = true
             }
@@ -206,12 +217,30 @@ class CallActivity : CameraActivity(), MainService.EndCallListener {
 
         Handler(Looper.getMainLooper()).postDelayed({
             mp3Player.stopMP3()
+            Log.d(TAG, "init: isAttend=$isAttend")
+            if(!isAttend){
+                isAttend=true
+                mainRepository.setCallStatus(target=target!!, sender = mainRepository.getUserPhone(),""){
+                    serviceRepository.sendEndCall()
+                }
+            }
+
         }, 20000)
         setupMicToggleClicked()
         setupCameraToggleClicked()
         setupToggleAudioDevice()
         setupScreenCasting()
         MainService.endCallListener = this
+    }
+
+    private fun updateBatteryTemperature() {
+        if (LoginActivity.tempLiveData != null && !LoginActivity.tempLiveData.value.equals("-0.0f")) {
+            views?.tempratureVideoCallAct?.text = "${LoginActivity.tempLiveData.value} °C"
+        } else {
+            val batteryTemperature = loginActivity.getBatteryTemprature()
+            LoginActivity.tempLiveData.value = batteryTemperature.toString()
+            views?.tempratureVideoCallAct?.text = "$batteryTemperature °C"
+        }
     }
 
     fun startCallTimer() {

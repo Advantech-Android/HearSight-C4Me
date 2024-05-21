@@ -3,8 +3,10 @@ package com.codewithkael.firebasevideocall.service
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.os.BatteryManager
 import android.util.Log
 import com.codewithkael.firebasevideocall.ui.CloseActivity
+import com.codewithkael.firebasevideocall.ui.LoginActivity
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -25,6 +27,10 @@ class MainServiceReceiver : BroadcastReceiver() {
             serviceRepository.stopService()
             context?.startActivity(Intent(context,CloseActivity::class.java))
 
+        }
+        if(intent?.action==Intent.ACTION_BATTERY_CHANGED){
+            val temprature=intent.getIntExtra(BatteryManager.EXTRA_TEMPERATURE,0)/10.0
+            LoginActivity.tempLiveData.value=temprature.toString()
         }
 
     }
