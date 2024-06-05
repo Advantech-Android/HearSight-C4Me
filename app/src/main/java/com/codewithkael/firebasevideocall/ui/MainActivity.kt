@@ -11,13 +11,9 @@ import android.os.Looper
 import android.text.InputFilter
 import android.text.method.DigitsKeyListener
 import android.util.Log
-<<<<<<< HEAD
 import android.view.Menu
 import android.view.MenuItem
-=======
 import android.util.TypedValue
-import android.view.LayoutInflater
->>>>>>> 3151b8d84f417bc3ed11db49a7e1e57f08f2085d
 import android.view.View
 import android.view.WindowManager
 import android.widget.Button
@@ -81,12 +77,12 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
         super.onCreate(savedInstanceState)
         views = ActivityMainBinding.inflate(layoutInflater)
         setContentView(views.root)
-<<<<<<< HEAD
+
         wifiManager=getSystemService(Context.WIFI_SERVICE) as WifiManager
-=======
+
 
         searchQuery()
->>>>>>> 3151b8d84f417bc3ed11db49a7e1e57f08f2085d
+
         init()
         logOut()
     }
