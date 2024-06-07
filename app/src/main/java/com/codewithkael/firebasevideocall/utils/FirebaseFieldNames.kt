@@ -6,5 +6,6 @@ object FirebaseFieldNames {
     const val PASSWORD = "password"
     const val LATEST_EVENT = "latest_event"
     const val CALL_EVENT = "call_event"
+    const val LOGIN_STATUS = "login_status"
 
 }

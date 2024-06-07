@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".astra.AstraDemo">
+    <Button
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:text="Start"
+        android:layout_gravity="center_vertical"
+        android:id="@+id/start"/>
+
+
+    <Button
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:text="set_interval"
+        android:layout_gravity="center_vertical"
+        android:id="@+id/postrequest"/>
+
+
+     <Button
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:text="ResumeServer"
+        android:layout_gravity="center_vertical"
+        android:id="@+id/resume1"/>
+
+
+    <Button
+        android:id="@+id/getrequest"
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:text="Stop" />
+
+
+
+</LinearLayout>

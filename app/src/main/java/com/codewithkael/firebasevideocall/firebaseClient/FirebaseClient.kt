@@ -1,17 +1,20 @@
 package com.codewithkael.firebasevideocall.firebaseClient
 
 import android.content.Context
+import android.content.Context.MODE_PRIVATE
 import android.content.SharedPreferences
 import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import com.codewithkael.firebasevideocall.adapters.MainRecyclerViewAdapter
 import com.codewithkael.firebasevideocall.ui.LoginActivity
+import com.codewithkael.firebasevideocall.ui.LoginActivity.Share.liveShare
 import com.codewithkael.firebasevideocall.ui.MainActivity
 import com.codewithkael.firebasevideocall.utils.ContactInfo
 import com.codewithkael.firebasevideocall.utils.DataModel
 import com.codewithkael.firebasevideocall.utils.FirebaseFieldNames.LATEST_EVENT
 import com.codewithkael.firebasevideocall.utils.FirebaseFieldNames.PASSWORD
 import com.codewithkael.firebasevideocall.utils.FirebaseFieldNames.CALL_EVENT
+import com.codewithkael.firebasevideocall.utils.FirebaseFieldNames.LOGIN_STATUS
 import com.codewithkael.firebasevideocall.utils.FirebaseFieldNames.STATUS
 import com.codewithkael.firebasevideocall.utils.MyEventListener
 import com.codewithkael.firebasevideocall.utils.UserStatus
@@ -33,7 +36,6 @@ class FirebaseClient @Inject constructor(
     private val dbRef: DatabaseReference,
     private val gson: Gson,
     private val context: Context
-
 ) : MainRecyclerViewAdapter.Listener {
 
     private var noAccountUserList: List<ContactInfo> = emptyList()
@@ -42,26 +44,58 @@ class FirebaseClient @Inject constructor(
     private var currentUsername: String? = null
     private var currentUserPhonenumber: String? = null
 
+    lateinit var sharedPref: SharedPreferences
+    lateinit var shEdit: SharedPreferences.Editor
+
+
     companion object {
         var registerNumber = ""
     }
 
+    fun setSharedPreference() {
+        sharedPref = context.getSharedPreferences("see_for_me", MODE_PRIVATE)
+        shEdit = sharedPref.edit()
+        putData("is_login", false) //Setting "is_login" to false
+        liveShare.value = sharedPref
+    }
 
-    fun setUsername(username: String, phonenumber: String) {
+
+
+    fun setUsername(username: String, phonenumber: String)
+    {
         if (!username.isNullOrEmpty()) {
             this.currentUsername = username
-            this.currentUserPhonenumber = phonenumber
         } else {
-            val userName = LoginActivity.Share.liveShare.value?.getString("user_name", "")
+            // Handle case when username is null or empty
+            val userName = getData("user_name")
             this.currentUsername = userName
+            Log.d(TAG, "setUsername: $currentUsername and $username")
         }
+
         if (!phonenumber.isNullOrEmpty()) {
             this.currentUserPhonenumber = phonenumber
-
         } else {
-            val userPhoneNUmber = LoginActivity.Share.liveShare.value?.getString("user_phone", "")
-            this.currentUserPhonenumber = userPhoneNUmber
+            // Handle case when phone number is null or empty
+            val userPhoneNumber = getData("user_phone")
+            this.currentUserPhonenumber = userPhoneNumber
+            Log.d(TAG, "setUsername: $currentUserPhonenumber and $userPhoneNumber")
         }
+
+//        if (!username.isNullOrEmpty()) {
+//            this.currentUsername = username
+//
+//        } else {
+//
+//            val userName = LoginActivity.Share.liveShare.value?.getString("user_name", "")
+//            this.currentUsername = userName
+//        }
+//        if (!phonenumber.isNullOrEmpty()) {
+//            this.currentUserPhonenumber = phonenumber
+//
+//        } else {
+//            val userPhoneNUmber = LoginActivity.Share.liveShare.value?.getString("user_phone", "")
+//            this.currentUserPhonenumber = userPhoneNUmber
+//        }
 
 
     }
@@ -86,39 +120,45 @@ class FirebaseClient @Inject constructor(
         })
     }
 
-    fun login(username: String, phonenumber: String, done: (Boolean, String?) -> Unit) {
-
+    fun login(
+        username: String,
+        phonenumber: String,
+        status: String,
+        isLogin: Boolean,
+        done: (Boolean, String?) -> Unit
+    ) {
         try {
             dbRef.addListenerForSingleValueEvent(object : MyEventListener() {
                 override fun onDataChange(snapshot: DataSnapshot) {
-                    //if the current user exists
                     if (snapshot.hasChild(phonenumber)) {
-                        //user exists , its time to check the phone_number
-                        // val dbUsername = snapshot.child(phonenumber).child("user_name").value
                         val dbPhonenumber = snapshot.child(phonenumber).key.toString()
                         if (phonenumber == dbPhonenumber) {
-                            //username is correct and sign in
                             registerNumber = phonenumber
                             val dbUsername = snapshot.child(phonenumber).child("user_name").value
-                            dbRef.child(phonenumber).child(STATUS).setValue(UserStatus.ONLINE)
+                            val dbChild = dbRef.child(phonenumber)
+                            dbChild.child(STATUS).setValue(status)
+                                .continueWithTask { task ->
+                                    dbChild.child("user_name").setValue(username)
+                                    dbChild.child(LOGIN_STATUS).setValue(true)
+                                    liveShare.value?.edit()?.putBoolean("is_login", true)?.apply()
+                                    return@continueWithTask task
+                                }
                                 .addOnCompleteListener {
                                     setUsername(dbUsername.toString(), phonenumber)
-
                                     done(true, null)
                                 }.addOnFailureListener {
                                     done(false, "${it.message}")
                                 }
                         } else {
-                            //password is wrong, notify user
                             done(false, "Password is wrong")
                         }
-
                     } else {
-                        //user doesnt exist, register the user
                         dbRef.child(phonenumber).child("user_name").setValue(username)
                             .addOnCompleteListener {
-                                dbRef.child(phonenumber).child(STATUS).setValue(UserStatus.ONLINE)
+                                dbRef.child(phonenumber).child(STATUS).setValue(status)
                                     .addOnCompleteListener {
+                                        dbRef.child(phonenumber).child(LOGIN_STATUS).setValue(true)
+                                        liveShare.value?.edit()?.putBoolean("is_login", true)?.apply()
                                         setUsername(username, phonenumber)
                                         done(true, null)
                                     }.addOnFailureListener {
@@ -127,23 +167,37 @@ class FirebaseClient @Inject constructor(
                             }.addOnFailureListener {
                                 done(false, it.message)
                             }
-
                     }
                 }
             })
-
         } catch (e: Exception) {
             e.printStackTrace()
         }
     }
 
 
+
     fun getEndCallEvent(data: (DataModel, String) -> Unit) {
         try {
             Log.d(
                 TAG,
-                "getEndCallEvent: currentUsername =$currentUsername -> CALL_EVENT=$CALL_EVENT"
-            )
+                "getEndCallEvent-1: currentUsername =$currentUsername -> CALL_EVENT=$CALL_EVENT")
+
+            if (currentUserPhonenumber.isNullOrEmpty()) {
+                currentUserPhonenumber = getUserPhone()
+                shEdit.putString("user_phone", currentUserPhonenumber)
+                shEdit.apply()
+            }
+
+            Log.d(TAG, "getEndCallEvent-4:$currentUserPhonenumber ")
+
+            if(currentUsername.isNullOrEmpty()) {
+                currentUsername = getUserName()
+                shEdit.putString("user_name", currentUsername)
+                shEdit.apply()
+            }
+            Log.d(TAG, "getEndCallEvent-5:$currentUsername ")
+
             dbRef.child(currentUserPhonenumber!!).child(LATEST_EVENT)
                 .addListenerForSingleValueEvent(object : MyEventListener() {
                     override fun onDataChange(snapshot: DataSnapshot) {
@@ -181,7 +235,6 @@ class FirebaseClient @Inject constructor(
             e.printStackTrace()
         }
     }
-
 
 
     suspend fun observeContactDetails(
@@ -301,7 +354,6 @@ class FirebaseClient @Inject constructor(
     }
 
 
-
     fun removeContactListener() {
         if (dbRef != null && myListener != null) {
             dbRef.child(currentUserPhonenumber!!)
@@ -401,9 +453,14 @@ class FirebaseClient @Inject constructor(
     fun logOff(function: () -> Unit) {
         dbRef.child(currentUserPhonenumber!!).child(STATUS).setValue(UserStatus.OFFLINE)
             .addOnCompleteListener {
-                function()
+                dbRef.child(currentUserPhonenumber!!).child(LOGIN_STATUS).setValue(false)
+                    .addOnCompleteListener {
+                        liveShare.value?.edit()?.putBoolean("is_login", false)?.apply()
+                        function()
+                    }
             }
     }
+
 
     fun addContacts(username: String, phone: String, done: (Boolean, String?) -> Unit) {
         dbRef.addListenerForSingleValueEvent(object : MyEventListener() {
@@ -442,7 +499,27 @@ class FirebaseClient @Inject constructor(
     override fun onAudioCallClicked(username: String) {
 
     }
+    fun getData(key: String): String {
+        return sharedPref.getString(key, "").toString()
+    }
 
+    fun putData(key: String, value: Any) {
+        when (value) {
+            is Int -> {
+                shEdit.putInt(key, value)
+            }
+
+            is Boolean -> {
+                shEdit.putBoolean(key, value)
+            }
+
+            is String -> {
+                shEdit.putString(key, value)
+            }
+        }
+
+        shEdit.apply()
+    }
 }
 
 

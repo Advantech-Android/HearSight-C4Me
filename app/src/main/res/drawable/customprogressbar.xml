@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Background layer -->
+    <item android:id="@android:id/background">
+        <shape>
+            <corners android:radius="5dp" />
+            <solid android:color="#F1F0EC" />
+        </shape>
+    </item>
+    <!-- Secondary progress layer -->
+    <item android:id="@android:id/secondaryProgress">
+        <clip>
+            <shape>
+                <corners android:radius="5dp" />
+                <solid android:color="#B3E5FC" />
+            </shape>
+        </clip>
+    </item>
+    <!-- Progress layer with custom icon -->
+    <item android:id="@android:id/progress">
+        <clip>
+            <layer-list>
+                <item>
+                    <shape>
+                        <corners android:radius="5dp" />
+                        <solid android:color="#03A9F4" />
+                    </shape>
+                </item>
+                <item>
+                    <bitmap
+                        android:gravity="center"
+                        android:src="@drawable/otp2" />
+                </item>
+            </layer-list>
+        </clip>
+    </item>
+</layer-list>

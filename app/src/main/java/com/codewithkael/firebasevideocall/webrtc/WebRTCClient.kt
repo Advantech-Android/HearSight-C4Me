@@ -2,6 +2,7 @@ package com.codewithkael.firebasevideocall.webrtc
 
 import android.content.Context
 import android.content.Intent
+import android.media.AudioManager
 import android.media.projection.MediaProjection
 import android.os.Build
 import android.util.DisplayMetrics
@@ -63,7 +64,8 @@ class WebRTCClient @Inject constructor(private val context: Context, private val
     private val localAudioSource by lazy { peerConnectionFactory.createAudioSource(MediaConstraints()) }
     private val videoCapturer = getVideoCapturer(context)
     private var surfaceTextureHelper: SurfaceTextureHelper? = null
-    private val mediaConstraint = MediaConstraints().apply {
+    private val mediaConstraint = MediaConstraints()
+        .apply {
         mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"))
         mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveAudio", "true"))
     }
@@ -85,25 +87,23 @@ class WebRTCClient @Inject constructor(private val context: Context, private val
 
     //installing requirements section
     init {
-
         initPeerConnectionFactory()
     }
 
     private fun initPeerConnectionFactory() {
+
         val options = PeerConnectionFactory.InitializationOptions.builder(context)
             .setEnableInternalTracer(true).setFieldTrials("WebRTC-H264HighProfile/Enabled/")
             .createInitializationOptions()
         PeerConnectionFactory.initialize(options)
+
     }
 
     private fun createPeerConnectionFactory(): PeerConnectionFactory {
         return PeerConnectionFactory.builder()
             .setVideoDecoderFactory(
-                DefaultVideoDecoderFactory(eglBaseContext)
-            ).setVideoEncoderFactory(
-                DefaultVideoEncoderFactory(
-                    eglBaseContext, true, true
-                )
+                DefaultVideoDecoderFactory(eglBaseContext)).setVideoEncoderFactory(
+                DefaultVideoEncoderFactory(eglBaseContext, true, true)
             ).setOptions(PeerConnectionFactory.Options().apply {
                 disableNetworkMonitor = false
                 disableEncryption = false
@@ -155,14 +155,9 @@ class WebRTCClient @Inject constructor(private val context: Context, private val
                 peerConnection?.setLocalDescription(object : MySdpObserver() {
                     override fun onSetSuccess() {
                         super.onSetSuccess()
+
                         listener?.onTransferEventToSocket(
-                            DataModel(
-                                type = DataModelType.Answer,
-                                sender = username,
-                                target = target,
-                                data = desc?.description
-                            )
-                        )
+                            DataModel(type = DataModelType.Answer, sender = username, target = target, data = desc?.description))
                     }
                 }, desc)
             }
@@ -211,6 +206,7 @@ class WebRTCClient @Inject constructor(private val context: Context, private val
     }
 
     fun toggleAudio(shouldBeMuted: Boolean) {
+
         if (shouldBeMuted) {
             localStream?.removeTrack(localAudioTrack)
         } else {
@@ -273,18 +269,23 @@ class WebRTCClient @Inject constructor(private val context: Context, private val
     }
 
     private fun startLocalStreaming(localView: SurfaceViewRenderer, isVideoCall: Boolean) {
+        setAudioOutputToSpeaker(context)
         Log.d(TAG, "startLocalStreaming: ")
         localSurfaceView = localView
         localStream = peerConnectionFactory.createLocalMediaStream(localStreamId)
         if (isVideoCall) {
             startCapturingCamera(localView)
         }
-        localAudioTrack =
-            peerConnectionFactory.createAudioTrack(localTrackId + "_audio", localAudioSource)
+        localAudioTrack = peerConnectionFactory.createAudioTrack(localTrackId + "_audio", localAudioSource)
+        localAudioTrack?.setEnabled(true)
+        localAudioTrack?.setVolume(1.0)
         localStream?.addTrack(localAudioTrack)
         peerConnection?.addStream(localStream)
     }
-
+    fun setAudioOutputToSpeaker(context: Context) {
+        val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        audioManager.isSpeakerphoneOn = true
+    }
     private fun startCapturingCamera(localView: SurfaceViewRenderer) {
         Log.d(TAG, "startCapturingCamera: ")
         localSurfaceView = localView
@@ -360,21 +361,13 @@ class WebRTCClient @Inject constructor(private val context: Context, private val
         val displayMetrics = DisplayMetrics()
         val windowsManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
         windowsManager.defaultDisplay.getMetrics(displayMetrics)
-
         val screenWidthPixels = displayMetrics.widthPixels
         val screenHeightPixels = displayMetrics.heightPixels
-
-        val surfaceTextureHelper =
-            SurfaceTextureHelper.create(Thread.currentThread().name, eglBaseContext)
-
-
+        val surfaceTextureHelper = SurfaceTextureHelper.create(Thread.currentThread().name, eglBaseContext)
         screenCapturer = createScreenCapturer()
-        screenCapturer!!.initialize(
-            surfaceTextureHelper, context, localScreenVideoSource.capturerObserver
-        )
+        screenCapturer!!.initialize(surfaceTextureHelper, context, localScreenVideoSource.capturerObserver)
         screenCapturer!!.startCapture(screenWidthPixels, screenHeightPixels, 15)
-        localScreenShareVideoTrack =
-            peerConnectionFactory.createVideoTrack(localTrackId + "_video", localScreenVideoSource)
+        localScreenShareVideoTrack = peerConnectionFactory.createVideoTrack(localTrackId + "_video", localScreenVideoSource)
         localScreenShareVideoTrack?.addSink(localSurfaceView)
         localStream?.addTrack(localScreenShareVideoTrack)
         peerConnection?.addStream(localStream)

@@ -2,10 +2,13 @@ package com.codewithkael.firebasevideocall.webrtc
 
 import android.content.Context
 import android.hardware.usb.UsbDevice
+import android.os.Build
 import android.util.Log
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import com.codewithkael.firebasevideocall.ui.CallActivity
 import com.codewithkael.firebasevideocall.ui.CallActivity.Companion.uvcPreview
+import com.codewithkael.firebasevideocall.videointelegence.VideoAnnotation
 import com.jiangdg.ausbc.MultiCameraClient
 import com.jiangdg.ausbc.MultiCameraClient.ICamera
 import com.jiangdg.ausbc.callback.ICameraStateCallBack
@@ -99,8 +102,6 @@ fun createUVCInstance(){
                  * @param device
                  */
                 override fun onDetachDec(device: UsbDevice?) {
-
-
                     Log.d(TAG, "onDetachDec: isExecute--> $isExecute :isCheck-->$isCheck -->isDetach:$isDetach")
                     isDetach = true
                     isExecute = false
@@ -116,7 +117,6 @@ fun createUVCInstance(){
                  */
                 override fun onConnectDev(device: UsbDevice?, ctrlBlock: UsbControlBlock?) {
                     Log.d(TAG, "onConnectDev: isExecute--> $isExecute :isCheck-->$isCheck -->isDetach:$isDetach")
-
                     if (device == null || ctrlBlock == null) {
                         Log.e(TAG, "onConnectDev: Device or CtrlBlock is null")
                         return
@@ -238,6 +238,7 @@ fun createUVCInstance(){
 
 
     val iPreviewDataCallBack = object : IPreviewDataCallBack {
+        @RequiresApi(Build.VERSION_CODES.O)
         override fun onPreviewData(
             data: ByteArray?,
             width: Int,
@@ -245,14 +246,9 @@ fun createUVCInstance(){
             format: IPreviewDataCallBack.DataFormat)
         {
             if (!isCheck) {
-
-                Log.d(
-                    TAG,
-                    "onPreviewData() called with: data = $data, width = $width, height = $height, format = $format"
-                )
+                Log.d(TAG, "onPreviewData() called with: data = $data, width = $width, height = $height, format = $format")
               isCheck=true
             }
-
             val nv21Buffer = NV21Buffer(data, UVC_PREVIEW_WIDTH, UVC_PREVIEW_HEIGHT, null);
             val frame = VideoFrame(nv21Buffer, 0, System.nanoTime());
             capturerObserver?.onFrameCaptured(frame);

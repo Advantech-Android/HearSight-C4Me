@@ -191,6 +191,7 @@ class MainService : Service(), MainRepository.Listener {
             isServiceRunning = true
             username = incomingIntent.getStringExtra("username")
             userphone = incomingIntent.getStringExtra("userphone")
+            Log.d(TAG, "==>>handleStartService:$username and $userphone ")
             startServiceWithNotification()
 
             //setup my clients

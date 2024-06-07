@@ -5,6 +5,7 @@ import android.app.AlertDialog
 import android.app.Dialog
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.net.wifi.WifiManager
 import android.os.Bundle
@@ -23,6 +24,7 @@ import android.widget.Button
 
 import android.widget.EditText
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ContextThemeWrapper
@@ -55,6 +57,11 @@ import com.codewithkael.firebasevideocall.utils.setViewFields
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.runBlocking
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.lifecycleScope
+import com.codewithkael.firebasevideocall.ui.LoginActivity.Share.liveShare
+import com.codewithkael.firebasevideocall.utils.UserStatus
+import kotlinx.coroutines.launch
 
 import javax.inject.Inject
 
@@ -68,7 +75,7 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
     private var recentContactPhone: String = ""
     private lateinit var contactBind: AddcontactsBinding
 
-private val MAX_LENGTH_PHONE=5
+    private val MAX_LENGTH_PHONE=5
     private lateinit var mDialog: Dialog
     private val TAG = "***>>MainActivity"
 
@@ -86,6 +93,9 @@ private val MAX_LENGTH_PHONE=5
     lateinit var serviceRepository: MainServiceRepository
     private var mainAdapter: MainRecyclerViewAdapter? = null
 
+    lateinit var sharedPref: SharedPreferences
+    lateinit var shEdit: SharedPreferences.Editor
+
     @Inject
     lateinit var context: Context
 
@@ -93,17 +103,100 @@ private val MAX_LENGTH_PHONE=5
     lateinit var mp3Player: Mp3Ring
     lateinit var wifiManager: WifiManager
 
+    companion object Share {
+        var liveShare = MutableLiveData<SharedPreferences>()//is used to provide a reactive and centralized way to manage and observe changes to the SharedPreferences instance across the app.
+
+    }
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         views = ActivityMainBinding.inflate(layoutInflater)
         setContentView(views?.root)
+
+
+        sharedPref = this.getSharedPreferences("see_for_me", MODE_PRIVATE)
+        shEdit = sharedPref.edit()
+
+        // Fetch data from shared preferences
+        username = sharedPref.getString("user_name", null)
+        userphone = sharedPref.getString("user_phone", null)
+
+
+
+        Log.d(TAG, "onCreate==??:$username and $userphone")
+
+
+      //Setting "is_login" to false
+
         wifiManager = getSystemService(Context.WIFI_SERVICE) as WifiManager
-        runBlocking { init() }
+
+        onBackPressedDispatcher.addCallback(back)
+
+        lifecycleScope.launch { init() }
+
         searchQuery()
+    }
+    private suspend fun init() {
+
+        //Extras from Main Activity
+        username = intent.getStringExtra(setViewFields.USER_NAME)
+        userphone = intent.getStringExtra(setViewFields.USER_PHONE)
+
+        Log.d(TAG, "init==??:$username and $userphone ")
+
+        if(username.isNullOrEmpty()||userphone.isNullOrEmpty())
+        {
+
+            username = sharedPref.getString("user_name", null)
+            userphone = sharedPref.getString("user_phone", null)
+        }
+        if (username == null) finish()
+
+        views?.addContact?.setOnClickListener {
+            addContacts()
+        }
+        //1. observe other users status
+        subscribeObservers()
+        //2. start foreground service to listen negotiations and calls.
+        startMyService()
+    }
+    val back=object: OnBackPressedCallback(true) {
+        /* override back pressing */
+        override fun handleOnBackPressed() {
+            //Your code here
+            showCloseAppDialog()
+        }
+    }
+    fun showCloseAppDialog(){
+        // Inflate the dialog layout
+        val dialogView = layoutInflater.inflate(R.layout.closeapp_dialog, null)
+
+        // Initialize the AlertDialog Builder
+        val builder = AlertDialog.Builder(this)
+        builder.setView(dialogView)
+
+        val dialog = builder.create()
+
+
+        val closeAppOkbtn=dialogView.findViewById<Button>(R.id.closeAppOkbtn)
+        val closeAppbtn=dialogView.findViewById<Button>(R.id.closeAppbtn)//
+        builder.setView(dialogView)
+            .setPositiveButton(null, null) // Setting null for positive button for custom handling
+            .setNegativeButton(null, null) // Setting null for negative button for custom handling
+
+        closeAppOkbtn.setOnClickListener {
+
+            mainServiceRepository.stopService()
+            finishAffinity()
+            dialog.dismiss()
+        }
+        closeAppbtn.setOnClickListener {
+            dialog.dismiss()
+        }
+        dialog.show()
 
     }
-
     private fun showLogoutDialog() {
         val builder = AlertDialog.Builder(this)
         val inflater = layoutInflater
@@ -120,6 +213,10 @@ private val MAX_LENGTH_PHONE=5
         dialog.show()
 
         logoutOkBtn.setOnClickListener {
+            liveShare.value?.edit()?.putBoolean("is_login",false)
+            mainRepository.login(username!!,userphone!!,UserStatus.OFFLINE.name,false){ischeck ,status->
+
+            }
             // Perform logout action
             // For example, navigate to login screen or clear session
             val intent = Intent(this, LoginActivity::class.java)
@@ -134,18 +231,7 @@ private val MAX_LENGTH_PHONE=5
     }
 
 
-    private suspend fun init() {
-        username = intent.getStringExtra(setViewFields.USER_NAME)
-        userphone = intent.getStringExtra(setViewFields.USER_PHONE)
-        if (username == null) finish()
-        views?.addContact?.setOnClickListener {
-            addContacts()
-        }
-        //1. observe other users status
-        subscribeObservers()
-        //2. start foreground service to listen negotiations and calls.
-        startMyService()
-    }
+
 
     private fun searchQuery() {
         views?.searchView?.queryHint = "Search Contacts"
@@ -176,17 +262,17 @@ private val MAX_LENGTH_PHONE=5
     }
 
     private val pickContactLauncher = registerForActivityResult(PickContactContract(this@MainActivity)) { result ->
-            result?.let { (name, phoneNumber) ->
-                Log.d(TAG, "name:$name = phoneNumber:$phoneNumber")
+        result?.let { (name, phoneNumber) ->
+            Log.d(TAG, "name:$name = phoneNumber:$phoneNumber")
 
-                var ph = phoneNumber
-                if (!phoneNumber.startsWith("+91")) {
-                    ph = "+91${phoneNumber}"
-                }
-                contactBind.addNameid.setText(name.trim().lowercase())
-                contactBind.addPhoneNumberid.setText(ph.trim().replace(" ", ""))
+            var ph = phoneNumber
+            if (!phoneNumber.startsWith("+91")) {
+                ph = "+91${phoneNumber}"
             }
+            contactBind.addNameid.setText(name.trim().lowercase())
+            contactBind.addPhoneNumberid.setText(ph.trim().replace(" ", ""))
         }
+    }
 
     private fun addContacts() {
         mDialog = Dialog(this)
@@ -272,7 +358,7 @@ private val MAX_LENGTH_PHONE=5
             },
             { onlineContactList ->
                 if (onlineContactList.isEmpty()) {
-                    Log.d(TAG, "Available Contact: ${onlineContactList.filter { 
+                    Log.d(TAG, "Available Contact: ${onlineContactList.filter {
                         it.userName
                         false
                     }}")
@@ -280,7 +366,7 @@ private val MAX_LENGTH_PHONE=5
                     //mainAdapter!!.updateList(allContact ?: emptyList(), emptyList())
                 } else {
                     views?.noContactTV?.visibility = View.GONE
-                   // mainAdapter!!.updateList(allContact ?: emptyList(), onlineContactList!!)
+                    // mainAdapter!!.updateList(allContact ?: emptyList(), onlineContactList!!)
                     registerCommonList = onlineContactList
                 }
             }
@@ -329,6 +415,9 @@ private val MAX_LENGTH_PHONE=5
     }
 
     private fun startMyService() {
+        if (username.isNullOrEmpty())
+            username=liveShare.value?.getString("user_name","")
+
         mainServiceRepository.startService(username!!, MainServiceActions.START_SERVICE.name)
     }
 
@@ -388,10 +477,10 @@ private val MAX_LENGTH_PHONE=5
     }
 
 
-    override fun onBackPressed() {
-        super.onBackPressed()
-        mainServiceRepository.stopService()
-    }
+//    override fun onBackPressed() {
+//        super.onBackPressed()
+//        mainServiceRepository.stopService()
+//    }
 
 
     override fun onCallReceived(model: DataModel) {
@@ -568,6 +657,28 @@ private val MAX_LENGTH_PHONE=5
             )
             ActivityCompat.requestPermissions(this, permissions, STORAGE_PERMISSION_CODE)
         }
+    }
+
+    fun getData(key: String): String {
+        return sharedPref.getString(key, "").toString()
+    }
+
+    fun putData(key: String, value: Any) {
+        when (value) {
+            is Int -> {
+                shEdit.putInt(key, value)
+            }
+
+            is Boolean -> {
+                shEdit.putBoolean(key, value)
+            }
+
+            is String -> {
+                shEdit.putString(key, value)
+            }
+        }
+
+        shEdit.apply()
     }
 
 

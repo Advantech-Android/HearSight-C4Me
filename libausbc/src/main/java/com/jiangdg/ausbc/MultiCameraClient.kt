@@ -197,7 +197,7 @@ open class MultiCameraClient(ctx: Context, callback: IDeviceConnectCallBack?) {
      * @param device see [UsbDevice]
      * @return true permission granted
      */
-    fun hasPermission(device: UsbDevice?) = mUsbMonitor?.hasPermission(device)
+     fun hasPermission(device: UsbDevice?) = mUsbMonitor?.hasPermission(device)
 
     /**
      * Get device list

@@ -137,7 +137,6 @@ class CallActivity : CameraActivity(), MainService.EndCallListener {
         } ?: kotlin.run {
             finish()
         }
-
         isVideoCall = intent.getBooleanExtra("isVideoCall", true)
         isCaller = intent.getBooleanExtra("isCaller", true)
         isIncoming = intent.getStringExtra("isIncoming").toString()
@@ -154,7 +153,6 @@ class CallActivity : CameraActivity(), MainService.EndCallListener {
                 toggleCameraButton.isVisible = false
                 screenShareButton.isVisible = false
                 switchCameraButton.isVisible = false
-
             }
             MainService.remoteSurfaceView = remoteView
             MainService.localSurfaceView = localView
@@ -185,11 +183,7 @@ class CallActivity : CameraActivity(), MainService.EndCallListener {
             mp3Player.startMP3(false)
         }
         mainRepository.onObserveEndCall() { data, status ->
-            Log.d(
-                TAG,
-                "CallAct -> onObserveEndCall: currentuser: ${mainRepository.getUserPhone()} target: ${target!!} status:$status"
-            )
-
+            Log.d(TAG, "CallAct -> onObserveEndCall: currentuser: ${mainRepository.getUserPhone()} target: ${target!!} status:$status")
             if (status == "EndCall") {
                 //isAttend=true
                 mp3Player.stopMP3()
@@ -202,9 +196,9 @@ class CallActivity : CameraActivity(), MainService.EndCallListener {
                     //finish()
                 }
             } else if (status == "AcceptCall") {
-//                    mainRepository.setCallStatus(target=target!!, sender = mainRepository.getUserPhone(),""){
-//
-//                    }
+                    mainRepository.setCallStatus(target=target!!, sender = mainRepository.getUserPhone(),""){
+
+                    }
                 isAttend=true
                 mp3Player.stopMP3()
                 startCallTimer()
@@ -234,13 +228,18 @@ class CallActivity : CameraActivity(), MainService.EndCallListener {
     }
 
     private fun updateBatteryTemperature() {
-        if (LoginActivity.tempLiveData != null && !LoginActivity.tempLiveData.value.equals("-0.0f")) {
-            views?.tempratureVideoCallAct?.text = "${LoginActivity.tempLiveData.value} °C"
-        } else {
-            val batteryTemperature = loginActivity.getBatteryTemprature()
-            LoginActivity.tempLiveData.value = batteryTemperature.toString()
-            views?.tempratureVideoCallAct?.text = "$batteryTemperature °C"
+        try{
+            if (LoginActivity.tempLiveData != null && !LoginActivity.tempLiveData.value.equals("-0.0f")) {
+                views?.tempratureVideoCallAct?.text = "${LoginActivity.tempLiveData.value} °C"
+            } else {
+                val batteryTemperature = loginActivity.getBatteryTemprature()
+                LoginActivity.tempLiveData.value = batteryTemperature.toString()
+                views?.tempratureVideoCallAct?.text = "$batteryTemperature °C"
+            }
+        }catch (e:Exception){
+
         }
+
     }
 
     fun startCallTimer() {
@@ -283,10 +282,7 @@ class CallActivity : CameraActivity(), MainService.EndCallListener {
 
 
     private fun startScreenCapture() {
-        val mediaProjectionManager = application.getSystemService(
-            Context.MEDIA_PROJECTION_SERVICE
-        ) as MediaProjectionManager
-
+        val mediaProjectionManager = application.getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
         val captureIntent = mediaProjectionManager.createScreenCaptureIntent()
         requestScreenCaptureLauncher.launch(captureIntent)
 
@@ -399,6 +395,7 @@ class CallActivity : CameraActivity(), MainService.EndCallListener {
         views=null
 
     }
+
 
     override fun getRootView(layoutInflater: LayoutInflater): View? {
         views = ActivityCallBinding.inflate(layoutInflater)

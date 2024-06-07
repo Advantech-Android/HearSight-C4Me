@@ -86,7 +86,7 @@ public class RTCAudioManager {
         ThreadUtils.checkIsOnMainThread();
         apprtcContext = context;
         audioManager = ((android.media.AudioManager) context.getSystemService(Context.AUDIO_SERVICE));
-
+        audioManager.setSpeakerphoneOn(true);
         bluetoothManager = BluetoothManager.create(context, this);
         wiredHeadsetReceiver = new WiredHeadsetReceiver();
         amState = AudioManagerState.UNINITIALIZED;
@@ -128,7 +128,6 @@ public class RTCAudioManager {
         if (!useSpeakerphone.equals(SPEAKERPHONE_AUTO)) {
             return;
         }
-
         // The proximity sensor should only be activated when there are exactly two
         // available audio devices.
         if (audioDevices.size() == 2 && audioDevices.contains(AudioDevice.EARPIECE) && audioDevices.contains(AudioDevice.SPEAKER_PHONE)) {
@@ -358,7 +357,6 @@ public class RTCAudioManager {
     private void setSpeakerphoneOn(boolean on) {
         boolean wasOn = audioManager.isSpeakerphoneOn();
         audioManager.setStreamVolume(AudioManager.STREAM_VOICE_CALL,volumeRange,0);
-
         if (wasOn == on) {
             return;
         }

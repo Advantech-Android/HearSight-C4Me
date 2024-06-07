@@ -1,29 +1,33 @@
 package com.codewithkael.firebasevideocall.adapters
 
 import android.app.Dialog
+import android.content.Intent
+import android.graphics.Color
 import android.os.Looper
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import android.view.WindowManager
 import android.widget.Button
 import android.widget.Toast
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
+import com.codewithkael.firebasevideocall.BuildConfig
 import com.codewithkael.firebasevideocall.R
 import com.codewithkael.firebasevideocall.databinding.ItemMainRecyclerViewBinding
 import com.codewithkael.firebasevideocall.firebaseClient.FirebaseClient
+import com.codewithkael.firebasevideocall.ui.Mp3Ring
 import com.codewithkael.firebasevideocall.utils.ContactInfo
 import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.collection.LLRBNode.Color
-import java.util.logging.Handler
+import javax.inject.Inject
+
 
 private const val TAG = "====>>MainRecycViewAdap"
 
 class MainRecyclerViewAdapter(private val listener: Listener) :
 
     RecyclerView.Adapter<MainRecyclerViewAdapter.MainRecyclerViewHolder>() {
-
+    @Inject
+    lateinit var mp3Player: Mp3Ring
     private var innerContactList: List<ContactInfo>? = null
     private var onlineContactList: List<ContactInfo>? = null
     var filteredContactList: List<ContactInfo>? = null
@@ -81,6 +85,8 @@ class MainRecyclerViewAdapter(private val listener: Listener) :
         RecyclerView.ViewHolder(binding.root) {
         val handler = android.os.Handler(Looper.getMainLooper())
         private val context = binding.root.context
+        @Inject
+        lateinit var mp3Player: Mp3Ring
         fun bind(
             user: ContactInfo,
             pos: Int,
@@ -137,22 +143,28 @@ class MainRecyclerViewAdapter(private val listener: Listener) :
                             usernameTv.text = "You cant connect ${user.userName}"
                             userNumber.text = ": ${user.contactNumber}"
                         }else{
+
                             videoCallBtn.isVisible = true
                             audioCallBtn.isVisible = false
                             cardViewVideoCallClick.isEnabled = false
                             statusTv.setTextColor(context.resources.getColor(R.color.blue_dark, null))
                             statusTv.text = "${user.userName} is Unregister"
                             usernameTv.text = "Invite ${user.userName}"
+                            usernameTv.setTextColor(Color.parseColor("#bdbdbd"))
+                            usernameTv.setOnClickListener {
+                                inviteGuideUser(user)
+                            }
                             userNumber.text = ": ${user.contactNumber}"
                         }
                     }
 
                     "IN_CALL" -> {
-                        videoCallBtn.isVisible = false
+                       //00.................................................................................................................................................. mp3Player.stopMP3()
+                        videoCallBtn.isVisible = true
                         audioCallBtn.isVisible = false
                         statusTv.setTextColor(context.resources.getColor(R.color.yellow, null))
                         statusTv.text = "${user.userName} is In call"
-                        usernameTv.text = "Call ${user.userName}"
+                        usernameTv.text = "Unable to call at the moment ${user.userName}"
                         userNumber.text = ": ${user.contactNumber}"
                     }
                 }
@@ -175,7 +187,6 @@ class MainRecyclerViewAdapter(private val listener: Listener) :
                             listener,
                             pos
                         )
-
                     }
                     noBtn.setOnClickListener { deleteDialog.dismiss() }
 
@@ -183,6 +194,21 @@ class MainRecyclerViewAdapter(private val listener: Listener) :
 
             }
         }
+
+        private fun inviteGuideUser(user: ContactInfo) {
+            try {
+                val shareIntent = Intent(Intent.ACTION_SEND)
+                shareIntent.setType("text/plain")
+                shareIntent.putExtra(Intent.EXTRA_SUBJECT, "HearSight App")
+                var shareMessage = "\n${user.userName} recommend you this application\n\n"
+                shareMessage = shareMessage + "https://drive.google.com/file/d/1VoXKYUIVVPHr-VZGbQaXUyr721VN1TXk/view?usp=sharing" + BuildConfig.APPLICATION_ID + "\n\n"
+                shareIntent.putExtra(Intent.EXTRA_TEXT, shareMessage)
+                context.startActivity(Intent.createChooser(shareIntent, "choose one"))
+            } catch (e: Exception) {
+                //e.toString();
+            }
+        }
+
 
 
         private fun deleteContacts(

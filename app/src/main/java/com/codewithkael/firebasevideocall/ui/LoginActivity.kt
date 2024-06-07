@@ -29,12 +29,20 @@ import com.codewithkael.firebasevideocall.service.MainServiceRepository
 import com.codewithkael.firebasevideocall.utils.MySMSBroadcastReceiver
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.MutableLiveData
+import com.codewithkael.firebasevideocall.astra.AstraDemo
 import com.codewithkael.firebasevideocall.service.MainServiceActions
 import com.codewithkael.firebasevideocall.utils.LoginActivityFields
 import com.codewithkael.firebasevideocall.utils.LoginActivityFields.USERNAME_INVALID
 import com.codewithkael.firebasevideocall.utils.LoginActivityFields.PASWORD_INVALID
 import com.codewithkael.firebasevideocall.utils.ProgressBarUtil
 import com.codewithkael.firebasevideocall.utils.SnackBarUtils
+import com.codewithkael.firebasevideocall.utils.UserStatus
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
+import com.jiangdg.usb.USBMonitor
 import dagger.hilt.android.AndroidEntryPoint
 import java.util.Locale
 import java.util.regex.Pattern
@@ -51,7 +59,6 @@ class LoginActivity : AppCompatActivity() {
     object uvc {
         var isUvc = MutableLiveData(false)
     }
-
     private lateinit var countryCode: String
     private var number: String? = null
     private var views: ActivityLoginBinding? = null
@@ -64,10 +71,11 @@ class LoginActivity : AppCompatActivity() {
     lateinit var wifiManager: WifiManager
     lateinit var sharedPref: SharedPreferences
     lateinit var shEdit: SharedPreferences.Editor
+    var ACTION_USB_PERMISSION = "com.serenegiant.USB_PERMISSION."
 
     companion object Share {
-        var liveShare = MutableLiveData<SharedPreferences>()
-        val tempLiveData=MutableLiveData<String>("-0.0f")
+        var liveShare = MutableLiveData<SharedPreferences>()//is used to provide a reactive and centralized way to manage and observe changes to the SharedPreferences instance across the app.
+        val tempLiveData = MutableLiveData<String>("-0.0f")
     }
 
     var sms_otp = ""
@@ -80,9 +88,11 @@ class LoginActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         views = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(views!!.root)
-        sharedPref = this.getSharedPreferences("save_login", MODE_PRIVATE)
+        sharedPref = getSharedPreferences("see_for_me", MODE_PRIVATE)
         shEdit = sharedPref.edit()
+        putData("is_login", false) //Setting "is_login" to false
         liveShare.value = sharedPref
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             registerReceiver(
                 mySMSBroadcastReceiver,
@@ -90,16 +100,40 @@ class LoginActivity : AppCompatActivity() {
                 RECEIVER_VISIBLE_TO_INSTANT_APPS
             )
         }
+
+        astra()
         wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
         getIPAdd()
         countryCode = Locale.getDefault().country
         Log.d(TAG, "init: CountryCode:\t$countryCode")
         init()
-        // modelDebug()
+        // modelDebug()ḍ
         clearData()
 
     }
 
+    private fun astra() {
+        views!!.astra.setOnClickListener {
+            startActivity(Intent(this, AstraDemo::class.java))
+        }
+    }
+
+    private fun isFirebaseVerificationTrue(callback:(Boolean)->Unit){
+        val firebaseUser = FirebaseAuth.getInstance().currentUser
+        val firebaseDatabase= FirebaseDatabase.getInstance()
+        firebaseUser?.uid?.let { uid ->
+            firebaseDatabase.reference.child("users").child(uid).child("verified")
+                .addListenerForSingleValueEvent(object : ValueEventListener {
+                    @SuppressLint("SuspiciousIndentation")
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        val isVerified=snapshot.getValue(Boolean::class.java)?:false
+                        callback(isVerified)
+                    }
+                    override fun onCancelled(error: DatabaseError) {
+                        callback(false)
+                    } })
+        }
+    }
 
     private fun getIPAdd() {
         views?.apply {
@@ -122,16 +156,18 @@ class LoginActivity : AppCompatActivity() {
 
             }
         }
+    }
 
+    fun getBatteryTemprature(): Float {
+        val intent = registerReceiver(
+            null,
+            IntentFilter(Intent.ACTION_BATTERY_CHANGED)
+        )
+        val temprature = intent?.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, 0) ?: 0
+        return temprature / 10F
 
     }
-    fun getBatteryTemprature():Float{
-        val intent=registerReceiver(null,
-            IntentFilter(Intent.ACTION_BATTERY_CHANGED))
-        val temprature=intent?.getIntExtra(BatteryManager.EXTRA_TEMPERATURE,0)?:0
-        return temprature/10F
 
-    }
     private fun init() {
         setUserData()
         handleButtonClick()
@@ -145,6 +181,7 @@ class LoginActivity : AppCompatActivity() {
             passwordEt.setText(getData("user_phone"))
         }
     }
+
     fun clearData() {
         views?.apply {
             clearData.setOnCheckedChangeListener() { buttonView, isChecked ->
@@ -158,6 +195,7 @@ class LoginActivity : AppCompatActivity() {
             }
         }
     }
+
     fun uvcVI_Control() {
         views?.apply {
             checkVi.setOnCheckedChangeListener() { buttonView, isChecked ->
@@ -170,6 +208,13 @@ class LoginActivity : AppCompatActivity() {
                 }
 
             }
+
+//            val filter = IntentFilter().apply {
+//                addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED)
+//                addAction(UsbManager.ACTION_USB_DEVICE_DETACHED)
+//                addAction(ACTION_USB_PERMISSION)
+//            }
+//            registerReceiver(mUsbReceiver, filter)
         }
     }
 
@@ -232,6 +277,7 @@ class LoginActivity : AppCompatActivity() {
 
         }
     }
+
     private fun clearAppData() {
         try {
             // clearing app data
@@ -251,7 +297,7 @@ class LoginActivity : AppCompatActivity() {
     private fun performLogin(usernameText: String, passwordText: String) {
         views?.apply {
             mainRepository.login(
-                usernameText, passwordText
+                usernameText, passwordText,UserStatus.ONLINE.name,true
             ) { isDone, reason ->
                 Log.d(TAG, "Login attempt result: $isDone, Reason: $reason")
                 ProgressBarUtil.hideProgressBar(this@LoginActivity)
@@ -260,21 +306,28 @@ class LoginActivity : AppCompatActivity() {
                     passwordEt.isEnabled = true
                     usernameEt.isEnabled = true
                     btn.isEnabled = true
+
                     Log.d(TAG, "Login failed: $reason")
                     SnackBarUtils.showSnackBar(root, LoginActivityFields.UN_PW_INCORRECT)
-                } else {
+                }
+                else {
                     putData("user_name", usernameText)
                     putData("user_phone", passwordText)
+                    Log.d(TAG, "!!>>performLogin:$usernameText and $passwordText ")
+                    putData("is_login", true)
 
-                    startActivity(Intent(this@LoginActivity, MainActivity::class.java).apply {
+                    startActivity(Intent(this@LoginActivity, RandomOTPGenerate::class.java).apply {
                         putExtra("username", usernameText)
                         putExtra("userphone", passwordText)
                     })
+                   /* startActivity(Intent(this@LoginActivity, MainActivity::class.java).apply {
+                        putExtra("username", usernameText)
+                        putExtra("userphone", passwordText)
+                    })*/
                 }
             }
         }
     }
-
 
 
     override fun onRequestPermissionsResult(
@@ -301,10 +354,6 @@ class LoginActivity : AppCompatActivity() {
             // Handle file chooser result
         }
     }
-
-
-
-
 
 
     fun triggerRebirth(context: Context, nextIntent: Intent?) {
@@ -357,7 +406,6 @@ class LoginActivity : AppCompatActivity() {
     }
 
 
-
     private fun isPermissionGrand() {
         if (ContextCompat.checkSelfPermission(
                 this,
@@ -386,15 +434,12 @@ class LoginActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        if(tempLiveData!=null && !tempLiveData.value.equals("-0.0f"))
-        {
-            views?.temperatureTextView?.text="Mobile Temprature:${tempLiveData.value} °C"
-        }
-        else
-        {
-            val batteryTemprature=getBatteryTemprature()
-            tempLiveData.value=batteryTemprature.toString()
-            views?.temperatureTextView?.text="Mobile Temperature: $batteryTemprature °C"
+        if (tempLiveData != null && !tempLiveData.value.equals("-0.0f")) {
+            views?.temperatureTextView?.text = "Mobile Temprature:${tempLiveData.value} °C"
+        } else {
+            val batteryTemprature = getBatteryTemprature()
+            tempLiveData.value = batteryTemprature.toString()
+            views?.temperatureTextView?.text = "Mobile Temperature: $batteryTemprature °C"
         }
     }
 
@@ -429,8 +474,21 @@ class LoginActivity : AppCompatActivity() {
         return sharedPref.getString(key, "").toString()
     }
 
-    fun putData(key: String, value: String) {
-        shEdit.putString(key, value)
+    fun putData(key: String, value: Any) {
+        when (value) {
+            is Int -> {
+                shEdit.putInt(key, value)
+            }
+
+            is Boolean -> {
+                shEdit.putBoolean(key, value)
+            }
+
+            is String -> {
+                shEdit.putString(key, value)
+            }
+        }
+
         shEdit.apply()
     }
 

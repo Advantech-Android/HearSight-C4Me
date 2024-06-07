@@ -196,22 +196,16 @@ class UvcCapturerOld(context: Context, svVideoRender: SurfaceViewRenderer) :
             height: Int,
             format: IPreviewDataCallBack.DataFormat
         ) {
-            Log.d(
-                TAG,
-                "onPreviewData() called with: data = $data, width = $width, height = $height, format = $format"
-            )
-
+            Log.d(TAG, "onPreviewData() called with: data = $data, width = $width, height = $height, format = $format")
             val nv21Buffer = NV21Buffer(data, UVC_PREVIEW_WIDTH, UVC_PREVIEW_HEIGHT, null);
             val frame = VideoFrame(nv21Buffer, 0, System.nanoTime());
             capturerObserver?.onFrameCaptured(frame);
             this@UvcCapturerOld.svVideoRender.onFrame(frame);
             mUvcStrategy?.onReady(this@UvcCapturerOld.svVideoRender.holder.surface)
         }
-
     }
 
-    override fun onUVCPreview(iCamera: MultiCameraClient.ICamera,
-                              state: ICameraStateCallBack.State, s: String?,callFrom:String) {
+    override fun onUVCPreview(iCamera: MultiCameraClient.ICamera, state: ICameraStateCallBack.State, s: String?,callFrom:String) {
         // Log.d(TAG, "onUVCPreview() called with: iCamera = $iCamera, state = $state, s = $s")
         self = iCamera
         code = state

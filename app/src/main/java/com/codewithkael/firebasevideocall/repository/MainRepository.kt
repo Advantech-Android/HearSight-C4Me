@@ -29,8 +29,8 @@ class MainRepository @Inject constructor(
     var listener: Listener? = null
     private var remoteView: SurfaceViewRenderer? = null
 
-    fun login(username: String, phonenumber: String, isDone: (Boolean, String?) -> Unit) {
-        firebaseClient.login(username, phonenumber, isDone)
+    fun login(username: String, phonenumber: String,status:String,isLogin:Boolean, isDone: (Boolean, String?) -> Unit) {
+        firebaseClient.login(username, phonenumber,status,isLogin, isDone)
     }
 
     fun getUserNameFB(phone: String, result: (String?) -> Unit) {
