@@ -36,13 +36,13 @@ import java.util.Set;
  */
 @SuppressLint("MissingPermission")
 public class RTCAudioManager {
-    private static final String TAG = RTCAudioManager.class.getSimpleName();
+    private static final String TAG = "xxxRTCAudioManager";
     private static final String SPEAKERPHONE_AUTO = "auto";
     private static final String SPEAKERPHONE_TRUE = "true";
     private static final String SPEAKERPHONE_FALSE = "false";
     private final Context apprtcContext;
 
-    private final int volumeRange=100;
+    private final int volumeRange = 100;
 
     // Contains speakerphone setting: auto, true or false
     private final String useSpeakerphone;
@@ -82,17 +82,28 @@ public class RTCAudioManager {
     // Callback method for changes in audio focus.
     private android.media.AudioManager.OnAudioFocusChangeListener audioFocusChangeListener;
 
-    private RTCAudioManager(Context context) {
+    private RTCAudioManager(Context context, String type) {
         ThreadUtils.checkIsOnMainThread();
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
         apprtcContext = context;
         audioManager = ((android.media.AudioManager) context.getSystemService(Context.AUDIO_SERVICE));
-        audioManager.setSpeakerphoneOn(true);
+        if(audioManager.isWiredHeadsetOn())
+            Log.d(TAG, "RTCAudioManager: isWiredHeadsetOn ==> true");
+        if (type.equals("auto") || type.equals("speakerphone")) {
+            audioManager.setSpeakerphoneOn(true);
+            useSpeakerphone = sharedPreferences.getString("speakerphone_preference", SPEAKERPHONE_AUTO);
+        }
+        else
+        {
+            audioManager.setSpeakerphoneOn(false);
+            useSpeakerphone= sharedPreferences.getString("speakerphone_preference", SPEAKERPHONE_FALSE);
+        }
         bluetoothManager = BluetoothManager.create(context, this);
         wiredHeadsetReceiver = new WiredHeadsetReceiver();
         amState = AudioManagerState.UNINITIALIZED;
 
-        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
-        useSpeakerphone = sharedPreferences.getString("speakerphone_preference", "auto");
+
+
         if (useSpeakerphone.equals(SPEAKERPHONE_FALSE)) {
             defaultAudioDevice = AudioDevice.EARPIECE;
         } else {
@@ -116,8 +127,8 @@ public class RTCAudioManager {
     /**
      * Construction.
      */
-    public static RTCAudioManager create(Context context) {
-        return new RTCAudioManager(context);
+    public static RTCAudioManager create(Context context, String type) {
+        return new RTCAudioManager(context, type);
     }
 
     /**
@@ -304,6 +315,13 @@ public class RTCAudioManager {
                     defaultAudioDevice = AudioDevice.SPEAKER_PHONE;
                 }
                 break;
+            case WIRED_HEADSET:
+                if (hasWiredHeadset()) {
+                    defaultAudioDevice = defaultDevice;
+                } else {
+                    defaultAudioDevice = AudioDevice.SPEAKER_PHONE;
+                }
+                break;
             default:
                 break;
         }
@@ -356,7 +374,7 @@ public class RTCAudioManager {
      */
     private void setSpeakerphoneOn(boolean on) {
         boolean wasOn = audioManager.isSpeakerphoneOn();
-        audioManager.setStreamVolume(AudioManager.STREAM_VOICE_CALL,volumeRange,0);
+        audioManager.setStreamVolume(AudioManager.STREAM_VOICE_CALL, volumeRange, 0);
         if (wasOn == on) {
             return;
         }
@@ -393,11 +411,12 @@ public class RTCAudioManager {
         @SuppressLint("WrongConstant") final AudioDeviceInfo[] devices = audioManager.getDevices(android.media.AudioManager.GET_DEVICES_ALL);
         for (AudioDeviceInfo device : devices) {
             final int type = device.getType();
+            Log.d(TAG, "hasWiredHeadset: ");
             if (type == AudioDeviceInfo.TYPE_WIRED_HEADSET) {
-                audioManager.setStreamVolume(type,volumeRange,0);
+                audioManager.setStreamVolume(type, volumeRange, 0);
                 return true;
             } else if (type == AudioDeviceInfo.TYPE_USB_DEVICE) {
-                audioManager.setStreamVolume(type,volumeRange,0);
+                audioManager.setStreamVolume(type, volumeRange, 0);
                 return true;
             }
         }
@@ -539,6 +558,7 @@ public class RTCAudioManager {
 
     /* Receiver which handles changes in wired headset availability. */
     private class WiredHeadsetReceiver extends BroadcastReceiver {
+        private static final String TAG = "xxxWiredHeadsetRecei";
         private static final int STATE_UNPLUGGED = 0;
         private static final int STATE_PLUGGED = 1;
         private static final int HAS_NO_MIC = 0;
@@ -546,6 +566,7 @@ public class RTCAudioManager {
 
         @Override
         public void onReceive(Context context, Intent intent) {
+            Log.d(TAG, "onReceive: " + intent.getAction() + " " + intent.getExtras());
             int state = intent.getIntExtra("state", STATE_UNPLUGGED);
             int microphone = intent.getIntExtra("microphone", HAS_NO_MIC);
             String name = intent.getStringExtra("name");

@@ -1,8 +1,6 @@
 package com.codewithkael.firebasevideocall.ui
 
 import android.Manifest.permission.READ_PHONE_NUMBERS
-import android.annotation.SuppressLint
-import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
@@ -21,7 +19,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import com.codewithkael.firebasevideocall.R
 import com.codewithkael.firebasevideocall.utils.setViewFields
-
 import kotlin.random.Random
 
 class RandomOTPGenerate : AppCompatActivity() {
@@ -169,19 +166,13 @@ class RandomOTPGenerate : AppCompatActivity() {
                 otp_input.setText(value)
                 timerId.text = "OTP Generated Successfully"
                 if (value.isEmpty()) {
-                    Toast.makeText(
-                        this@RandomOTPGenerate,
-                        "Failed to generate OTP",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    Toast.makeText(this@RandomOTPGenerate, "Failed to generate OTP", Toast.LENGTH_SHORT).show()
                 } else {
                     otp_verify_btn.isEnabled = true //Enable the verify otp button after the otp generated
                     otp_input.isEnabled = true // Enable OTP input to allow copying or viewing
                     otp_input.isFocusable = false // Prevent user from typing in the OTP input field
-
                 }
             }
-
         }.start()
     }
 

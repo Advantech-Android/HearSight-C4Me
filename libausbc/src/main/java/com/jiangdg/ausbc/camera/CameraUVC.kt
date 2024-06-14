@@ -121,7 +121,7 @@ class CameraUVC(ctx: Context, device: UsbDevice) : MultiCameraClient.ICamera(ctx
         // 1. create a UVCCamera
         val request = mCameraRequest!!
         try {
-            mUvcCamera = UVCCamera().apply {
+            mUvcCamera = UVCCamera(ctx).apply {
                 open(mCtrlBlock)
             }
         } catch (e: Exception) {

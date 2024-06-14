@@ -60,6 +60,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.lifecycleScope
 import com.codewithkael.firebasevideocall.ui.LoginActivity.Share.liveShare
+
 import com.codewithkael.firebasevideocall.utils.UserStatus
 import kotlinx.coroutines.launch
 
@@ -103,6 +104,7 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
     lateinit var mp3Player: Mp3Ring
     lateinit var wifiManager: WifiManager
 
+
     companion object Share {
         var liveShare = MutableLiveData<SharedPreferences>()//is used to provide a reactive and centralized way to manage and observe changes to the SharedPreferences instance across the app.
 
@@ -113,7 +115,6 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
         super.onCreate(savedInstanceState)
         views = ActivityMainBinding.inflate(layoutInflater)
         setContentView(views?.root)
-
 
         sharedPref = this.getSharedPreferences("see_for_me", MODE_PRIVATE)
         shEdit = sharedPref.edit()
@@ -171,20 +172,16 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
     fun showCloseAppDialog(){
         // Inflate the dialog layout
         val dialogView = layoutInflater.inflate(R.layout.closeapp_dialog, null)
-
         // Initialize the AlertDialog Builder
         val builder = AlertDialog.Builder(this)
         builder.setView(dialogView)
-
         val dialog = builder.create()
-
-
         val closeAppOkbtn=dialogView.findViewById<Button>(R.id.closeAppOkbtn)
         val closeAppbtn=dialogView.findViewById<Button>(R.id.closeAppbtn)//
         builder.setView(dialogView)
             .setPositiveButton(null, null) // Setting null for positive button for custom handling
             .setNegativeButton(null, null) // Setting null for negative button for custom handling
-
+        dialog.show()
         closeAppOkbtn.setOnClickListener {
 
             mainServiceRepository.stopService()
@@ -194,8 +191,6 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
         closeAppbtn.setOnClickListener {
             dialog.dismiss()
         }
-        dialog.show()
-
     }
     private fun showLogoutDialog() {
         val builder = AlertDialog.Builder(this)
@@ -473,6 +468,7 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
         super.onDestroy()
         mp3Player.stopMP3()
         wifiManager.disconnect()
+
         views = null
     }
 

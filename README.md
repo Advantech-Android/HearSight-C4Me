@@ -1,4 +1,4 @@
 # hearsight advantech 
-App Name:C4Me
-des: UVC camera via videocall to host and client  
-upto otp completed 4.6.24
+App Name:  SeeForMe
+version :  1.0.4
+Des     :  works with reconnect video call

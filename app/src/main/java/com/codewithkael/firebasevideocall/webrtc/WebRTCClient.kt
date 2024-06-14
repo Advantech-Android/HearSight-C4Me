@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.Intent
 import android.media.AudioManager
 import android.media.projection.MediaProjection
-import android.os.Build
 import android.util.DisplayMetrics
 import android.util.Log
 import android.view.WindowManager
@@ -66,9 +65,9 @@ class WebRTCClient @Inject constructor(private val context: Context, private val
     private var surfaceTextureHelper: SurfaceTextureHelper? = null
     private val mediaConstraint = MediaConstraints()
         .apply {
-        mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"))
-        mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveAudio", "true"))
-    }
+            mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"))
+            mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveAudio", "true"))
+        }
 
     //call variables
     private lateinit var localSurfaceView: SurfaceViewRenderer
@@ -112,6 +111,12 @@ class WebRTCClient @Inject constructor(private val context: Context, private val
 
     fun initializeWebrtcClient(username: String, observer: PeerConnection.Observer) {
         Log.d(TAG, "initializeWebrtcClient: ")
+        this.username = username
+        localTrackId = "${username}_track"
+        localStreamId = "${username}_stream"
+        peerConnection = createPeerConnection(observer)
+    }
+    fun createReConnectPeerConnection(username: String,observer: PeerConnection.Observer) {
         this.username = username
         localTrackId = "${username}_track"
         localStreamId = "${username}_stream"
@@ -190,14 +195,14 @@ class WebRTCClient @Inject constructor(private val context: Context, private val
     fun closeConnection() {
         Log.d(TAG, "closeConnection: ")
         try {
-
             videoCapturer?.dispose()
             screenCapturer?.dispose()
             localStream?.dispose()
             peerConnection?.close()
             peerConnection?.dispose()
         } catch (e: Exception) {
-            e.printStackTrace()
+           // e.printStackTrace()
+            Log.e(TAG, "closeConnection: ${e.message}" )
         }
     }
 
@@ -229,6 +234,7 @@ class WebRTCClient @Inject constructor(private val context: Context, private val
     //streaming section
     private fun initSurfaceView(view: SurfaceViewRenderer, isLocal: Boolean) {
         Log.d(TAG, "initSurfaceView: ")
+
         view.run {
 //          release()
 //            if (isLocal)
@@ -244,15 +250,20 @@ class WebRTCClient @Inject constructor(private val context: Context, private val
             setZOrderMediaOverlay(true)
             scaleMatrix()
             setScalingType(RendererCommon.ScalingType.SCALE_ASPECT_BALANCED)
-            init(eglBaseContext, object : RendererCommon.RendererEvents {
-                override fun onFirstFrameRendered() {
-                    Log.d(TAG, "onFirstFrameRendered: ")
-                }
 
-                override fun onFrameResolutionChanged(p0: Int, p1: Int, p2: Int) {
-                   // Log.d(TAG, "$p0,$p1,$p2")
-                }
-            })
+           Log.d(TAG, "initSurfaceView: ${this.cameraDistance}")
+
+                init(eglBaseContext, object : RendererCommon.RendererEvents {
+                    override fun onFirstFrameRendered() {
+                        Log.d(TAG, "onFirstFrameRendered: ")
+                    }
+
+                    override fun onFrameResolutionChanged(p0: Int, p1: Int, p2: Int) {
+                        // Log.d(TAG, "$p0,$p1,$p2")
+                    }
+                })
+
+
         }
     }
 
@@ -269,7 +280,7 @@ class WebRTCClient @Inject constructor(private val context: Context, private val
     }
 
     private fun startLocalStreaming(localView: SurfaceViewRenderer, isVideoCall: Boolean) {
-        setAudioOutputToSpeaker(context)
+       // setAudioOutputToSpeaker(context)
         Log.d(TAG, "startLocalStreaming: ")
         localSurfaceView = localView
         localStream = peerConnectionFactory.createLocalMediaStream(localStreamId)
@@ -299,7 +310,7 @@ class WebRTCClient @Inject constructor(private val context: Context, private val
                 Toast.LENGTH_SHORT
             ).show()
             Log.d(TAG, "startCapturingCamera: ${Camera2Enumerator(context).deviceNames}")
-            uvcCapturer = UvcCapturerNew(context, localView) as CameraVideoCapturer
+            uvcCapturer = UvcCapturerNew(context, localView,eglBaseContext) as CameraVideoCapturer
             var localVideoSource = peerConnectionFactory.createVideoSource(uvcCapturer.isScreencast)
             uvcCapturer.initialize(
                 surfaceTextureHelper,
@@ -398,3 +409,5 @@ class WebRTCClient @Inject constructor(private val context: Context, private val
         fun onTransferEventToSocket(data: DataModel)
     }
 }
+
+

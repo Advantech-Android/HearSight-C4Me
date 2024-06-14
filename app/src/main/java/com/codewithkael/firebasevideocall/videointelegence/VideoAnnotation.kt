@@ -1,5 +1,5 @@
 package com.codewithkael.firebasevideocall.videointelegence
-
+/*
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
@@ -23,15 +23,18 @@ import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
 
 
+
 const val TAG="==>VideoAnnotation"
 @Singleton
 class VideoAnnotation {
     var results:VideoAnnotationResults?=null
-    /**
+    */
+/**
      * Detect text in a video.
      *
      * @param filePath the path to the video file to analyze.
-     */
+     *//*
+
     @RequiresApi(Build.VERSION_CODES.O)
     @Throws(Exception::class)
     fun detectText(data: ByteArray?): VideoAnnotationResults? {
@@ -82,4 +85,4 @@ class VideoAnnotation {
         }
         return results
     }
-}
+}*/

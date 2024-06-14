@@ -14,10 +14,12 @@ import com.codewithkael.firebasevideocall.repository.MainRepository
 import com.codewithkael.firebasevideocall.service.MainServiceActions.*
 import com.codewithkael.firebasevideocall.utils.DataModel
 import com.codewithkael.firebasevideocall.utils.DataModelType
+import com.codewithkael.firebasevideocall.utils.NetworkChangeReceiver
 import com.codewithkael.firebasevideocall.utils.isValid
 import com.codewithkael.firebasevideocall.webrtc.RTCAudioManager
 import com.jiangdg.ausbc.MultiCameraClient
 import dagger.hilt.android.AndroidEntryPoint
+import org.webrtc.EglBase
 import org.webrtc.SurfaceViewRenderer
 import javax.inject.Inject
 
@@ -48,9 +50,10 @@ class MainService : Service(), MainRepository.Listener {
 
     override fun onCreate() {
         super.onCreate()
-        rtcAudioManager = RTCAudioManager.create(this)
-        rtcAudioManager.setDefaultAudioDevice(RTCAudioManager.AudioDevice.SPEAKER_PHONE)
+        rtcAudioManager = RTCAudioManager.create(this,"earpiece")//auto,speakerphone,earpiece,wiredheadsets,
+        rtcAudioManager.setDefaultAudioDevice(RTCAudioManager.AudioDevice.EARPIECE)
         notificationManager = getSystemService(NotificationManager::class.java)
+
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -126,6 +129,7 @@ class MainService : Service(), MainRepository.Listener {
         val type = when (incomingIntent.getStringExtra("type")) {
             RTCAudioManager.AudioDevice.EARPIECE.name -> RTCAudioManager.AudioDevice.EARPIECE
             RTCAudioManager.AudioDevice.SPEAKER_PHONE.name -> RTCAudioManager.AudioDevice.SPEAKER_PHONE
+            RTCAudioManager.AudioDevice.WIRED_HEADSET.name -> RTCAudioManager.AudioDevice.WIRED_HEADSET
             else -> null
         }
 
@@ -163,6 +167,7 @@ class MainService : Service(), MainRepository.Listener {
     private fun endCallAndRestartRepository() {
         mainRepository.endCall()
         endCallListener?.onCallEnded()
+
         mainRepository.initWebrtcClient(username!!)
     }
 
@@ -184,6 +189,7 @@ class MainService : Service(), MainRepository.Listener {
         }
 
     }
+
 
     private fun handleStartService(incomingIntent: Intent) {
         //start our foreground service

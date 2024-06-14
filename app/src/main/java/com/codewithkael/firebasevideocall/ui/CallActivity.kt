@@ -25,8 +25,11 @@ import com.codewithkael.firebasevideocall.databinding.ActivityCallBinding
 import com.codewithkael.firebasevideocall.repository.MainRepository
 import com.codewithkael.firebasevideocall.service.MainService
 import com.codewithkael.firebasevideocall.service.MainServiceRepository
+import com.codewithkael.firebasevideocall.utils.NetworkChangeReceiver
+import com.codewithkael.firebasevideocall.utils.NetworkChangeReceiver.Companion.scheduleNetworkCheck
 
 import com.codewithkael.firebasevideocall.utils.convertToHumanTime
+import com.codewithkael.firebasevideocall.utils.setViewFields.IS_CALLER
 import com.codewithkael.firebasevideocall.webrtc.RTCAudioManager
 import com.codewithkael.firebasevideocall.webrtc.UvcCapturerNew
 import com.jiangdg.ausbc.MultiCameraClient
@@ -36,7 +39,9 @@ import com.jiangdg.ausbc.callback.IPreviewDataCallBack
 import com.jiangdg.ausbc.widget.IAspectRatio
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -46,7 +51,8 @@ import javax.inject.Inject
 @AndroidEntryPoint
 
 
-class CallActivity : CameraActivity(), MainService.EndCallListener {
+class CallActivity : CameraActivity(), MainService.EndCallListener,
+    NetworkChangeReceiver.InetWorkChange {
 
     private val handler: Handler = Handler(Looper.getMainLooper())
     private val TAG = "###CallActivity"
@@ -60,7 +66,7 @@ class CallActivity : CameraActivity(), MainService.EndCallListener {
     private var isCameraMuted = false
     private var isSpeakerMode = true
     private var isScreenCasting = false
-    var isAttend=false
+    var isAttend = false
 
     @Inject
     lateinit var mp3Player: Mp3Ring
@@ -72,8 +78,8 @@ class CallActivity : CameraActivity(), MainService.EndCallListener {
     lateinit var serviceRepository: MainServiceRepository
     private lateinit var requestScreenCaptureLauncher: ActivityResultLauncher<Intent>
 
-    private var views: ActivityCallBinding?=null
-    private lateinit var loginActivity:LoginActivity
+    private var views: ActivityCallBinding? = null
+    private lateinit var loginActivity: LoginActivity
 
     override fun onStart() {
         super.onStart()
@@ -104,21 +110,26 @@ class CallActivity : CameraActivity(), MainService.EndCallListener {
         Log.d(TAG, "onStop: ")
     }
 
+    lateinit var networkChangeReceiver: NetworkChangeReceiver
 
-  override fun onCreate(savedInstanceState: Bundle?) {
+    @OptIn(DelicateCoroutinesApi::class)
+    override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.d(TAG, "onCreate: ")
         views = ActivityCallBinding.inflate(layoutInflater)
-        setContentView(views?.root)
         init()
-
+        setContentView(views?.root)
     }
 
 
     override fun onResume() {
         super.onResume()
         Log.d(TAG, "onResume: ")
-        loginActivity=LoginActivity()
+
+        scheduleNetworkCheck(this)
+        NetworkChangeReceiver.inetWorkChange = this
+        NetworkChangeReceiver.sharePref(applicationContext)
+        loginActivity = LoginActivity()
         updateBatteryTemperature()
     }
 
@@ -138,14 +149,14 @@ class CallActivity : CameraActivity(), MainService.EndCallListener {
             finish()
         }
         isVideoCall = intent.getBooleanExtra("isVideoCall", true)
-        isCaller = intent.getBooleanExtra("isCaller", true)
+        isCaller = intent.getBooleanExtra(IS_CALLER, false)
         isIncoming = intent.getStringExtra("isIncoming").toString()
         timer = intent.getBooleanExtra("timer", false)
         Log.d(TAG, "init: isIncoming=$isIncoming")
         views?.apply {
             callTitleTv.text = "In call with $target"
             if (!isCaller) {
-                isAttend=true
+                isAttend = true
                 startCallTimer()
             }
 
@@ -183,7 +194,10 @@ class CallActivity : CameraActivity(), MainService.EndCallListener {
             mp3Player.startMP3(false)
         }
         mainRepository.onObserveEndCall() { data, status ->
-            Log.d(TAG, "CallAct -> onObserveEndCall: currentuser: ${mainRepository.getUserPhone()} target: ${target!!} status:$status")
+            Log.d(
+                TAG,
+                "CallAct -> onObserveEndCall: currentuser: ${mainRepository.getUserPhone()} target: ${target!!} status:$status"
+            )
             if (status == "EndCall") {
                 //isAttend=true
                 mp3Player.stopMP3()
@@ -192,14 +206,19 @@ class CallActivity : CameraActivity(), MainService.EndCallListener {
                     sender = mainRepository.getUserPhone(),
                     ""
                 ) {
+
                     serviceRepository.sendEndCall()
                     //finish()
                 }
             } else if (status == "AcceptCall") {
-                    mainRepository.setCallStatus(target=target!!, sender = mainRepository.getUserPhone(),""){
-
-                    }
-                isAttend=true
+                mainRepository.setCallStatus(
+                    target = target!!,
+                    sender = mainRepository.getUserPhone(),
+                    ""
+                ) {
+                    mp3Player.stopMP3()
+                }
+                isAttend = true
                 mp3Player.stopMP3()
                 startCallTimer()
             } else if (status == "") {
@@ -212,9 +231,14 @@ class CallActivity : CameraActivity(), MainService.EndCallListener {
         Handler(Looper.getMainLooper()).postDelayed({
             mp3Player.stopMP3()
             Log.d(TAG, "init: isAttend=$isAttend")
-            if(!isAttend){
-                isAttend=true
-                mainRepository.setCallStatus(target=target!!, sender = mainRepository.getUserPhone(),""){
+            if (!isAttend) {
+                isAttend = true
+
+                mainRepository.setCallStatus(
+                    target = target!!,
+                    sender = mainRepository.getUserPhone(),
+                    ""
+                ) {
                     serviceRepository.sendEndCall()
                 }
             }
@@ -228,7 +252,7 @@ class CallActivity : CameraActivity(), MainService.EndCallListener {
     }
 
     private fun updateBatteryTemperature() {
-        try{
+        try {
             if (LoginActivity.tempLiveData != null && !LoginActivity.tempLiveData.value.equals("-0.0f")) {
                 views?.tempratureVideoCallAct?.text = "${LoginActivity.tempLiveData.value} °C"
             } else {
@@ -236,7 +260,7 @@ class CallActivity : CameraActivity(), MainService.EndCallListener {
                 LoginActivity.tempLiveData.value = batteryTemperature.toString()
                 views?.tempratureVideoCallAct?.text = "$batteryTemperature °C"
             }
-        }catch (e:Exception){
+        } catch (e: Exception) {
 
         }
 
@@ -282,7 +306,8 @@ class CallActivity : CameraActivity(), MainService.EndCallListener {
 
 
     private fun startScreenCapture() {
-        val mediaProjectionManager = application.getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+        val mediaProjectionManager =
+            application.getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
         val captureIntent = mediaProjectionManager.createScreenCaptureIntent()
         requestScreenCaptureLauncher.launch(captureIntent)
 
@@ -330,13 +355,6 @@ class CallActivity : CameraActivity(), MainService.EndCallListener {
         }
     }
 
-    override fun onBackPressed() {
-        super.onBackPressed()
-        if (isIncoming.equals("Out", true)) {
-            mp3Player.stopMP3()
-        }
-        serviceRepository.sendEndCall()
-    }
 
 
     private fun setupToggleAudioDevice() {
@@ -354,12 +372,20 @@ class CallActivity : CameraActivity(), MainService.EndCallListener {
                     //we should set it to earpiece mode
                     toggleAudioDevice.setImageResource(R.drawable.ic_speaker)
                     //we should send a command to our service to switch between devices
-                    serviceRepository.toggleAudioDevice(RTCAudioManager.AudioDevice.EARPIECE.name)
+                   serviceRepository.toggleAudioDevice(RTCAudioManager.AudioDevice.EARPIECE.name)
+                   // serviceRepository.toggleAudioDevice(RTCAudioManager.AudioDevice.WIRED_HEADSET.name)
                 }
                 isSpeakerMode = !isSpeakerMode
             }
 
         }
+    }
+    override fun onBackPressed() {
+        super.onBackPressed()
+        if (isIncoming.equals("Out", true)) {
+            mp3Player.stopMP3()
+        }
+//        serviceRepository.sendEndCall()
     }
 
     private fun setupCameraToggleClicked() {
@@ -391,8 +417,10 @@ class CallActivity : CameraActivity(), MainService.EndCallListener {
         MainService.localSurfaceView?.release()
         MainService.localSurfaceView = null
         mp3Player.stopMP3()
+        uvcPreview?.onCallEnd(mainRepository.getUserPhone())
+        //  NetworkChangeReceiver.unregister(this, networkChangeReceiver)
 //        serviceRepository.sendEndCall()
-        views=null
+        views = null
 
     }
 
@@ -449,6 +477,19 @@ class CallActivity : CameraActivity(), MainService.EndCallListener {
         )
 
         fun onCallEnd(msg: String)
+    }
+    var isNetStatus=false
+    override fun onNetworkAvailable(isAvailable: Boolean, type: String) {
+        Log.d(TAG, "onNetworkAvailable:  =$isAvailable type=$type")
+        if (isAvailable) {
+            if (type == "Internet_Available"&&!isNetStatus) {
+                val us = mainRepository.getUserPhone()
+                //mainRepository.closeConnection()
+                mainRepository.initWebrtcClient(username = us)
+                isNetStatus=true
+            }
+
+        }
     }
 
 }

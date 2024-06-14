@@ -2,12 +2,12 @@ package com.codewithkael.firebasevideocall.utils
 
 object setViewFields
 {
-    const val USER_PHONE: String ="userphone"
+    const val USER_PHONE: String ="user_phone"
     const val IS_VIDEO_CALL="isVideoCall"
     const val TARGET="target"
     const val IS_CALLER="isCaller"
     const val CALLER_NAME="callerName"
-    const val USER_NAME="username"
+    const val USER_NAME="user_name"
     const val SHOULD_BE_MUTED="shouldBeMuted"
     const val TYPE="type"
     const val IS_STARTING="isStarting"

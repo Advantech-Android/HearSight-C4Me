@@ -16,6 +16,7 @@ import com.codewithkael.firebasevideocall.utils.FirebaseFieldNames.PASSWORD
 import com.codewithkael.firebasevideocall.utils.FirebaseFieldNames.CALL_EVENT
 import com.codewithkael.firebasevideocall.utils.FirebaseFieldNames.LOGIN_STATUS
 import com.codewithkael.firebasevideocall.utils.FirebaseFieldNames.STATUS
+import com.codewithkael.firebasevideocall.utils.MyChildEventListener
 import com.codewithkael.firebasevideocall.utils.MyEventListener
 import com.codewithkael.firebasevideocall.utils.UserStatus
 import com.google.firebase.database.DataSnapshot
@@ -55,7 +56,7 @@ class FirebaseClient @Inject constructor(
     fun setSharedPreference() {
         sharedPref = context.getSharedPreferences("see_for_me", MODE_PRIVATE)
         shEdit = sharedPref.edit()
-        putData("is_login", false) //Setting "is_login" to false
+
         liveShare.value = sharedPref
     }
 
@@ -63,6 +64,7 @@ class FirebaseClient @Inject constructor(
 
     fun setUsername(username: String, phonenumber: String)
     {
+        setSharedPreference()
         if (!username.isNullOrEmpty()) {
             this.currentUsername = username
         } else {
@@ -81,34 +83,30 @@ class FirebaseClient @Inject constructor(
             Log.d(TAG, "setUsername: $currentUserPhonenumber and $userPhoneNumber")
         }
 
-//        if (!username.isNullOrEmpty()) {
-//            this.currentUsername = username
-//
-//        } else {
-//
-//            val userName = LoginActivity.Share.liveShare.value?.getString("user_name", "")
-//            this.currentUsername = userName
-//        }
-//        if (!phonenumber.isNullOrEmpty()) {
-//            this.currentUserPhonenumber = phonenumber
-//
-//        } else {
-//            val userPhoneNUmber = LoginActivity.Share.liveShare.value?.getString("user_phone", "")
-//            this.currentUserPhonenumber = userPhoneNUmber
-//        }
-
 
     }
 
     public fun getUserName(): String {
+        if (currentUsername.isNullOrEmpty()) {
+            setSharedPreference()
+            currentUsername=getData("user_name")
+
+        }
         return currentUsername.toString()
     }
 
 
     public fun getUserPhone(): String//called in main repository
     {
+        if (currentUserPhonenumber.isNullOrEmpty()) {
+            setSharedPreference()
+            currentUserPhonenumber=getData("user_phone")
+
+        }
         return currentUserPhonenumber.toString()
     }
+
+
 
     fun getUserNameFB(phone: String, result: (String?) -> Unit)//Called in Main Repository
     {
@@ -185,16 +183,14 @@ class FirebaseClient @Inject constructor(
 
             if (currentUserPhonenumber.isNullOrEmpty()) {
                 currentUserPhonenumber = getUserPhone()
-                shEdit.putString("user_phone", currentUserPhonenumber)
-                shEdit.apply()
+
             }
 
             Log.d(TAG, "getEndCallEvent-4:$currentUserPhonenumber ")
 
             if(currentUsername.isNullOrEmpty()) {
                 currentUsername = getUserName()
-                shEdit.putString("user_name", currentUsername)
-                shEdit.apply()
+
             }
             Log.d(TAG, "getEndCallEvent-5:$currentUsername ")
 
@@ -228,6 +224,23 @@ class FirebaseClient @Inject constructor(
                     }
 
 
+                })
+            dbRef.child(currentUserPhonenumber!!).child(LATEST_EVENT)
+                .addChildEventListener(object:MyChildEventListener(){
+                    override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
+                        super.onChildAdded(snapshot, previousChildName)
+                    }
+
+                    override fun onChildChanged(
+                        snapshot: DataSnapshot,
+                        previousChildName: String?
+                    ) {
+                        super.onChildChanged(snapshot, previousChildName)
+                    }
+
+                    override fun onChildRemoved(snapshot: DataSnapshot) {
+                        super.onChildRemoved(snapshot)
+                    }
                 })
 
 

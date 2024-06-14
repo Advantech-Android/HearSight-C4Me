@@ -139,11 +139,69 @@ class MainRepository @Inject constructor(
         fun onLatestEventReceived(data: DataModel)
         fun endCall()
     }
+    fun closeConnection() {
+        webRTCClient.closeConnection()
+
+    }
 
     fun initWebrtcClient(username: String) {
         Log.d(TAG, "initWebrtcClient: username: $username")
         webRTCClient.listener = this
-        webRTCClient.initializeWebrtcClient(username, object : MyPeerObserver() {
+        val peerObserver =  object : MyPeerObserver() {
+            override fun onSignalingChange(p0: PeerConnection.SignalingState?) {
+                super.onSignalingChange(p0)
+                Log.d(TAG, "onSignalingChange: ")
+            }
+            override fun onIceConnectionChange(p0: PeerConnection.IceConnectionState?) {
+                super.onIceConnectionChange(p0)
+                Log.d(TAG, "onIceConnectionChange: ")
+            }
+            override fun onIceConnectionReceivingChange(p0: Boolean) {
+                super.onIceConnectionReceivingChange(p0)
+                Log.d(TAG, "onIceConnectionReceivingChange: ")
+            }
+
+            override fun onDataChannel(p0: DataChannel?) {
+                super.onDataChannel(p0)
+                Log.d(TAG, "onDataChannel: ")
+            }
+            override fun onIceGatheringChange(p0: PeerConnection.IceGatheringState?) {
+                super.onIceGatheringChange(p0)
+                Log.d(TAG, "onIceGatheringChange: ")
+            }
+
+            override fun onIceCandidatesRemoved(p0: Array<out IceCandidate>?) {
+                super.onIceCandidatesRemoved(p0)
+                Log.d(TAG, "onIceCandidatesRemoved: ")
+            }
+
+            override fun onRemoveStream(p0: MediaStream?) {
+                super.onRemoveStream(p0)
+                Log.d(TAG, "onRemoveStream: ")
+            }
+
+            override fun onStandardizedIceConnectionChange(newState: PeerConnection.IceConnectionState?) {
+                super.onStandardizedIceConnectionChange(newState)
+                Log.d(TAG, "onStandardizedIceConnectionChange: ")
+            }
+            override fun onAddTrack(p0: RtpReceiver?, p1: Array<out MediaStream>?) {
+                super.onAddTrack(p0, p1)
+                Log.d(TAG, "onAddTrack: ")
+            }
+            override fun onTrack(transceiver: RtpTransceiver?) {
+                super.onTrack(transceiver)
+                Log.d(TAG, "onTrack: ")
+            }
+
+            override fun onRenegotiationNeeded() {
+                super.onRenegotiationNeeded()
+                Log.d(TAG, "onRenegotiationNeeded: ")
+            }
+
+            override fun onSelectedCandidatePairChanged(event: CandidatePairChangeEvent?) {
+                super.onSelectedCandidatePairChanged(event)
+                Log.d(TAG, "onSelectedCandidatePairChanged: ")
+            }
             override fun onAddStream(p0: MediaStream?) {
                 super.onAddStream(p0)
                 try {
@@ -168,8 +226,18 @@ class MainRepository @Inject constructor(
                     // 2. clear latest event inside my user section in firebase database
                     firebaseClient.clearLatestEvent()
                 }
+                if (newState == PeerConnection.PeerConnectionState.DISCONNECTED) {
+                    // 1. change my status to online
+                    changeMyStatus(UserStatus.ONLINE)
+                    // 2. clear latest event inside my user section in firebase database
+                    firebaseClient.clearLatestEvent()
+                 //   webRTCClient. createReConnectPeerConnection(peerObserver)
+
+                }
             }
-        })
+        }
+        webRTCClient.initializeWebrtcClient(username,peerObserver)
+
     }
 
     fun initLocalSurfaceView(view: SurfaceViewRenderer, isVideoCall: Boolean) {

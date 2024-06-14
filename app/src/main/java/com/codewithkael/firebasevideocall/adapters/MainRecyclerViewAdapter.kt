@@ -17,6 +17,7 @@ import com.codewithkael.firebasevideocall.databinding.ItemMainRecyclerViewBindin
 import com.codewithkael.firebasevideocall.firebaseClient.FirebaseClient
 import com.codewithkael.firebasevideocall.ui.Mp3Ring
 import com.codewithkael.firebasevideocall.utils.ContactInfo
+import com.codewithkael.firebasevideocall.utils.NetworkChangeReceiver
 import com.google.firebase.database.FirebaseDatabase
 import javax.inject.Inject
 
@@ -113,6 +114,7 @@ class MainRecyclerViewAdapter(private val listener: Listener) :
                             cardViewVideoCallClick.isEnabled = true
                         }, 3000)
                         cardViewVideoCallClick.setOnClickListener {
+
                             cardViewVideoCallClick.isEnabled = false
                             Toast.makeText(
                                 context,
@@ -194,6 +196,11 @@ class MainRecyclerViewAdapter(private val listener: Listener) :
 
             }
         }
+
+
+
+
+
 
         private fun inviteGuideUser(user: ContactInfo) {
             try {

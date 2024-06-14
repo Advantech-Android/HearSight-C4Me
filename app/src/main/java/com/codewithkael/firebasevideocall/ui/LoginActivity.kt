@@ -9,6 +9,9 @@ import android.content.Context
 import android.content.Intent
 import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import WebQ
+import android.app.AlarmManager
+import android.app.PendingIntent
+import android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP
 import android.content.IntentFilter
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
@@ -19,8 +22,10 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.telephony.TelephonyManager
 import android.util.Log
+import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.codewithkael.firebasevideocall.databinding.ActivityLoginBinding
@@ -44,6 +49,9 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.jiangdg.usb.USBMonitor
 import dagger.hilt.android.AndroidEntryPoint
+import java.io.BufferedReader
+import java.io.File
+import java.io.InputStreamReader
 import java.util.Locale
 import java.util.regex.Pattern
 import javax.inject.Inject
@@ -59,6 +67,7 @@ class LoginActivity : AppCompatActivity() {
     object uvc {
         var isUvc = MutableLiveData(false)
     }
+
     private lateinit var countryCode: String
     private var number: String? = null
     private var views: ActivityLoginBinding? = null
@@ -74,7 +83,8 @@ class LoginActivity : AppCompatActivity() {
     var ACTION_USB_PERMISSION = "com.serenegiant.USB_PERMISSION."
 
     companion object Share {
-        var liveShare = MutableLiveData<SharedPreferences>()//is used to provide a reactive and centralized way to manage and observe changes to the SharedPreferences instance across the app.
+        var liveShare =
+            MutableLiveData<SharedPreferences>()//is used to provide a reactive and centralized way to manage and observe changes to the SharedPreferences instance across the app.
         val tempLiveData = MutableLiveData<String>("-0.0f")
     }
 
@@ -118,20 +128,22 @@ class LoginActivity : AppCompatActivity() {
         }
     }
 
-    private fun isFirebaseVerificationTrue(callback:(Boolean)->Unit){
+    private fun isFirebaseVerificationTrue(callback: (Boolean) -> Unit) {
         val firebaseUser = FirebaseAuth.getInstance().currentUser
-        val firebaseDatabase= FirebaseDatabase.getInstance()
+        val firebaseDatabase = FirebaseDatabase.getInstance()
         firebaseUser?.uid?.let { uid ->
             firebaseDatabase.reference.child("users").child(uid).child("verified")
                 .addListenerForSingleValueEvent(object : ValueEventListener {
                     @SuppressLint("SuspiciousIndentation")
                     override fun onDataChange(snapshot: DataSnapshot) {
-                        val isVerified=snapshot.getValue(Boolean::class.java)?:false
+                        val isVerified = snapshot.getValue(Boolean::class.java) ?: false
                         callback(isVerified)
                     }
+
                     override fun onCancelled(error: DatabaseError) {
                         callback(false)
-                    } })
+                    }
+                })
         }
     }
 
@@ -177,24 +189,108 @@ class LoginActivity : AppCompatActivity() {
     fun setUserData() {
         views?.apply {
 
-            usernameEt.setText(getData("user_name"))
-            passwordEt.setText(getData("user_phone"))
+            usernameEt.setText(getData("user_name", String::class.java) as String)
+            passwordEt.setText(getData("user_phone", String::class.java) as String)
         }
     }
 
     fun clearData() {
+
         views?.apply {
             clearData.setOnCheckedChangeListener() { buttonView, isChecked ->
                 if (isChecked) {
                     Log.d("Checkbox", "Checkbox is checked!")
-                    clearAppData()
+                    // ProgressBarUtil.showProgressBar(this@LoginActivity)
+                   // clearCacheAndRestartApp(applicationContext)
+                   //clearCacheAndRestartApp(this@LoginActivity)
+
+                    triggerAppRestart()
+                    restartApp(this@LoginActivity)
                 } else {
                     Log.d("Checkbox", "Checkbox is unchecked!")
                 }
 
             }
         }
+
     }
+
+    private fun clearCacheAndRestartApp(context: Context) {
+        clearCache(context)
+        restartApp(context)
+    }
+    private fun clearCache(context: Context) {
+        try {
+            val cacheDir = context.cacheDir
+            val dataDir=context.filesDir.parentFile
+            if (cacheDir.isDirectory) {
+                cacheDir.deleteRecursively()
+            }else{
+                cacheDir.delete()
+            }
+            if (dataDir != null) {
+                if (dataDir.isDirectory)
+                    dataDir.deleteRecursively()
+                else
+                    dataDir.delete()
+            }
+            // clear app data
+        } catch (e: Exception) {
+            Toast.makeText(context, "error in clearCache${e.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
+    private fun restartApp(context: Context) {
+        val intent = context.packageManager.getLaunchIntentForPackage(context.packageName)
+        intent?.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        context.startActivity(intent)
+        (context as? Activity)?.finish()
+        Runtime.getRuntime().exit(0)
+    }
+    private fun clearAppData() {
+        try {
+            // clearing app data
+            (getSystemService(ACTIVITY_SERVICE) as ActivityManager).clearApplicationUserData() // note: it has a return value!
+        } catch (e: Exception) {
+            Log.d(TAG, "clearAppData: ${e.message}")
+        }
+    }
+
+
+
+    fun triggerRebirth(context: Context, nextIntent: Intent?) {
+        val intent = Intent(this@LoginActivity, SplashAcitivity::class.java)
+      //  intent.addFlags(FLAG_ACTIVITY_NEW_TASK)
+        intent.addFlags(FLAG_ACTIVITY_CLEAR_TOP)
+        intent.putExtra("Restart", Intent(this@LoginActivity, LoginActivity::class.java))
+        context.startActivity(intent)
+        if (context is Activity) {
+            context.finish()
+        }
+        Runtime.getRuntime().exit(0)
+
+    }
+
+
+    private fun triggerAppRestart() {
+        // Set up the pending intent to restart the app
+        val restartIntent = Intent(applicationContext, SplashAcitivity::class.java)
+        val pendingIntent = PendingIntent.getActivity(
+            applicationContext, 0, restartIntent, PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        // Schedule the restart using AlarmManager
+        val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        alarmManager.set(
+            AlarmManager.ELAPSED_REALTIME,
+            SystemClock.elapsedRealtime() + 1000, // Delay of 1 second
+            pendingIntent
+        )
+
+        // Clear the app data
+        clearAppData()
+    }
+
+
 
     fun uvcVI_Control() {
         views?.apply {
@@ -209,12 +305,6 @@ class LoginActivity : AppCompatActivity() {
 
             }
 
-//            val filter = IntentFilter().apply {
-//                addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED)
-//                addAction(UsbManager.ACTION_USB_DEVICE_DETACHED)
-//                addAction(ACTION_USB_PERMISSION)
-//            }
-//            registerReceiver(mUsbReceiver, filter)
         }
     }
 
@@ -278,26 +368,11 @@ class LoginActivity : AppCompatActivity() {
         }
     }
 
-    private fun clearAppData() {
-        try {
-            // clearing app data
-            if (Build.VERSION_CODES.KITKAT <= Build.VERSION.SDK_INT) {
-                (getSystemService(ACTIVITY_SERVICE) as ActivityManager).clearApplicationUserData() // note: it has a return value!
-            } else {
-                val packageName = applicationContext.packageName
-                val runtime = Runtime.getRuntime()
-                runtime.exec("pm clear $packageName")
-                triggerRebirth(applicationContext, intent)
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
 
     private fun performLogin(usernameText: String, passwordText: String) {
         views?.apply {
             mainRepository.login(
-                usernameText, passwordText,UserStatus.ONLINE.name,true
+                usernameText, passwordText, UserStatus.ONLINE.name, true
             ) { isDone, reason ->
                 Log.d(TAG, "Login attempt result: $isDone, Reason: $reason")
                 ProgressBarUtil.hideProgressBar(this@LoginActivity)
@@ -309,22 +384,21 @@ class LoginActivity : AppCompatActivity() {
 
                     Log.d(TAG, "Login failed: $reason")
                     SnackBarUtils.showSnackBar(root, LoginActivityFields.UN_PW_INCORRECT)
-                }
-                else {
+                } else {
                     putData("user_name", usernameText)
                     putData("user_phone", passwordText)
                     Log.d(TAG, "!!>>performLogin:$usernameText and $passwordText ")
                     putData("is_login", true)
 
-                    startActivity(Intent(this@LoginActivity, RandomOTPGenerate::class.java).apply {
-                        putExtra("username", usernameText)
-                        putExtra("userphone", passwordText)
+//                    startActivity(Intent(this@LoginActivity, RandomOTPGenerate::class.java).apply {
+//                        putExtra("username", usernameText)
+//                        putExtra("userphone", passwordText)
+                    startActivity(Intent(this@LoginActivity, MainActivity::class.java).apply {
+                        putExtra("user_name", usernameText)
+                        putExtra("user_phone", passwordText)
                     })
-                   /* startActivity(Intent(this@LoginActivity, MainActivity::class.java).apply {
-                        putExtra("username", usernameText)
-                        putExtra("userphone", passwordText)
-                    })*/
                 }
+
             }
         }
     }
@@ -353,19 +427,6 @@ class LoginActivity : AppCompatActivity() {
         if (requestCode == FILECHOOSER_RESULTCODE) {
             // Handle file chooser result
         }
-    }
-
-
-    fun triggerRebirth(context: Context, nextIntent: Intent?) {
-        val intent = Intent(context, LoginActivity::class.java)
-        intent.addFlags(FLAG_ACTIVITY_NEW_TASK)
-        intent.putExtra("Restart", Intent(this@LoginActivity, LoginActivity::class.java))
-        context.startActivity(intent)
-        if (context is Activity) {
-            context.finish()
-        }
-        Runtime.getRuntime().exit(0)
-
     }
 
 
@@ -470,8 +531,14 @@ class LoginActivity : AppCompatActivity() {
     }
 
 
-    fun getData(key: String): String {
-        return sharedPref.getString(key, "").toString()
+    fun <T> getData(key: String, type: Class<T>): Any? {
+        return when (type) {
+            Boolean::class.java -> sharedPref.getBoolean(key, false)
+            String::class.java -> sharedPref.getString(key, "")
+            Float::class.java -> "sharedPref.getFloat(key,0.0f)"
+            else -> null
+        }
+
     }
 
     fun putData(key: String, value: Any) {
