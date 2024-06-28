@@ -8,6 +8,7 @@ import android.content.Intent
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
+import android.view.SurfaceView
 import androidx.core.app.NotificationCompat
 import com.codewithkael.firebasevideocall.R
 import com.codewithkael.firebasevideocall.repository.MainRepository
@@ -40,6 +41,7 @@ class MainService : Service(), MainRepository.Listener {
     private var isPreviousCallStateVideo = true
     private lateinit var self: MultiCameraClient.ICamera
 
+
     companion object {
         var listener: Listener? = null
         var endCallListener: EndCallListener? = null
@@ -50,7 +52,8 @@ class MainService : Service(), MainRepository.Listener {
 
     override fun onCreate() {
         super.onCreate()
-        rtcAudioManager = RTCAudioManager.create(this,"earpiece")//auto,speakerphone,earpiece,wiredheadsets,
+        rtcAudioManager =
+            RTCAudioManager.create(this, "earpiece")//auto,speakerphone,earpiece,wiredheadsets,
         rtcAudioManager.setDefaultAudioDevice(RTCAudioManager.AudioDevice.EARPIECE)
         notificationManager = getSystemService(NotificationManager::class.java)
 
@@ -70,6 +73,7 @@ class MainService : Service(), MainRepository.Listener {
                 TOGGLE_SCREEN_SHARE.name -> handleToggleScreenShare(incomingIntent)
                 STOP_SERVICE.name -> handleStopService()
                 START_WIFI_SCAN.name -> handleStartWifiScan()
+                START_AI_NAVIGATOR.name -> handleAISetupViews()
                 else -> Unit
             }
         }
@@ -77,6 +81,11 @@ class MainService : Service(), MainRepository.Listener {
         return START_STICKY
     }
 
+    fun handleAISetupViews()
+    {
+        Log.d(TAG, "handleAISetupViews: $localSurfaceView")
+        mainRepository.initLocalSurfaceView(localSurfaceView!!, true,true)
+    }
 
     fun handleStartWifiScan() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -102,7 +111,6 @@ class MainService : Service(), MainRepository.Listener {
             stopSelf()
         }
     }
-
 
     private fun handleToggleScreenShare(incomingIntent: Intent) {
         val isStarting = incomingIntent.getBooleanExtra("isStarting", true)
@@ -179,8 +187,8 @@ class MainService : Service(), MainRepository.Listener {
         mainRepository.setTarget(target!!)
         //initialize our widgets and start streaming our video and audio source
         //and get prepared for call
-        mainRepository.initLocalSurfaceView(localSurfaceView!!, isVideoCall)
-        mainRepository.initRemoteSurfaceView(remoteSurfaceView!!)
+        mainRepository.initLocalSurfaceView(localSurfaceView!!, isVideoCall,false)
+        mainRepository.initRemoteSurfaceView(remoteSurfaceView!!,false)
 
 
         if (!isCaller) {

@@ -1,25 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
-    <uses-permission android:name="oppo.permission.OPPO_COMPONENT_SAFE"/>
-    <uses-permission android:name="com.huawei.permission.external_app_settings.USE_COMPONENT"/>
-    <uses-feature
-        android:name="android.hardware.camera"
-        android:required="true" />
-    <uses-feature android:name="android.hardware.camera.autofocus" />
-
-    <uses-permission android:name="android.permission.CAMERA"/>
-    <uses-feature android:name="android.hardware.usb.host"/>
-
-    <uses-feature
-        android:name="android.hardware.telephony"
-        android:required="false" />
-
+    <!-- Permissions -->
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.READ_PHONE_NUMBERS" />
-
     <uses-permission
         android:name="android.permission.CAPTURE_VIDEO_OUTPUT"
         tools:ignore="ProtectedPermissions" />
@@ -31,7 +18,22 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission android:name="android.permission.BLUETOOTH" />
-    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" /> <!-- Features -->
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_SMS" />
+    <uses-permission android:name="android.permission.RECEIVE_SMS" />
+    <uses-permission android:name="android.permission.SEND_SMS" />
+
+    <!-- Features -->
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="true" />
+    <uses-feature android:name="android.hardware.camera.autofocus" />
+    <uses-feature android:name="android.hardware.usb.host" />
+    <uses-feature
+        android:name="android.hardware.telephony"
+        android:required="false" />
     <uses-feature
         android:name="android.hardware.bluetooth"
         android:required="false" />
@@ -41,19 +43,6 @@
     <uses-feature
         android:name="android.hardware.microphone"
         android:required="false" />
-
-    <uses-permission android:name="android.permission.CLEAR_APP_CACHE" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.WRITE_INTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.READ_INTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.READ_SMS" />
-    <uses-permission android:name="android.permission.RECEIVE_SMS" />
-    <uses-permission android:name="android.permission.SEND_SMS" />
-    <uses-permission android:name="android.Manifest.permission.READ_PHONE_STATE" />
-    <uses-permission
-        android:name="android.permission.SEND_RESPOND_VIA_MESSAGE"
-        tools:ignore="ProtectedPermissions" />
 
     <application
         android:name=".utils.MyApplication"
@@ -66,6 +55,11 @@
         android:theme="@style/Theme.FirebaseVideoCall"
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
+
+        <!-- Activities -->
+        <activity
+            android:name=".videointelegence.AINavigator"
+            android:exported="false" />
         <activity
             android:name=".ui.RandomOTPGenerate"
             android:exported="false" />
@@ -73,8 +67,13 @@
             android:name=".ui.SplashAcitivity"
             android:exported="true">
             <intent-filter>
+                <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
+            </intent-filter>
+            <meta-data
+                android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED"
+                android:resource="@xml/default_device_filter" />
+            <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
@@ -84,17 +83,7 @@
         <activity
             android:name=".ui.LoginActivity"
             android:exported="true"
-            android:screenOrientation="portrait"></activity>
-
-        <receiver
-            android:name=".utils.MySMSBroadcastReceiver"
-            android:exported="true"
-            android:permission="com.google.android.gms.auth.api.phone.permission.SEND">
-            <intent-filter>
-                <action android:name="com.google.android.gms.auth.api.phone.SMS_RETRIEVED" />
-            </intent-filter>
-        </receiver>
-
+            android:screenOrientation="portrait" />
         <activity
             android:name=".ui.MainActivity"
             android:exported="true"
@@ -107,14 +96,30 @@
             android:name=".ui.CloseActivity"
             android:exported="true" />
 
-        <receiver android:name=".service.MainServiceReceiver" />
-        <receiver android:name=".utils.UsbReceiver"
-            android:exported="true">
+        <!-- Broadcast Receivers -->
+        <receiver
+            android:name=".utils.MySMSBroadcastReceiver"
+            android:exported="true"
+            android:permission="com.google.android.gms.auth.api.phone.permission.SEND">
             <intent-filter>
-                <action android:name="android.hardware.usb.action.USB_STATE" />
+                <action android:name="com.google.android.gms.auth.api.phone.SMS_RETRIEVED" />
             </intent-filter>
         </receiver>
-        <receiver android:name=".utils.NetworkChangeReceiver"
+        <receiver android:name=".service.MainServiceReceiver" />
+
+        <!-- USB Receiver -->
+        <receiver
+            android:name=".utils.UsbReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Network Change Receiver -->
+        <receiver
+            android:name=".utils.NetworkChangeReceiver"
             android:enabled="true"
             android:exported="false">
             <intent-filter>
@@ -122,6 +127,7 @@
             </intent-filter>
         </receiver>
 
+        <!-- Services -->
         <service
             android:name=".service.MainService"
             android:foregroundServiceType="mediaProjection" />

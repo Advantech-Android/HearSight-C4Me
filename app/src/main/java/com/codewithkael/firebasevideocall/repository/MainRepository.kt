@@ -29,8 +29,14 @@ class MainRepository @Inject constructor(
     var listener: Listener? = null
     private var remoteView: SurfaceViewRenderer? = null
 
-    fun login(username: String, phonenumber: String,status:String,isLogin:Boolean, isDone: (Boolean, String?) -> Unit) {
-        firebaseClient.login(username, phonenumber,status,isLogin, isDone)
+    fun login(
+        username: String,
+        phonenumber: String,
+        status: String,
+        isLogin: Boolean,
+        isDone: (Boolean, String?) -> Unit
+    ) {
+        firebaseClient.login(username, phonenumber, status, isLogin, isDone)
     }
 
     fun getUserNameFB(phone: String, result: (String?) -> Unit) {
@@ -139,6 +145,7 @@ class MainRepository @Inject constructor(
         fun onLatestEventReceived(data: DataModel)
         fun endCall()
     }
+
     fun closeConnection() {
         webRTCClient.closeConnection()
 
@@ -147,15 +154,17 @@ class MainRepository @Inject constructor(
     fun initWebrtcClient(username: String) {
         Log.d(TAG, "initWebrtcClient: username: $username")
         webRTCClient.listener = this
-        val peerObserver =  object : MyPeerObserver() {
+        val peerObserver = object : MyPeerObserver() {
             override fun onSignalingChange(p0: PeerConnection.SignalingState?) {
                 super.onSignalingChange(p0)
                 Log.d(TAG, "onSignalingChange: ")
             }
+
             override fun onIceConnectionChange(p0: PeerConnection.IceConnectionState?) {
                 super.onIceConnectionChange(p0)
                 Log.d(TAG, "onIceConnectionChange: ")
             }
+
             override fun onIceConnectionReceivingChange(p0: Boolean) {
                 super.onIceConnectionReceivingChange(p0)
                 Log.d(TAG, "onIceConnectionReceivingChange: ")
@@ -165,6 +174,7 @@ class MainRepository @Inject constructor(
                 super.onDataChannel(p0)
                 Log.d(TAG, "onDataChannel: ")
             }
+
             override fun onIceGatheringChange(p0: PeerConnection.IceGatheringState?) {
                 super.onIceGatheringChange(p0)
                 Log.d(TAG, "onIceGatheringChange: ")
@@ -184,10 +194,12 @@ class MainRepository @Inject constructor(
                 super.onStandardizedIceConnectionChange(newState)
                 Log.d(TAG, "onStandardizedIceConnectionChange: ")
             }
+
             override fun onAddTrack(p0: RtpReceiver?, p1: Array<out MediaStream>?) {
                 super.onAddTrack(p0, p1)
                 Log.d(TAG, "onAddTrack: ")
             }
+
             override fun onTrack(transceiver: RtpTransceiver?) {
                 super.onTrack(transceiver)
                 Log.d(TAG, "onTrack: ")
@@ -202,6 +214,7 @@ class MainRepository @Inject constructor(
                 super.onSelectedCandidatePairChanged(event)
                 Log.d(TAG, "onSelectedCandidatePairChanged: ")
             }
+
             override fun onAddStream(p0: MediaStream?) {
                 super.onAddStream(p0)
                 try {
@@ -231,21 +244,26 @@ class MainRepository @Inject constructor(
                     changeMyStatus(UserStatus.ONLINE)
                     // 2. clear latest event inside my user section in firebase database
                     firebaseClient.clearLatestEvent()
-                 //   webRTCClient. createReConnectPeerConnection(peerObserver)
+                    //   webRTCClient. createReConnectPeerConnection(peerObserver)
 
                 }
             }
         }
-        webRTCClient.initializeWebrtcClient(username,peerObserver)
+        webRTCClient.initializeWebrtcClient(username, peerObserver)
 
     }
 
-    fun initLocalSurfaceView(view: SurfaceViewRenderer, isVideoCall: Boolean) {
-        webRTCClient.initLocalSurfaceView(view, isVideoCall)
+    fun initLocalSurfaceView(
+        view: SurfaceViewRenderer,
+        isVideoCall: Boolean,
+        isAINavigator: Boolean
+    ) {
+        webRTCClient.initLocalSurfaceView(view, isVideoCall, isAINavigator)
+
     }
 
-    fun initRemoteSurfaceView(view: SurfaceViewRenderer) {
-        webRTCClient.initRemoteSurfaceView(view)
+    fun initRemoteSurfaceView(view: SurfaceViewRenderer, isAINavigator: Boolean) {
+        webRTCClient.initRemoteSurfaceView(view, isAINavigator)
         this.remoteView = view
     }
 
@@ -318,4 +336,7 @@ class MainRepository @Inject constructor(
         firebaseClient.sendCallStatusToOtherClient(target, sender, callLogs, callStatus)
     }
 
+    fun onPreviewStop(callBack: () -> Unit) {
+        webRTCClient.onPreviewStop(callBack)
+    }
 }

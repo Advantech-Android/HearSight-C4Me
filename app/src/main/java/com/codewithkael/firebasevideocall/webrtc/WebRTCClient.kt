@@ -1,5 +1,6 @@
 package com.codewithkael.firebasevideocall.webrtc
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.media.AudioManager
@@ -24,6 +25,8 @@ class WebRTCClient @Inject constructor(private val context: Context, private val
     //  private var isUvc = false
     //class variables
     lateinit var uvcCapturer: CameraVideoCapturer
+
+
     var listener: Listener? = null
     private lateinit var username: String
     private lateinit var usbCapturer: CameraVideoCapturer
@@ -101,7 +104,8 @@ class WebRTCClient @Inject constructor(private val context: Context, private val
     private fun createPeerConnectionFactory(): PeerConnectionFactory {
         return PeerConnectionFactory.builder()
             .setVideoDecoderFactory(
-                DefaultVideoDecoderFactory(eglBaseContext)).setVideoEncoderFactory(
+                DefaultVideoDecoderFactory(eglBaseContext)
+            ).setVideoEncoderFactory(
                 DefaultVideoEncoderFactory(eglBaseContext, true, true)
             ).setOptions(PeerConnectionFactory.Options().apply {
                 disableNetworkMonitor = false
@@ -116,7 +120,8 @@ class WebRTCClient @Inject constructor(private val context: Context, private val
         localStreamId = "${username}_stream"
         peerConnection = createPeerConnection(observer)
     }
-    fun createReConnectPeerConnection(username: String,observer: PeerConnection.Observer) {
+
+    fun createReConnectPeerConnection(username: String, observer: PeerConnection.Observer) {
         this.username = username
         localTrackId = "${username}_track"
         localStreamId = "${username}_stream"
@@ -162,7 +167,13 @@ class WebRTCClient @Inject constructor(private val context: Context, private val
                         super.onSetSuccess()
 
                         listener?.onTransferEventToSocket(
-                            DataModel(type = DataModelType.Answer, sender = username, target = target, data = desc?.description))
+                            DataModel(
+                                type = DataModelType.Answer,
+                                sender = username,
+                                target = target,
+                                data = desc?.description
+                            )
+                        )
                     }
                 }, desc)
             }
@@ -201,8 +212,8 @@ class WebRTCClient @Inject constructor(private val context: Context, private val
             peerConnection?.close()
             peerConnection?.dispose()
         } catch (e: Exception) {
-           // e.printStackTrace()
-            Log.e(TAG, "closeConnection: ${e.message}" )
+            // e.printStackTrace()
+            Log.e(TAG, "closeConnection: ${e.message}")
         }
     }
 
@@ -232,8 +243,15 @@ class WebRTCClient @Inject constructor(private val context: Context, private val
     }
 
     //streaming section
-    private fun initSurfaceView(view: SurfaceViewRenderer, isLocal: Boolean) {
-        Log.d(TAG, "initSurfaceView: ")
+    private fun initSurfaceView(
+        view: SurfaceViewRenderer,
+        isLocal: Boolean,
+        isAINavigator: Boolean
+    ) {
+        Log.d(
+            TAG,
+            "initSurfaceView() called with: view = $view, isLocal = $isLocal, isAINavigator = $isAINavigator"
+        )
 
         view.run {
 //          release()
@@ -241,7 +259,15 @@ class WebRTCClient @Inject constructor(private val context: Context, private val
 //                setMirror(true)
 //            else
 //                setMirror(false)
-            setMirror(false)
+
+            if (isAINavigator) {
+
+                setMirror(false)
+
+            } else {
+                setMirror(false)
+            }
+
             if (isUvc.value == false) {
                 scaleX = 1.0f
                 scaleY = 1.0f
@@ -251,53 +277,63 @@ class WebRTCClient @Inject constructor(private val context: Context, private val
             scaleMatrix()
             setScalingType(RendererCommon.ScalingType.SCALE_ASPECT_BALANCED)
 
-           Log.d(TAG, "initSurfaceView: ${this.cameraDistance}")
 
-                init(eglBaseContext, object : RendererCommon.RendererEvents {
-                    override fun onFirstFrameRendered() {
-                        Log.d(TAG, "onFirstFrameRendered: ")
-                    }
 
-                    override fun onFrameResolutionChanged(p0: Int, p1: Int, p2: Int) {
-                        // Log.d(TAG, "$p0,$p1,$p2")
-                    }
-                })
+            init(eglBaseContext, object : RendererCommon.RendererEvents {
+                override fun onFirstFrameRendered() {
+                    Log.d(TAG, "onFirstFrameRendered: ")
+                }
+
+                override fun onFrameResolutionChanged(p0: Int, p1: Int, p2: Int) {
+                    // Log.d(TAG, "$p0,$p1,$p2")
+                    Log.d(TAG, "initSurfaceView: ${cameraDistance}")
+                }
+            })
 
 
         }
     }
 
 
-    fun initRemoteSurfaceView(remoteView: SurfaceViewRenderer) {
+    fun initRemoteSurfaceView(remoteView: SurfaceViewRenderer, isAINavigator: Boolean) {
         this.remoteSurfaceView = remoteView
-        initSurfaceView(remoteView, isLocal = false)
+        initSurfaceView(remoteView, isLocal = false, isAINavigator)
     }
 
-    fun initLocalSurfaceView(localView: SurfaceViewRenderer, isVideoCall: Boolean) {
+    fun initLocalSurfaceView(
+        localView: SurfaceViewRenderer,
+        isVideoCall: Boolean,
+        isAINavigator: Boolean
+    ) {
         this.localSurfaceView = localView
-        initSurfaceView(localView, isLocal = true)
+        initSurfaceView(localView, isLocal = true, isAINavigator)
         startLocalStreaming(localView, isVideoCall)
     }
 
     private fun startLocalStreaming(localView: SurfaceViewRenderer, isVideoCall: Boolean) {
-       // setAudioOutputToSpeaker(context)
+        // setAudioOutputToSpeaker(context)
         Log.d(TAG, "startLocalStreaming: ")
         localSurfaceView = localView
         localStream = peerConnectionFactory.createLocalMediaStream(localStreamId)
         if (isVideoCall) {
             startCapturingCamera(localView)
         }
-        localAudioTrack = peerConnectionFactory.createAudioTrack(localTrackId + "_audio", localAudioSource)
+        localAudioTrack =
+            peerConnectionFactory.createAudioTrack(localTrackId + "_audio", localAudioSource)
         localAudioTrack?.setEnabled(true)
         localAudioTrack?.setVolume(1.0)
         localStream?.addTrack(localAudioTrack)
         peerConnection?.addStream(localStream)
     }
+
+
+
     fun setAudioOutputToSpeaker(context: Context) {
         val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
         audioManager.isSpeakerphoneOn = true
     }
-    private fun startCapturingCamera(localView: SurfaceViewRenderer) {
+
+    fun startCapturingCamera(localView: SurfaceViewRenderer) {
         Log.d(TAG, "startCapturingCamera: ")
         localSurfaceView = localView
         surfaceTextureHelper = SurfaceTextureHelper.create(
@@ -310,7 +346,7 @@ class WebRTCClient @Inject constructor(private val context: Context, private val
                 Toast.LENGTH_SHORT
             ).show()
             Log.d(TAG, "startCapturingCamera: ${Camera2Enumerator(context).deviceNames}")
-            uvcCapturer = UvcCapturerNew(context, localView,eglBaseContext) as CameraVideoCapturer
+            uvcCapturer = UvcCapturerNew(context, localView, eglBaseContext)
             var localVideoSource = peerConnectionFactory.createVideoSource(uvcCapturer.isScreencast)
             uvcCapturer.initialize(
                 surfaceTextureHelper,
@@ -324,9 +360,7 @@ class WebRTCClient @Inject constructor(private val context: Context, private val
             videoCapturer?.initialize(
                 surfaceTextureHelper, context, localVideoSource.capturerObserver
             )
-            videoCapturer?.startCapture(
-                720, 480, 30
-            )
+            videoCapturer?.startCapture(720, 480, 30)
             localVideoTrack =
                 peerConnectionFactory.createVideoTrack(localTrackId + "_video", localVideoSource)
         }
@@ -353,7 +387,7 @@ class WebRTCClient @Inject constructor(private val context: Context, private val
             }
         }
 
-    private fun stopCapturingCamera() {
+    fun stopCapturingCamera() {
         Log.d(TAG, "stopCapturingCamera: ")
         videoCapturer?.dispose()
         localVideoTrack?.removeSink(localSurfaceView)
@@ -374,11 +408,17 @@ class WebRTCClient @Inject constructor(private val context: Context, private val
         windowsManager.defaultDisplay.getMetrics(displayMetrics)
         val screenWidthPixels = displayMetrics.widthPixels
         val screenHeightPixels = displayMetrics.heightPixels
-        val surfaceTextureHelper = SurfaceTextureHelper.create(Thread.currentThread().name, eglBaseContext)
+        val surfaceTextureHelper =
+            SurfaceTextureHelper.create(Thread.currentThread().name, eglBaseContext)
         screenCapturer = createScreenCapturer()
-        screenCapturer!!.initialize(surfaceTextureHelper, context, localScreenVideoSource.capturerObserver)
+        screenCapturer!!.initialize(
+            surfaceTextureHelper,
+            context,
+            localScreenVideoSource.capturerObserver
+        )
         screenCapturer!!.startCapture(screenWidthPixels, screenHeightPixels, 15)
-        localScreenShareVideoTrack = peerConnectionFactory.createVideoTrack(localTrackId + "_video", localScreenVideoSource)
+        localScreenShareVideoTrack =
+            peerConnectionFactory.createVideoTrack(localTrackId + "_video", localScreenVideoSource)
         localScreenShareVideoTrack?.addSink(localSurfaceView)
         localStream?.addTrack(localScreenShareVideoTrack)
         peerConnection?.addStream(localStream)
@@ -404,6 +444,11 @@ class WebRTCClient @Inject constructor(private val context: Context, private val
         })
     }
 
+    @SuppressLint("SuspiciousIndentation")
+    fun onPreviewStop(callBack: () -> Unit) {
+        val uvcCapturerNew = uvcCapturer as UvcCapturerNew
+        uvcCapturerNew.onPreviewStop(callBack)
+    }
 
     interface Listener {
         fun onTransferEventToSocket(data: DataModel)

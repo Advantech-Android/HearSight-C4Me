@@ -20,7 +20,7 @@ class MainServiceRepository @Inject constructor(
             intent.putExtra("username",username)
             //intent.action = MainServiceActions.START_SERVICE.name
 
-            intent.putExtra(setViewFields.USER_NAME,username)
+            intent.putExtra(setViewFields.EXTRA_USER_NAME,username)
 
             intent.action = intentAction
             startServiceIntent(intent)
@@ -47,6 +47,15 @@ class MainServiceRepository @Inject constructor(
             putExtra("isVideoCall",videoCall)
             putExtra("target",target)
             putExtra("isCaller",caller)
+        }
+        startServiceIntent(intent)
+    }
+    fun AI_setupViews()// it just get the local surface view from the main service and main service is get from the main service repository and this one called from web RTC actually it is having this fucntion -initLocalSurfaceView()
+    {
+        val intent = Intent(context,MainService::class.java)
+        intent.apply {
+            action = MainServiceActions.START_AI_NAVIGATOR.name
+
         }
         startServiceIntent(intent)
     }

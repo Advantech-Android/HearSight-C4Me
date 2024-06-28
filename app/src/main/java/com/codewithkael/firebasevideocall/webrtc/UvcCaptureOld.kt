@@ -1,6 +1,8 @@
 package com.codewithkael.firebasevideocall.webrtc
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.YuvImage
 import android.hardware.usb.UsbDevice
 import android.util.Log
 import android.widget.Toast
@@ -204,6 +206,10 @@ class UvcCapturerOld(context: Context, svVideoRender: SurfaceViewRenderer) :
             mUvcStrategy?.onReady(this@UvcCapturerOld.svVideoRender.holder.surface)
         }
     }
+
+//    fun nv21ToBitmap(data:ByteArray,width:Int,height:Int):Bitmap{
+//        val yuvImage=YuvImage()
+//    }
 
     override fun onUVCPreview(iCamera: MultiCameraClient.ICamera, state: ICameraStateCallBack.State, s: String?,callFrom:String) {
         // Log.d(TAG, "onUVCPreview() called with: iCamera = $iCamera, state = $state, s = $s")

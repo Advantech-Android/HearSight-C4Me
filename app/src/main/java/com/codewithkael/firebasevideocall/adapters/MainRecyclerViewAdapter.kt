@@ -9,6 +9,7 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import com.codewithkael.firebasevideocall.BuildConfig
@@ -18,6 +19,7 @@ import com.codewithkael.firebasevideocall.firebaseClient.FirebaseClient
 import com.codewithkael.firebasevideocall.ui.Mp3Ring
 import com.codewithkael.firebasevideocall.utils.ContactInfo
 import com.codewithkael.firebasevideocall.utils.NetworkChangeReceiver
+import com.codewithkael.firebasevideocall.utils.setViewFields
 import com.google.firebase.database.FirebaseDatabase
 import javax.inject.Inject
 
@@ -33,37 +35,33 @@ class MainRecyclerViewAdapter(private val listener: Listener) :
     private var onlineContactList: List<ContactInfo>? = null
     var filteredContactList: List<ContactInfo>? = null
     fun updateList(list: List<ContactInfo>, onlineList: List<ContactInfo>) {
+        Log.d(TAG, "updateList: Updating list")
         this.innerContactList = list
         this.onlineContactList = onlineList
         filteredContactList = onlineList
         notifyDataSetChanged()
-
     }
 
-    fun filterList(query: String) {
-        filteredContactList = onlineContactList?.filter {
-            it.userName.contains(query, ignoreCase = true) || it.contactNumber.contains(query, ignoreCase = true)
+        fun filterList(query: String) {
 
-        }
-        filteredContactList?.filter {
-            filteredContactList?.indexOf(it)?.let { it1 -> notifyItemChanged(it1) }
-            return
-        }
-        notifyDataSetChanged()
-
+            filteredContactList=onlineContactList?.filter {
+                it.userName.contains(query, ignoreCase = true) || it.contactNumber.contains(query,ignoreCase = true)
+            }
+            notifyDataSetChanged()
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MainRecyclerViewHolder {
         val binding = ItemMainRecyclerViewBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-        return MainRecyclerViewHolder(binding, listener)
+        return MainRecyclerViewHolder(binding, listener,this)
     }
 
     override fun getItemCount(): Int {
-        return onlineContactList?.size ?: 0
+        return filteredContactList?.size?:0
+        //return onlineContactList?.size ?: 0
     }
 
     override fun onBindViewHolder(holder: MainRecyclerViewHolder, position: Int) {
-        onlineContactList?.let { list ->
+        filteredContactList?.let { list ->
             val user = list[position]
             holder.bind(user, position, {
                 Log.d(TAG, "onBindViewHolder: onVideoCallClicked $it")
@@ -79,10 +77,18 @@ class MainRecyclerViewAdapter(private val listener: Listener) :
     interface Listener {
         fun onVideoCallClicked(username: String, user: ContactInfo)
         fun onAudioCallClicked(username: String)
+
+    }
+    private fun removeContactFromList(contactNumber: String)
+    {
+        innerContactList=innerContactList?.filterNot { it.contactNumber == contactNumber }
+        onlineContactList=onlineContactList?.filterNot { it.contactNumber==contactNumber }
+        filteredContactList=filteredContactList?.filterNot { it.contactNumber==contactNumber }
+        notifyDataSetChanged()
+
     }
 
-
-    class MainRecyclerViewHolder(private val binding: ItemMainRecyclerViewBinding, private val listener: Listener) :
+    class MainRecyclerViewHolder(private val binding: ItemMainRecyclerViewBinding, private val listener: Listener, private val adapter: MainRecyclerViewAdapter) :
         RecyclerView.ViewHolder(binding.root) {
         val handler = android.os.Handler(Looper.getMainLooper())
         private val context = binding.root.context
@@ -116,9 +122,7 @@ class MainRecyclerViewAdapter(private val listener: Listener) :
                         cardViewVideoCallClick.setOnClickListener {
 
                             cardViewVideoCallClick.isEnabled = false
-                            Toast.makeText(
-                                context,
-                                "Please wait while your call is being connected",
+                            Toast.makeText(context, "Please wait while your call is being connected",
                                 Toast.LENGTH_LONG
                             ).show()
                             videoCallClicked.invoke(user.contactNumber)//represents username
@@ -182,13 +186,7 @@ class MainRecyclerViewAdapter(private val listener: Listener) :
                     deleteDialog.show()
                     yesBtn.setOnClickListener {
                         Log.d(TAG, "deleteContacts:ContactNumber: ${user.contactNumber.toString()}\t,UserName${user.userName.toString()}")
-                        deleteContacts(
-                            deleteDialog,
-                            user.contactNumber,
-                            user.userName,
-                            listener,
-                            pos
-                        )
+                        deleteContacts(deleteDialog, user.contactNumber, user.userName, listener, pos)
                     }
                     noBtn.setOnClickListener { deleteDialog.dismiss() }
 
@@ -196,12 +194,6 @@ class MainRecyclerViewAdapter(private val listener: Listener) :
 
             }
         }
-
-
-
-
-
-
         private fun inviteGuideUser(user: ContactInfo) {
             try {
                 val shareIntent = Intent(Intent.ACTION_SEND)
@@ -215,47 +207,35 @@ class MainRecyclerViewAdapter(private val listener: Listener) :
                 //e.toString();
             }
         }
+        private fun deleteContacts(deleteDialog: Dialog, contactNumber: String, userName: String, listener: Listener, pos: Int) {
+            val context = binding.root.context
+            val sharedPref = context.getSharedPreferences(setViewFields.PREF_NAME, AppCompatActivity.MODE_PRIVATE)
+            val registerNumber = sharedPref.getString(setViewFields.KEY_USER_PHONE, null)
+            if (registerNumber != null) {
+                Log.d(TAG, "deleteContacts: ContactNumber: $contactNumber, UserName: $userName, registerNumber: $registerNumber")
+                val ref = FirebaseDatabase.getInstance().getReference(registerNumber)
+                val hastContactRef = ref.child(setViewFields.PATH_CONTACTS).child(contactNumber)
+
+                hastContactRef.removeValue().addOnSuccessListener {
+                    Toast.makeText(context, "Contact $userName deleted Successfully", Toast.LENGTH_SHORT).show()
+                    adapter.removeContactFromList(contactNumber)
+                    deleteDialog.dismiss()
 
 
-
-        private fun deleteContacts(
-            deleteDialog: Dialog,
-            contactNumber: String,
-            userName: String,
-            listener: Listener,
-            pos: Int
-        ) {
-            val registerNumber = FirebaseClient.registerNumber
-            Log.d(
-                TAG,
-                "deleteContacts:ContactNumber: ${contactNumber}\t,UserName${userName.toString()}\t\tRegisterNumber${registerNumber}"
-            )
-            val ref = FirebaseDatabase.getInstance().reference
-            val hastContactRef =
-                ref.child(registerNumber).child("contacts").child(contactNumber)
-            hastContactRef.removeValue().addOnSuccessListener {
-
-                Toast.makeText(
-                    context,
-                    "Contact ${userName} deleted Successfully",
-                    Toast.LENGTH_SHORT
-                ).show()
-                val mainRecyclerViewAdapter = MainRecyclerViewAdapter(listener)
-                mainRecyclerViewAdapter.notifyItemChanged(pos)
-                deleteDialog.dismiss()
-
-            }
-                .addOnFailureListener { exception ->
-                    Toast.makeText(
-                        context,
-                        "Failed to remove host contact: ${exception.message}",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                }.addOnFailureListener { exception ->
+                    Toast.makeText(context, "Failed to remove host contact: ${exception.message}", Toast.LENGTH_SHORT).show()
                 }
+            }
+            else
+            {
+                Log.e(TAG, "User phone not found in SharedPreferences")
+                // Handle the case where user_phone is not found in SharedPreferences
+            }
         }
 
 
     }
+
 
 }
 

@@ -1,0 +1,96 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/AIMainRelativeLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".videointelegence.AINavigator">
+
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        android:src="@drawable/n" />
+
+    <TextView
+        android:id="@+id/language_headline"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentRight="true"
+        android:layout_marginEnd="16dp"
+        android:layout_marginRight="16dp"
+        android:layout_marginTop="20dp"
+        android:text="Select your language"
+        android:textColor="@color/white"
+        android:textSize="18sp"
+        />
+
+    <TextView
+        android:id="@+id/ans_ai"
+        android:layout_width="300dp"
+        android:layout_height="150dp"
+        android:layout_below="@id/language_headline"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="20dp"
+        android:background="@drawable/ai_outline"
+        android:maxLines="4"
+        android:padding="15dp"
+        android:text="AI Guidance"
+        android:textColor="@color/white"
+        android:textSize="20sp"
+
+        android:translationZ="90dp" />
+
+    <org.webrtc.SurfaceViewRenderer
+        android:id="@+id/ai_remoteview"
+        android:layout_width="300dp"
+        android:layout_height="300dp"
+        android:layout_below="@id/ans_ai"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="20dp"
+        android:layout_marginBottom="20dp"
+        android:background="@drawable/ai_outline" />
+
+    <LinearLayout
+        android:id="@+id/btns"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/ai_remoteview"
+        android:layout_centerHorizontal="true"
+        android:orientation="horizontal"
+        android:gravity="center">
+
+        <Button
+            android:id="@+id/btnPause"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="16dp"
+            android:textSize="12dp"
+            android:backgroundTint="#D3D3D3"
+            android:textColor="@color/black"
+            android:text="Pause" />
+
+        <Button
+            android:id="@+id/btnExit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="16dp"
+            android:textSize="12dp"
+            android:textColor="@color/black"
+
+            android:backgroundTint="#D3D3D3"
+            android:text="End" />
+
+        <Button
+            android:id="@+id/btnPlay"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="16dp"
+            android:textColor="@color/black"
+            android:textSize="12dp"
+            android:backgroundTint="#D3D3D3"
+            android:text="Resume" />
+
+    </LinearLayout>
+
+</RelativeLayout>

@@ -1,12 +1,15 @@
 package com.codewithkael.firebasevideocall.ui
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.app.Dialog
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import android.hardware.usb.UsbManager
 import android.net.wifi.WifiManager
 import android.os.Bundle
 import android.os.Handler
@@ -60,8 +63,10 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.lifecycleScope
 import com.codewithkael.firebasevideocall.ui.LoginActivity.Share.liveShare
+import com.codewithkael.firebasevideocall.utils.UsbReceiver
 
 import com.codewithkael.firebasevideocall.utils.UserStatus
+import com.codewithkael.firebasevideocall.videointelegence.AINavigator
 import kotlinx.coroutines.launch
 
 import javax.inject.Inject
@@ -76,7 +81,7 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
     private var recentContactPhone: String = ""
     private lateinit var contactBind: AddcontactsBinding
 
-    private val MAX_LENGTH_PHONE=5
+
     private lateinit var mDialog: Dialog
     private val TAG = "***>>MainActivity"
 
@@ -106,8 +111,10 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
 
 
     companion object Share {
-        var liveShare = MutableLiveData<SharedPreferences>()//is used to provide a reactive and centralized way to manage and observe changes to the SharedPreferences instance across the app.
-
+        var liveShare =
+            MutableLiveData<SharedPreferences>()//is used to provide a reactive and centralized way to manage and observe changes to the SharedPreferences instance across the app.
+        private val MAX_LENGTH_PHONE = 13
+        private const val MAX_USERNAME_LENGTH = 15
     }
 
 
@@ -116,41 +123,34 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
         views = ActivityMainBinding.inflate(layoutInflater)
         setContentView(views?.root)
 
-        sharedPref = this.getSharedPreferences("see_for_me", MODE_PRIVATE)
+        sharedPref = this.getSharedPreferences(setViewFields.PREF_NAME, MODE_PRIVATE)
         shEdit = sharedPref.edit()
 
         // Fetch data from shared preferences
-        username = sharedPref.getString("user_name", null)
-        userphone = sharedPref.getString("user_phone", null)
-
-
-
+        username = sharedPref.getString(setViewFields.KEY_USER_NAME, null)
+        userphone = sharedPref.getString(setViewFields.KEY_USER_PHONE, null)
         Log.d(TAG, "onCreate==??:$username and $userphone")
 
-
-      //Setting "is_login" to false
-
         wifiManager = getSystemService(Context.WIFI_SERVICE) as WifiManager
-
         onBackPressedDispatcher.addCallback(back)
-
-        lifecycleScope.launch { init() }
-
+        lifecycleScope.launch {
+            init()
+        }
         searchQuery()
     }
+
+    lateinit var usbReceiver: UsbReceiver
     private suspend fun init() {
 
-        //Extras from Main Activity
-        username = intent.getStringExtra(setViewFields.USER_NAME)
-        userphone = intent.getStringExtra(setViewFields.USER_PHONE)
+        //Extras from login Activity
+        username = intent.getStringExtra(setViewFields.EXTRA_USER_NAME)
+        userphone = intent.getStringExtra(setViewFields.EXTRA_USER_PHONE)
 
         Log.d(TAG, "init==??:$username and $userphone ")
 
-        if(username.isNullOrEmpty()||userphone.isNullOrEmpty())
-        {
-
-            username = sharedPref.getString("user_name", null)
-            userphone = sharedPref.getString("user_phone", null)
+        if (username.isNullOrEmpty() || userphone.isNullOrEmpty()) {
+            username = sharedPref.getString(setViewFields.KEY_USER_NAME, null)
+            userphone = sharedPref.getString(setViewFields.KEY_USER_PHONE, null)
         }
         if (username == null) finish()
 
@@ -162,22 +162,24 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
         //2. start foreground service to listen negotiations and calls.
         startMyService()
     }
-    val back=object: OnBackPressedCallback(true) {
+
+    val back = object : OnBackPressedCallback(true) {
         /* override back pressing */
         override fun handleOnBackPressed() {
             //Your code here
             showCloseAppDialog()
         }
     }
-    fun showCloseAppDialog(){
+
+    fun showCloseAppDialog() {
         // Inflate the dialog layout
         val dialogView = layoutInflater.inflate(R.layout.closeapp_dialog, null)
         // Initialize the AlertDialog Builder
         val builder = AlertDialog.Builder(this)
         builder.setView(dialogView)
         val dialog = builder.create()
-        val closeAppOkbtn=dialogView.findViewById<Button>(R.id.closeAppOkbtn)
-        val closeAppbtn=dialogView.findViewById<Button>(R.id.closeAppbtn)//
+        val closeAppOkbtn = dialogView.findViewById<Button>(R.id.closeAppOkbtn)
+        val closeAppbtn = dialogView.findViewById<Button>(R.id.closeAppbtn)//
         builder.setView(dialogView)
             .setPositiveButton(null, null) // Setting null for positive button for custom handling
             .setNegativeButton(null, null) // Setting null for negative button for custom handling
@@ -192,6 +194,7 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
             dialog.dismiss()
         }
     }
+
     private fun showLogoutDialog() {
         val builder = AlertDialog.Builder(this)
         val inflater = layoutInflater
@@ -207,41 +210,39 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
         val dialog = builder.create()
         dialog.show()
 
-        logoutOkBtn.setOnClickListener {
-            liveShare.value?.edit()?.putBoolean("is_login",false)
-            mainRepository.login(username!!,userphone!!,UserStatus.OFFLINE.name,false){ischeck ,status->
 
+        logoutOkBtn.setOnClickListener {
+            mainRepository.login(
+                username!!,
+                userphone!!,
+                UserStatus.OFFLINE.name,
+                false
+            ) { ischeck, status ->
+                sharedPref.edit().putBoolean(setViewFields.KEY_IS_LOGIN, false).apply()
             }
-            // Perform logout action
-            // For example, navigate to login screen or clear session
             val intent = Intent(this, LoginActivity::class.java)
             startActivity(intent)
             dialog.dismiss()
         }
-
         logoutCancelBtn.setOnClickListener {
             dialog.dismiss()
         }
 
     }
 
-
-
-
     private fun searchQuery() {
         views?.searchView?.queryHint = "Search Contacts"
 
         // Find the EditText inside the SearchView
-        val searchEditText = views?.searchView?.findViewById<EditText>(
-            androidx.appcompat.R.id.search_src_text
-        )
+        val searchEditText = views?.searchView?.findViewById<EditText>(androidx.appcompat.R.id.search_src_text)
 
         // Set the text size of the query hint
         searchEditText?.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 15f)
 
 
         views?.searchView?.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-            override fun onQueryTextSubmit(query: String?): Boolean {
+            override fun onQueryTextSubmit(query: String?): Boolean
+            {
                 return false
             }
 
@@ -256,18 +257,19 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
         })
     }
 
-    private val pickContactLauncher = registerForActivityResult(PickContactContract(this@MainActivity)) { result ->
-        result?.let { (name, phoneNumber) ->
-            Log.d(TAG, "name:$name = phoneNumber:$phoneNumber")
+    private val pickContactLauncher =
+        registerForActivityResult(PickContactContract(this@MainActivity)) { result ->
+            result?.let { (name, phoneNumber) ->
+                Log.d(TAG, "name:$name = phoneNumber:$phoneNumber")
 
-            var ph = phoneNumber
-            if (!phoneNumber.startsWith("+91")) {
-                ph = "+91${phoneNumber}"
+                var ph = phoneNumber
+                if (!phoneNumber.startsWith("+91")) {
+                    ph = "+91${phoneNumber}"
+                }
+                contactBind.addNameid.setText(name.trim().lowercase())
+                contactBind.addPhoneNumberid.setText(ph.trim().replace(" ", ""))
             }
-            contactBind.addNameid.setText(name.trim().lowercase())
-            contactBind.addPhoneNumberid.setText(ph.trim().replace(" ", ""))
         }
-    }
 
     private fun addContacts() {
         mDialog = Dialog(this)
@@ -294,8 +296,12 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
         }
 
         contactBind.saveBtn.setOnClickListener {
-            val name = contactBind.addNameid.text.toString().trim().lowercase()
+            var name = contactBind.addNameid.text.toString().trim().lowercase()
+            if (name.length >= MAX_USERNAME_LENGTH) {
+                name = name.substring(0, 15)
+            }
             var phoneNumber = contactBind.addPhoneNumberid.text.toString().trim().replace(" ", "")
+
             if (!phoneNumber.startsWith("+91")) {
                 phoneNumber = "+91$phoneNumber"
             }
@@ -311,6 +317,7 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
             recentContactName = name
             contactBind.addNameid.setText(name)
             contactBind.addPhoneNumberid.setText(phoneNumber)
+
             mainRepository.addContacts(name, phoneNumber) { isDone, reason ->
                 if (!isDone) {
                     SnackBarUtils.showSnackBar(
@@ -345,18 +352,26 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
         var unregisterList: List<ContactInfo>? = null
         mainRepository.observeUsersStatus(this,
             { registerContact ->
-                Log.d(TAG, "All_Contacts: ${registerContact.filter {
-                    it.userName
-                    false
-                }}")
+                Log.d(
+                    TAG, "All_Contacts: ${
+                        registerContact.filter {
+                            it.userName
+                            false
+                        }
+                    }"
+                )
                 allContact = registerContact
             },
             { onlineContactList ->
                 if (onlineContactList.isEmpty()) {
-                    Log.d(TAG, "Available Contact: ${onlineContactList.filter {
-                        it.userName
-                        false
-                    }}")
+                    Log.d(
+                        TAG, "Available Contact: ${
+                            onlineContactList.filter {
+                                it.userName
+                                false
+                            }
+                        }"
+                    )
                     views?.noContactTV?.visibility = View.VISIBLE
                     //mainAdapter!!.updateList(allContact ?: emptyList(), emptyList())
                 } else {
@@ -392,7 +407,7 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
                 TAG,
                 "subscribeObservers: target: ${data.target} ,sender:${data.sender} , message:${"empty"} callstatus:$callStatus"
             )
-            if (callStatus == "EndCall" || callStatus == "AcceptCall") {
+            if (callStatus == setViewFields.END_CALL || callStatus == setViewFields.ACCEPT_CALL) {
                 mp3Player.stopMP3()
                 decline(target = data.target, sender = data.sender, message = "")
             }
@@ -409,10 +424,10 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
         }
     }
 
+    @SuppressLint("SuspiciousIndentation")
     private fun startMyService() {
         if (username.isNullOrEmpty())
-            username=liveShare.value?.getString("user_name","")
-
+            username = liveShare.value?.getString(setViewFields.KEY_USER_NAME, "")
         mainServiceRepository.startService(username!!, MainServiceActions.START_SERVICE.name)
     }
 
@@ -420,22 +435,20 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
         //check if permission of mic and camera is taken
         Log.d(TAG, "onVideoCallClicked: =====================$username")
         getCameraAndMicPermission {
+          shEdit.putBoolean(setViewFields.KEY_IS_MIRROR,true)
             mainRepository.sendConnectionRequest(username, true) {
                 if (it) {
                     //we have to start video call
                     //we wanna create an intent to move to call activity
                     //here username is phone number
-
                     startActivity(Intent(this, CallActivity::class.java).apply {
-                        putExtra(setViewFields.TARGET, username)
-                        putExtra(setViewFields.IS_VIDEO_CALL, true)
-                        putExtra(setViewFields.IS_CALLER, true)
-                        putExtra(setViewFields.IS_INCOMING, "Out")
-                        putExtra(setViewFields.TIMER, false)
+                        putExtra(setViewFields.EXTRA_TARGET, username)
+                        putExtra(setViewFields.EXTRA_IS_VIDEO_CALL, true)
+                        putExtra(setViewFields.EXTRA_IS_CALLER, true)
+                        putExtra(setViewFields.EXTRA_IS_INCOMING, "Out")
+                        putExtra(setViewFields.EXTRA_TIMER, false)
                         putExtra(setViewFields.CALLER_NAME, user.userName)
                     })
-
-
                 }
             }
 
@@ -450,10 +463,9 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
                     //we have to start audio call
                     //we wanna create an intent to move to call activity
                     startActivity(Intent(this, CallActivity::class.java).apply {
-                        putExtra(setViewFields.TARGET, username)
-                        putExtra(setViewFields.IS_VIDEO_CALL, false)
-                        putExtra(setViewFields.IS_CALLER, true)
-
+                        putExtra(setViewFields.EXTRA_TARGET, username)
+                        putExtra(setViewFields.EXTRA_IS_VIDEO_CALL, false)
+                        putExtra(setViewFields.EXTRA_IS_CALLER, true)
                     })
                 }
             }
@@ -468,7 +480,7 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
         super.onDestroy()
         mp3Player.stopMP3()
         wifiManager.disconnect()
-
+        // unregisterReceiver(usbReceiver)
         views = null
     }
 
@@ -498,7 +510,11 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
                     getCameraAndMicPermission {
 
                         mp3Player.stopMP3()
-                        mainRepository.setCallStatus(model.target, model.sender!!, "AcceptCall") {
+                        mainRepository.setCallStatus(
+                            model.target,
+                            model.sender!!,
+                            setViewFields.ACCEPT_CALL
+                        ) {
                             mp3Player.stopMP3()
 
                             incomingCallLayout.isVisible = false
@@ -524,7 +540,7 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
                     incomingCallLayout.isVisible = false
                     contactLayout.isVisible = true
                     mp3Player.stopMP3()
-                    decline(model.target, model.sender, "EndCall")
+                    decline(model.target, model.sender, setViewFields.END_CALL)
                 }
                 Handler(Looper.getMainLooper()).postDelayed({
                     mp3Player.stopMP3()
@@ -563,12 +579,32 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.qr_codeid -> {
-                showEnableDeveloperModeDialog()
+                //showEnableDeveloperModeDialog()
+                isPermissionGrand()
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                    555
+                )
+                isCheckHotspot()
+                if (wifiManager.isWifiEnabled) {
+                    val wifiReceiver = WifiPasswordGenerated(this)
+                    wifiReceiver.showQRDialog()
+                } else {
+                    SnackBarUtils.showSnackBar(views!!.root, MainActivityFields.TURN_ON_WIFI)
+                }
+
                 true
+
             }
 
             R.id.logOut -> {
                 showLogoutDialog()
+                true
+            }
+
+            R.id.ai_navigator -> {
+                startActivity(Intent(this, AINavigator::class.java))
                 true
             }
 
@@ -578,14 +614,14 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
 
     }
 
-    private fun showEnableDeveloperModeDialog(){
+    private fun showEnableDeveloperModeDialog() {
         AlertDialog.Builder(ContextThemeWrapper(this, androidx.appcompat.R.style.Theme_AppCompat))
             .setTitle("Enable Developer Mode/Wi-Fi Throttling")
             .setMessage("To access available network settings, please follow these steps:\n\n1. Go to Settings.\n2. Scroll down and tap on 'About phone'.\n3. Find 'Build number' and tap it seven times to enable Developer Mode.\n4. Go back to the main Settings menu.\n5. Tap on 'System' and then 'Developer options'.\n6. Find and enable 'Wi-Fi throttling'.\n\nIf you have already enabled Developer Mode, you can ignore this and click Cancel.\n\n*Note:Options name may differ in models but procedures are same")
-            .setPositiveButton("Ok"){dialog,which->
+            .setPositiveButton("Ok") { dialog, which ->
                 dialog.dismiss()
             }
-            .setNegativeButton("Cancel"){dialog,which->
+            .setNegativeButton("Cancel") { dialog, which ->
                 isPermissionGrand()
                 ActivityCompat.requestPermissions(
                     this,
@@ -603,19 +639,20 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
     }
 
 
-
-
     private fun isCheckHotspot(): Boolean {
         try {
             val npm = Class.forName("android.net.NetworkPolicyManager")
                 .getDeclaredMethod("from", Context::class.java).invoke(null, this)
-            val policies = npm.javaClass.getDeclaredMethod("getNetworkPolicies").invoke(npm)
+            val policies = npm.javaClass.getDeclaredMethod(setViewFields.GET_NW_POLICY).invoke(npm)
 
             if (policies != null) {
                 val policyArray = policies as Array<Any>
                 for (policy in policyArray) {
                     val isHotspotEnabled =
-                        policy.javaClass.getDeclaredMethod("isMetered", *arrayOfNulls(0))
+                        policy.javaClass.getDeclaredMethod(
+                            setViewFields.IS_METERED,
+                            *arrayOfNulls(0)
+                        )
                             .invoke(policy) as Boolean
                     if (isHotspotEnabled) {
                         return true

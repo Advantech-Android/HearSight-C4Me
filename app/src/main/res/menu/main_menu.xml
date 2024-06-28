@@ -4,5 +4,9 @@
         android:id="@+id/qr_codeid"
         android:title="Wifi QR Code"/>
     <item android:id="@+id/logOut"
+
         android:title="Log Out"></item>
+    <item android:id="@+id/ai_navigator"
+
+        android:title="AI Navigator"></item>
 </menu>

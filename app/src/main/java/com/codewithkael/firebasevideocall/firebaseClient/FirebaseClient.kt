@@ -1,5 +1,7 @@
 package com.codewithkael.firebasevideocall.firebaseClient
 
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.content.SharedPreferences
@@ -19,6 +21,7 @@ import com.codewithkael.firebasevideocall.utils.FirebaseFieldNames.STATUS
 import com.codewithkael.firebasevideocall.utils.MyChildEventListener
 import com.codewithkael.firebasevideocall.utils.MyEventListener
 import com.codewithkael.firebasevideocall.utils.UserStatus
+import com.codewithkael.firebasevideocall.utils.setViewFields
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
@@ -126,7 +129,13 @@ class FirebaseClient @Inject constructor(
         done: (Boolean, String?) -> Unit
     ) {
         try {
+            Log.d(TAG, "login: db=$dbRef")
             dbRef.addListenerForSingleValueEvent(object : MyEventListener() {
+                override fun onCancelled(error: DatabaseError) {
+                    super.onCancelled(error)
+                    Log.d(TAG, "onCancelled: ")
+                }
+
                 override fun onDataChange(snapshot: DataSnapshot) {
                     if (snapshot.hasChild(phonenumber)) {
                         val dbPhonenumber = snapshot.child(phonenumber).key.toString()
@@ -468,7 +477,8 @@ class FirebaseClient @Inject constructor(
             .addOnCompleteListener {
                 dbRef.child(currentUserPhonenumber!!).child(LOGIN_STATUS).setValue(false)
                     .addOnCompleteListener {
-                        liveShare.value?.edit()?.putBoolean("is_login", false)?.apply()
+                        sharedPref.edit().putBoolean(setViewFields.KEY_IS_LOGIN, false)
+                        //updateFirebaseLoginStatus(false) // Update Firebase login status
                         function()
                     }
             }

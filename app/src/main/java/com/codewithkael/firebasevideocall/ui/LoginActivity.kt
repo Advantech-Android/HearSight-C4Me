@@ -11,6 +11,8 @@ import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import WebQ
 import android.app.AlarmManager
 import android.app.PendingIntent
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP
 import android.content.IntentFilter
 import android.content.SharedPreferences
@@ -23,8 +25,12 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
+import android.telephony.SubscriptionManager
 import android.telephony.TelephonyManager
+import android.text.Editable
+import android.text.TextWatcher
 import android.util.Log
+import android.widget.EditText
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -42,6 +48,7 @@ import com.codewithkael.firebasevideocall.utils.LoginActivityFields.PASWORD_INVA
 import com.codewithkael.firebasevideocall.utils.ProgressBarUtil
 import com.codewithkael.firebasevideocall.utils.SnackBarUtils
 import com.codewithkael.firebasevideocall.utils.UserStatus
+import com.codewithkael.firebasevideocall.utils.setViewFields
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -75,22 +82,24 @@ class LoginActivity : AppCompatActivity() {
     @Inject
     lateinit var mainRepository: MainRepository
 
-    lateinit var webQ: WebQ
 
+    lateinit var webQ: WebQ
     lateinit var wifiManager: WifiManager
     lateinit var sharedPref: SharedPreferences
     lateinit var shEdit: SharedPreferences.Editor
     var ACTION_USB_PERMISSION = "com.serenegiant.USB_PERMISSION."
+    private var fetchedPhoneNumber:String?=null
 
     companion object Share {
         var liveShare =
             MutableLiveData<SharedPreferences>()//is used to provide a reactive and centralized way to manage and observe changes to the SharedPreferences instance across the app.
         val tempLiveData = MutableLiveData<String>("-0.0f")
+        private const val REQUEST_READ_PHONE_NUMBERS = 1001//permission request code
+        private const val MAX_USERNAME_LENGTH = 15
     }
 
     var sms_otp = ""
 
-    @Inject
     lateinit var mainServiceRepository: MainServiceRepository
     var mySMSBroadcastReceiver: MySMSBroadcastReceiver = MySMSBroadcastReceiver()
 
@@ -98,10 +107,19 @@ class LoginActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         views = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(views!!.root)
-        sharedPref = getSharedPreferences("see_for_me", MODE_PRIVATE)
+
+        sharedPref = getSharedPreferences(setViewFields.PREF_NAME, MODE_PRIVATE)
         shEdit = sharedPref.edit()
-        putData("is_login", false) //Setting "is_login" to false
+        putData(setViewFields.KEY_IS_LOGIN, false) //Setting "is_login" to false
         liveShare.value = sharedPref
+
+        //Request sim number know permission from the user at run time
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            ActivityCompat.requestPermissions(
+                this, arrayOf(Manifest.permission.READ_PHONE_NUMBERS), REQUEST_READ_PHONE_NUMBERS
+            )
+        }
+
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             registerReceiver(
@@ -120,6 +138,19 @@ class LoginActivity : AppCompatActivity() {
         // modelDebug()ḍ
         clearData()
 
+    }
+
+
+    private fun modelDebug() {
+        views?.apply {
+            if (Build.BRAND!!.equals("samsung", true)) {
+                usernameEt.setText("Divya")
+                passwordEt.setText("9843716886")
+            } else {
+                usernameEt.setText("Pooja")
+                passwordEt.setText("9994639839")
+            }
+        }
     }
 
     private fun astra() {
@@ -180,20 +211,131 @@ class LoginActivity : AppCompatActivity() {
 
     }
 
+    //app can  handle both granted and denied permissions to fetch the sim number
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == REQUEST_READ_PHONE_NUMBERS) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                setPhoneNumber()
+            } else {
+                // Permission denied, handle accordingly
+                views?.setmobileno?.text = "Permission denied"
+            }
+        }
+    }
+
+    private fun setPhoneNumber() {
+        // Check if the required permissions are granted
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_NUMBERS) == PackageManager.PERMISSION_GRANTED ||
+            ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED) {
+
+            // Get the TelephonyManager instance
+            val telephonyManager = getSystemService(TELEPHONY_SERVICE) as TelephonyManager
+
+            // Initialize the SIM number variable
+            var simNumber: String? = null
+
+            // Check the SIM state
+            val simState = telephonyManager.simState
+            if (simState == TelephonyManager.SIM_STATE_READY)
+            {
+                // For Android TIRAMISU and above, use SubscriptionManager to get the phone number
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    val subscriptionManager = getSystemService(TELEPHONY_SUBSCRIPTION_SERVICE) as SubscriptionManager
+                    simNumber = subscriptionManager.getPhoneNumber(SubscriptionManager.DEFAULT_SUBSCRIPTION_ID).trim()
+                }
+
+
+                // Fallback to TelephonyManager for older Android versions or if SubscriptionManager returns null/empty
+                if (simNumber.isNullOrEmpty()) {
+                    simNumber = telephonyManager.line1Number
+                }
+
+
+                // Double-check by accessing subscription info directly
+                if (simNumber.isNullOrEmpty() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
+                    val subscriptionManager = getSystemService(TELEPHONY_SUBSCRIPTION_SERVICE) as SubscriptionManager
+                    val activeSubscriptionInfoList = subscriptionManager.activeSubscriptionInfoList
+                    if (!activeSubscriptionInfoList.isNullOrEmpty()) {
+                        simNumber = activeSubscriptionInfoList[0].number
+                    }
+                }
+            }
+
+
+            // Check if the SIM number is not null or empty
+            if (!simNumber.isNullOrEmpty()) {
+                // If SIM number is available, set it to the TextView
+                iterateSIM_Number(simNumber)
+            }
+            else
+            {
+                // If SIM number is null or empty, clear the TextView and show a toast message
+                Toast.makeText(this@LoginActivity, "Please insert the SIM card first", Toast.LENGTH_SHORT).show()
+            }
+        }
+        else
+        {
+            // If permissions are not granted, show a toast message
+            Toast.makeText(this@LoginActivity, "Please allow all permifbackssions in your mobile", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun setSIM(simNumber: String?) {
+        // Check if the SIM number is not null or empty
+        if (!simNumber.isNullOrEmpty())
+        {
+            copyToClipboard(simNumber)
+            // If SIM number is available, set it
+            views?.setmobileno?.text = simNumber
+            fetchedPhoneNumber = simNumber
+
+        }
+        else
+        {
+            // If SIM number is null or empty, clear the text view and reset fetchedPhoneNumber
+            views?.setmobileno?.text = ""
+            fetchedPhoneNumber = null
+            Toast.makeText(this@LoginActivity, "Please insert the SIM card first", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun iterateSIM_Number(sim_number: String) {
+        var i = ""
+        var j = 0
+        sim_number.reversed().toCharArray().iterator().forEach {
+            Log.d(TAG, "setPhoneNumber: ${it}")
+            if (sim_number.length >= 10) {
+                j++
+                if (j <= 10) {
+                    i = it + i
+                }
+            }
+        }
+        Log.d(TAG, "-----setPhoneNumber: -->${"+91" + i}")
+        i = "+91" + i
+        setSIM(i)
+    }
+
     private fun init() {
         setUserData()
         handleButtonClick()
         uvcVI_Control()
+        restrictUsernameInput(views!!.usernameEt)
     }
 
     fun setUserData() {
         views?.apply {
 
-            usernameEt.setText(getData("user_name", String::class.java) as String)
-            passwordEt.setText(getData("user_phone", String::class.java) as String)
+            usernameEt.setText(getData(setViewFields.KEY_USER_NAME, String::class.java) as String)
+            passwordEt.setText(getData(setViewFields.KEY_USER_PHONE, String::class.java) as String)
+            Log.d(TAG, "***LoginActivity-setUserData: $usernameEt and $passwordEt")
         }
     }
-
     fun clearData() {
 
         views?.apply {
@@ -202,10 +344,10 @@ class LoginActivity : AppCompatActivity() {
                     Log.d("Checkbox", "Checkbox is checked!")
                     // ProgressBarUtil.showProgressBar(this@LoginActivity)
                    // clearCacheAndRestartApp(applicationContext)
-                   //clearCacheAndRestartApp(this@LoginActivity)
+                  Handler(Looper.getMainLooper()).postDelayed({ clearCacheAndRestartApp(this@LoginActivity)},1000)
 
                     triggerAppRestart()
-                    restartApp(this@LoginActivity)
+
                 } else {
                     Log.d("Checkbox", "Checkbox is unchecked!")
                 }
@@ -229,10 +371,18 @@ class LoginActivity : AppCompatActivity() {
                 cacheDir.delete()
             }
             if (dataDir != null) {
-                if (dataDir.isDirectory)
-                    dataDir.deleteRecursively()
-                else
-                    dataDir.delete()
+                if (dataDir.isDirectory){
+                   if(dataDir.deleteRecursively()) {
+
+                   }
+                    dataDir.listFiles()?.forEach { file ->
+                        if (file.name!="lib") {
+                            file.deleteRecursively()
+                        }
+                    }
+                }
+
+
             }
             // clear app data
         } catch (e: Exception) {
@@ -308,15 +458,26 @@ class LoginActivity : AppCompatActivity() {
         }
     }
 
-    private fun ActivityLoginBinding.loginBtnUI(isEnabled: Boolean) {
-        if (isEnabled)
+    private fun ActivityLoginBinding.loginBtnUI(isEnabled: Boolean, delay: Long = 0L) {
+        if (isEnabled) {
             ProgressBarUtil.hideProgressBar(this@LoginActivity)
-        else
+            btn.isEnabled = true
+            passwordEt.isEnabled = true
+            usernameEt.isEnabled = true
+        } else {
             ProgressBarUtil.showProgressBar(this@LoginActivity)
-
-        btn.isEnabled = isEnabled
-        passwordEt.isEnabled = isEnabled
-        usernameEt.isEnabled = isEnabled
+            btn.isEnabled = false
+            passwordEt.isEnabled = false
+            usernameEt.isEnabled = false
+            if (delay > 0) {
+                Handler(Looper.getMainLooper()).postDelayed({
+                    ProgressBarUtil.hideProgressBar(this@LoginActivity)
+                    btn.isEnabled = true
+                    passwordEt.isEnabled = true
+                    usernameEt.isEnabled = true
+                }, delay)
+            }
+        }
     }
 
     private fun handleButtonClick() {
@@ -326,22 +487,42 @@ class LoginActivity : AppCompatActivity() {
             btn.setOnClickListener {
                 btn.isEnabled = false
                 Log.d(TAG, "handleButtonClick: ${uvc.isUvc.value}")
-                loginBtnUI(false)
-                val usernameText = usernameEt.text.toString().trim().lowercase().replace(" ", "")
+                loginBtnUI(false)// This will show the progress bar and disable the login button, password field, and username field.
+                val usernameText =
+                    usernameEt.text.toString().trim().lowercase().replace(" ", "")
                 var passwordText = passwordEt.text.toString().trim()
-                if (!passwordText.startsWith("+91")) {
+
+                if (!passwordText.startsWith("+91"))
+                {
                     passwordText = "+91${passwordText}"
                 }
                 usernameEt.setText(usernameText)
                 passwordEt.setText(passwordText)
+
                 if (usernameText.isEmpty()) {
                     SnackBarUtils.showSnackBar(views!!.root, USERNAME_INVALID)
+                    loginBtnUI(false, 5000)
                     return@setOnClickListener
                 }
-                if (passwordText.isEmpty() || passwordText.length < MAX_LENGTH_PHONE) {
+                if (passwordText.isEmpty()) {
                     SnackBarUtils.showSnackBar(views!!.root, PASWORD_INVALID)
+                    loginBtnUI(false, 5000)
                     return@setOnClickListener
                 }
+                else if (fetchedPhoneNumber != null && passwordText != fetchedPhoneNumber)
+                {
+                    SnackBarUtils.showSnackBar(
+                        views!!.root,
+                        "Please enter the correct mobile number"
+                    )
+                    loginBtnUI(false, 5000)
+                    return@setOnClickListener
+                } else if (fetchedPhoneNumber == null) {
+                    Toast.makeText(this@LoginActivity, "Please insert the SIM card first", Toast.LENGTH_SHORT).show()
+                    loginBtnUI(false, 5000)
+                    return@setOnClickListener
+                }
+
                 val run = {
                     loginBtnUI(true)
                 }
@@ -359,15 +540,67 @@ class LoginActivity : AppCompatActivity() {
                     SnackBarUtils.showSnackBar(btn, LoginActivityFields.CHECK_NET_CONNECTION)
                     hand.removeCallbacksAndMessages(null)
                     ProgressBarUtil.hideProgressBar(this@LoginActivity)
-
-                } else {
-                    performLogin(usernameText, passwordText)
+                }
+                else
+                {
+                 //   performLogin(usernameText, passwordText)
+                  loginReactive(usernameText,passwordText)
                 }
             }
 
         }
     }
 
+    private fun loginReactive(usernameText: String,  phoneNumber: String) {
+        views?.apply {
+            if (fetchedPhoneNumber == phoneNumber)
+            {
+                startActivityForResult(Intent(this@LoginActivity, RandomOTPGenerate::class.java).apply {
+                    putExtra(setViewFields.EXTRA_USER_NAME, usernameEt.text.toString().trim())
+                    putExtra(setViewFields.EXTRA_USER_PHONE, passwordEt.text.toString().trim()) },111)
+            }
+            else
+            {
+                views?.apply {
+                    SnackBarUtils.showSnackBar(btn,"please check your phone number")
+                }
+            }
+        }
+    }
+    // Inside your LoginActivity class
+    private fun restrictUsernameInput(editText: EditText) {
+        editText.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+                Log.d(TAG, "beforeTextChanged: $s")
+            }
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                Log.d(TAG, "beforeTextChanged: $s")
+            }
+
+            override fun afterTextChanged(s: Editable?) {
+                s?.let {
+                    val inputUserName = it.toString()
+                    if (inputUserName.length > MAX_USERNAME_LENGTH) {
+                        // Limit the input to 10 characters
+                        editText.setText(inputUserName.substring(0, MAX_USERNAME_LENGTH))
+                        editText.setSelection(MAX_USERNAME_LENGTH) // Stop cursor movement
+                        return
+                    }
+
+                    // Disallow special characters and convert to lowercase
+                    val filteredInput = inputUserName.filter { char ->
+                        char.isLetter() && char.isLowerCase()
+                    }
+
+                    if (inputUserName != filteredInput) {
+                        editText.setText(filteredInput)
+                        editText.setSelection(filteredInput.length) // Stop cursor movement
+                    }
+                }
+            }
+        })
+    }
 
     private fun performLogin(usernameText: String, passwordText: String) {
         views?.apply {
@@ -385,48 +618,81 @@ class LoginActivity : AppCompatActivity() {
                     Log.d(TAG, "Login failed: $reason")
                     SnackBarUtils.showSnackBar(root, LoginActivityFields.UN_PW_INCORRECT)
                 } else {
-                    putData("user_name", usernameText)
-                    putData("user_phone", passwordText)
+                    putData(setViewFields.KEY_USER_NAME, usernameText)
+                    putData(setViewFields.KEY_USER_PHONE, passwordText)
                     Log.d(TAG, "!!>>performLogin:$usernameText and $passwordText ")
-                    putData("is_login", true)
+                    putData(setViewFields.KEY_IS_LOGIN, true)
 
-//                    startActivity(Intent(this@LoginActivity, RandomOTPGenerate::class.java).apply {
-//                        putExtra("username", usernameText)
-//                        putExtra("userphone", passwordText)
                     startActivity(Intent(this@LoginActivity, MainActivity::class.java).apply {
-                        putExtra("user_name", usernameText)
-                        putExtra("user_phone", passwordText)
+                        putExtra(setViewFields.EXTRA_USER_NAME, usernameText)
+                        putExtra(setViewFields.EXTRA_USER_PHONE, passwordText)
                     })
+
                 }
 
             }
         }
     }
 
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == STORAGE_PERMISSION_CODE) {
-            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Log.d(TAG, "scanSuccess:onRequestPermissionsResult")
-            }
-        } else if (requestCode == 1000) {
-            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Log.d(TAG, "scanSuccess:onRequestPermissionsResult")
-            }
-        }
-    }
-
+//
+//    override fun onRequestPermissionsResult(
+//        requestCode: Int,
+//        permissions: Array<String>,
+//        grantResults: IntArray
+//    ) {
+//        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+//        if (requestCode == STORAGE_PERMISSION_CODE) {
+//            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+//                Log.d(TAG, "scanSuccess:onRequestPermissionsResult")
+//            }
+//        } else if (requestCode == 1000) {
+//            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+//                Log.d(TAG, "scanSuccess:onRequestPermissionsResult")
+//            }
+//        }
+//    }
+fun Context.copyToClipboard(text: CharSequence){
+    val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+    val clip = ClipData.newPlainText("label",text)
+    clipboard.setPrimaryClip(clip)
+}
     @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, intent)
         if (requestCode == FILECHOOSER_RESULTCODE) {
             // Handle file chooser result
         }
+        if(requestCode==111){
+            val resultData = data?.getStringExtra(setViewFields.EXTRA_RESULT)
+            views?.apply {
+                SnackBarUtils.showSnackBar(btn,resultData.toString())
+                val uName=usernameEt.text.toString().trim()
+                val uPhone=passwordEt.text.toString().trim()
+                mainRepository.login(
+                    uName,
+                    uPhone,
+                    UserStatus.ONLINE.name, true
+                ) { isDone, reason ->
+                    isLoginDebug(uName, uPhone)
+                }
+               // isLoginDebug(uName, uPhone)
+
+            }
+        }
+    }
+
+    private fun isLoginDebug(uName: String, uPhone: String) {
+        putData(setViewFields.KEY_USER_NAME, uName)
+        putData(setViewFields.KEY_USER_PHONE, uPhone)
+        Log.d("***LoginActivity", "uName and pass:$uName and $uPhone ")
+        putData(setViewFields.KEY_IS_LOGIN, true)
+        val intent = Intent(this@LoginActivity, MainActivity::class.java)
+            .apply {
+                putExtra(setViewFields.EXTRA_USER_NAME, uName)
+                putExtra(setViewFields.EXTRA_USER_PHONE, uPhone)
+            }
+        startActivity(intent)
+        finish()
     }
 
 

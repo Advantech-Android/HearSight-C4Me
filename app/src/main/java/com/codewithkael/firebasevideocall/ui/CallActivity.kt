@@ -4,8 +4,12 @@ package com.codewithkael.firebasevideocall.ui
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.ImageFormat
+import android.graphics.Rect
+import android.graphics.YuvImage
 import android.media.projection.MediaProjectionManager
-
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -15,21 +19,20 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
-
 import androidx.core.view.isVisible
+import androidx.lifecycle.lifecycleScope
 import com.codewithkael.firebasevideocall.R
-import com.codewithkael.firebasevideocall.adapters.MainRecyclerViewAdapter
 import com.codewithkael.firebasevideocall.databinding.ActivityCallBinding
 import com.codewithkael.firebasevideocall.repository.MainRepository
 import com.codewithkael.firebasevideocall.service.MainService
 import com.codewithkael.firebasevideocall.service.MainServiceRepository
 import com.codewithkael.firebasevideocall.utils.NetworkChangeReceiver
 import com.codewithkael.firebasevideocall.utils.NetworkChangeReceiver.Companion.scheduleNetworkCheck
-
 import com.codewithkael.firebasevideocall.utils.convertToHumanTime
 import com.codewithkael.firebasevideocall.utils.setViewFields.IS_CALLER
+import com.codewithkael.firebasevideocall.videointelegence.BakingViewModel
 import com.codewithkael.firebasevideocall.webrtc.RTCAudioManager
 import com.codewithkael.firebasevideocall.webrtc.UvcCapturerNew
 import com.jiangdg.ausbc.MultiCameraClient
@@ -41,10 +44,11 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.webrtc.SurfaceViewRenderer
+import java.io.ByteArrayOutputStream
 import javax.inject.Inject
 
 
@@ -54,6 +58,7 @@ import javax.inject.Inject
 class CallActivity : CameraActivity(), MainService.EndCallListener,
     NetworkChangeReceiver.InetWorkChange {
 
+    private val backingBakingViewModel:BakingViewModel by viewModels()
     private val handler: Handler = Handler(Looper.getMainLooper())
     private val TAG = "###CallActivity"
     private var timer = false
@@ -80,14 +85,11 @@ class CallActivity : CameraActivity(), MainService.EndCallListener,
 
     private var views: ActivityCallBinding? = null
     private lateinit var loginActivity: LoginActivity
-
     override fun onStart() {
         super.onStart()
         Log.d(TAG, "onStart: ")
-        requestScreenCaptureLauncher = registerForActivityResult(
-            ActivityResultContracts
-                .StartActivityForResult()
-        ) { result ->
+        requestScreenCaptureLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult())
+        { result ->
             if (result.resultCode == Activity.RESULT_OK) {
                 val intent = result.data
                 //its time to give this intent to our service and service passes it to our webrtc client
@@ -120,12 +122,9 @@ class CallActivity : CameraActivity(), MainService.EndCallListener,
         init()
         setContentView(views?.root)
     }
-
-
     override fun onResume() {
         super.onResume()
         Log.d(TAG, "onResume: ")
-
         scheduleNetworkCheck(this)
         NetworkChangeReceiver.inetWorkChange = this
         NetworkChangeReceiver.sharePref(applicationContext)
@@ -137,11 +136,9 @@ class CallActivity : CameraActivity(), MainService.EndCallListener,
         super.onRestart()
         Log.d(TAG, "onRestart: ")
     }
-
     val runnable = {
         views?.progressBar?.isVisible = false
     }
-
     private fun init() {
         intent.getStringExtra("target")?.let {
             this.target = it
@@ -448,7 +445,7 @@ class CallActivity : CameraActivity(), MainService.EndCallListener,
         Log.d(TAG, "onCameraState: preview-2")
         uvcPreview?.onUVCPreview(self, code, msg, "call_activity")
 
-        /*  self.addPreviewDataCallBack(object :IPreviewDataCallBack{
+          self.addPreviewDataCallBack(object :IPreviewDataCallBack{
               override fun onPreviewData(
                   data: ByteArray?,
                   width: Int,
@@ -456,10 +453,36 @@ class CallActivity : CameraActivity(), MainService.EndCallListener,
                   format: IPreviewDataCallBack.DataFormat
               ) {
                   Log.d(TAG, "onPreviewData() called with: data = $data, width = $width, height = $height, format = $format")
+                  data?.let {
+                      val bitmap=convertYuvToBitmap(it, width, height)
+                      Log.d(TAG, "!!onPreviewData:$bitmap ")
+
+
+                  }
 
               }
 
-          })*/
+          })
+    }
+
+    suspend fun DelayBitmapTest(bitmap: Bitmap?) {
+       lifecycleScope.launch(Dispatchers.Main) {
+           delay(3000)
+           if(bitmap!=null){
+               backingBakingViewModel.sendPrompt(bitmap!!,"Explore this image"){
+
+               }
+           }
+
+       }
+
+    }
+    private fun convertYuvToBitmap(yunData:ByteArray, width: Int, height: Int):Bitmap?{
+        val yuvImage=YuvImage(yunData,ImageFormat.NV21,width,height,null)
+        val out=ByteArrayOutputStream()
+        yuvImage.compressToJpeg(Rect(0, 0, width, height), 100, out)
+        val imageBytes = out.toByteArray()
+        return BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
 
     }
 

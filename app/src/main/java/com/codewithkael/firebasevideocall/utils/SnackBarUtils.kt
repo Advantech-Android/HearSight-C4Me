@@ -25,8 +25,10 @@ object WifiPassWordGeneratedField
 object LoginActivityFields{
     val PASWORD_INVALID: String="Enter valid password"
     const val USERNAME_INVALID="Enter valid username "
+    const val USERNAME_NOT_EMPTY="Contact name should not be empty"
     const val CHECK_NET_CONNECTION="Check your Internet Connection"
     const val UN_PW_INCORRECT="Username and Password incorrect.."
+    const val PICKED_CONTACTNO_WRONG="The Picked contact number is wrong"
 }
 object MainActivityFields{
     const val AC_BOTH_USERNAME_PW="Enter both username and password"

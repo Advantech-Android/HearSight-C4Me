@@ -129,8 +129,11 @@
             android:background="@android:color/transparent"
             android:src="@drawable/ic_screen_share"/>
 
-
-
+<Button
+    android:layout_width="50dp"
+    android:layout_height="40dp"
+    android:text="AI"
+    android:id="@+id/btnAI"></Button>
 
     </LinearLayout>
 

@@ -31,7 +31,7 @@
                 android:layout_width="115dp"
                 android:layout_height="45dp"
                 android:layout_marginLeft="10dp"
-                android:text="Ok"></Button>
+                android:text="Exit"></Button>
             <Button
                 android:id="@+id/closeAppbtn"
                 android:layout_width="115dp"

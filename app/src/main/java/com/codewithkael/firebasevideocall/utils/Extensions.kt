@@ -7,7 +7,8 @@ import com.permissionx.guolindev.PermissionX
 fun AppCompatActivity.getCameraAndMicPermission(success:()->Unit){
     PermissionX.init(this)
 
-        .permissions(android.Manifest.permission.CAMERA,android.Manifest.permission.RECORD_AUDIO,android.Manifest.permission.ACCESS_FINE_LOCATION)
+        .permissions(android.Manifest.permission.CAMERA,android.Manifest.permission.RECORD_AUDIO,
+            android.Manifest.permission.ACCESS_FINE_LOCATION)
 
         .request{allGranted,_,_ ->
 

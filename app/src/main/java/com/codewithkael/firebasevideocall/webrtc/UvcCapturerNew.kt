@@ -1,13 +1,20 @@
 package com.codewithkael.firebasevideocall.webrtc
 
+
 import android.content.Context
+import android.content.Context.MODE_PRIVATE
+import android.content.SharedPreferences
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.ImageFormat
+import android.graphics.YuvImage
 import android.hardware.usb.UsbDevice
 import android.os.Build
 import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import com.codewithkael.firebasevideocall.ui.CallActivity
-import com.codewithkael.firebasevideocall.ui.CallActivity.Companion.uvcPreview
+import com.codewithkael.firebasevideocall.utils.setViewFields
 import com.jiangdg.ausbc.MultiCameraClient
 import com.jiangdg.ausbc.MultiCameraClient.ICamera
 import com.jiangdg.ausbc.callback.ICameraStateCallBack
@@ -17,25 +24,16 @@ import com.jiangdg.ausbc.camera.CameraUvcStrategy
 import com.jiangdg.ausbc.camera.bean.CameraRequest
 import com.jiangdg.usb.USBMonitor.UsbControlBlock
 import com.journeyapps.barcodescanner.camera.CameraInstance
-import org.webrtc.CameraVideoCapturer
-import org.webrtc.CameraVideoCapturer.CameraSwitchHandler
-import org.webrtc.CapturerObserver
-import org.webrtc.NV21Buffer
-import org.webrtc.SurfaceTextureHelper
-import org.webrtc.SurfaceViewRenderer
-import org.webrtc.VideoCapturer
-import org.webrtc.VideoFrame
-
-
 import org.webrtc.*
+import org.webrtc.CameraVideoCapturer.CameraSwitchHandler
+import java.io.ByteArrayOutputStream
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
-class UvcCapturerNew(
-    context: Context,
-    private val svVideoRender: SurfaceViewRenderer,
-    private val eglBaseContext: EglBase.Context
-) :
-    CameraInstance(context), VideoCapturer, CameraVideoCapturer, CallActivity.UVCPreview {
+
+class UvcCapturerNew
+    (context: Context, private val svVideoRender: SurfaceViewRenderer, private val eglBaseContext: EglBase.Context) :
+    CameraInstance(context), VideoCapturer, CameraVideoCapturer, CallActivity.UVCPreview
+{
 
     private val context: Context
     private var surfaceTextureHelper: SurfaceTextureHelper? = null
@@ -52,19 +50,26 @@ class UvcCapturerNew(
     var self: ICamera? = null
     var code: ICameraStateCallBack.State? = null
     var msg: String? = null
-
+    lateinit var sharedPref:SharedPreferences
+    lateinit var shEdit:SharedPreferences.Editor
 
     companion object {
         private const val TAG = "###CallUvcCapturer"
+        var usbPreview: USBPreview? = null
+
     }
 
     init {
         Log.d(TAG, "UvcCapturer: ")
         this.context = context
-        uvcPreview = this
+        CallActivity.uvcPreview = this
+        sharedPref=context.getSharedPreferences(setViewFields.PREF_NAME, MODE_PRIVATE)
+        shEdit=sharedPref.edit()
+
         initializeUvcStrategy()
         initializeMultiCameraClient()
     }
+
 
     private fun initializeUvcStrategy() {
         if (uvcStrategy == null) {
@@ -81,17 +86,26 @@ class UvcCapturerNew(
                 }
 
                 override fun onDisConnectDec(device: UsbDevice?, ctrlBlock: UsbControlBlock?) {
-                    Log.d(TAG, "onDisConnectDec: $isExecute :isCheck-->$isCheck -->isDetach:$isDetach")
+                    Log.d(
+                        TAG,
+                        "onDisConnectDec: $isExecute :isCheck-->$isCheck -->isDetach:$isDetach"
+                    )
                     resetFlags()
                 }
 
                 override fun onDetachDec(device: UsbDevice?) {
-                    Log.d(TAG, "onDetachDec: isExecute--> $isExecute :isCheck-->$isCheck -->isDetach:$isDetach")
+                    Log.d(
+                        TAG,
+                        "onDetachDec: isExecute--> $isExecute :isCheck-->$isCheck -->isDetach:$isDetach"
+                    )
                     resetFlags()
                 }
 
                 override fun onConnectDev(device: UsbDevice?, ctrlBlock: UsbControlBlock?) {
-                    Log.d(TAG, "onConnectDev: isExecute--> $isExecute :isCheck-->$isCheck -->isDetach:$isDetach")
+                    Log.d(
+                        TAG,
+                        "onConnectDev: isExecute--> $isExecute :isCheck-->$isCheck -->isDetach:$isDetach"
+                    )
                     if (device == null || ctrlBlock == null) {
                         Log.e(TAG, "onConnectDev: Device or CtrlBlock is null")
                         return
@@ -151,12 +165,14 @@ class UvcCapturerNew(
         this.capturerObserver = capturerObserver
         try {
             svVideoRender.init(eglBaseContext, null)
-        }catch (e:Exception){
+        } catch (e: Exception) {
             Log.d(TAG, "initialize: Error-->${e.message}")
         }
-        svVideoRender.setMirror(true)
+     //  svVideoRender.setMirror(true)
+        svVideoRender.setMirror(sharedPref.getBoolean(setViewFields.KEY_IS_MIRROR,false))
         svVideoRender.setEnableHardwareScaler(true)
     }
+
 
     override fun startCapture(i: Int, i1: Int, i2: Int) {
         Log.d(TAG, "startCapture: ")
@@ -217,25 +233,45 @@ class UvcCapturerNew(
 
     val iPreviewDataCallBack = object : IPreviewDataCallBack {
         @RequiresApi(Build.VERSION_CODES.O)
-        override fun onPreviewData(
-            data: ByteArray?,
-            width: Int,
-            height: Int,
-            format: IPreviewDataCallBack.DataFormat
-        ) {
-            if (!isCheck) {
-                Log.d(TAG, "onPreviewData() called with: data = $data, width = $width, height = $height, format = $format")
-                isCheck = true
+        override fun onPreviewData(data: ByteArray?, width: Int, height: Int, format: IPreviewDataCallBack.DataFormat)// Method that gets called when USB preview data is available
+        {
+            if (!isCheck)//true
+            {
+                Log.d(
+                    TAG,
+                    "onPreviewData() called with: data = $data, width = $width, height = $height, format = $format"
+                )
+                // isCheck = true
             }
+            //so using this variable just fetch these 4 parameter and pass it to the AI navigator
+            usbPreview?.onPreviewStart(data, width, height, format)
+
+
             Log.d("--->***frameeeee", "onPreviewData: $data")
             val nv21Buffer = NV21Buffer(data, UVC_PREVIEW_WIDTH, UVC_PREVIEW_HEIGHT, null)
             val frame = VideoFrame(nv21Buffer, 0, System.nanoTime())
+            Log.d(TAG, "onPreviewData==#>: $frame")
             capturerObserver?.onFrameCaptured(frame)
             this@UvcCapturerNew.svVideoRender.onFrame(frame)
         }
     }
 
-    override fun onUVCPreview(iCamera: ICamera, state: ICameraStateCallBack.State, s: String?, callFrom: String) {
+
+    //converts NV21 data to a Bitmap
+    fun nv21ToBitmap(data: ByteArray, width: Int, height: Int): Bitmap? {
+        val yuvImage = YuvImage(data, ImageFormat.NV21, width, height, null)
+        val out = ByteArrayOutputStream()
+        yuvImage.compressToJpeg(android.graphics.Rect(0, 0, width, height), 100, out)
+        val imageBytes = out.toByteArray()
+        return BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+    }
+
+    override fun onUVCPreview(
+        iCamera: ICamera,
+        state: ICameraStateCallBack.State,
+        s: String?,
+        callFrom: String
+    ) {
         self = iCamera
         code = state
         msg = s
@@ -273,5 +309,31 @@ class UvcCapturerNew(
         isExecute = false
         isDetach = false
     }
+    interface USBPreview
+    {
+        fun onPreviewStart( data: ByteArray?, width: Int, height: Int, format: IPreviewDataCallBack.DataFormat)//this function data is above-onPreviewData()
+
+    }
+    lateinit var callBack:()->Unit
+
+    fun onPreviewStop(callBack:()->Unit){
+       this.callBack=callBack//stores the passed call back function into the call back variable
+
+        svVideoRender.holder.removeCallback(svVideoRender)
+        self?.removePreviewDataCallBack(iPreviewDataCallBack)
+        svVideoRender.removeCallbacks {
+            Log.d(TAG, "onCallEnd: ---------")
+        }
+        if (uvcStrategy != null) {
+            uvcStrategy?.stopPreview()
+            uvcStrategy?.removePreviewDataCallBack(iPreviewDataCallBack)
+            uvcStrategy?.unRegister()
+        }
+
+        multiCameraClient?.unRegister()
+        isExecute = false
+        isDetach = false
+    }
+
 }
 
