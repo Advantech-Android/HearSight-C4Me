@@ -76,7 +76,8 @@ class AINavigator : CameraActivity(), UvcCapturerNew.USBPreview, TextToSpeech.On
     private val handler= android.os.Handler(Looper.getMainLooper())
 
     private var isPaused=false
-private val prompt="Detect the surroundings with directions(left,right,up,down and straight) within 20 words"
+    //private val prompt="Detect the surroundings with directions(left,right,up,down and straight) within 10 words"
+    private val prompt="Detect the India money and Coins in 6 words"
 
 
     override fun getCameraView(): IAspectRatio? {
@@ -121,13 +122,13 @@ private val prompt="Detect the surroundings with directions(left,right,up,down a
 
             // MainService.remoteSurfaceView = remoteView
 
-            LoginActivity.uvc.isUvc.value = true// get the UVC status from login activity always true(open)
+            LoginActivity.uvc.isUvc.value =
+                true// get the UVC status from login activity always true(open)
 
             //webRTCClient.initLocalSurfaceView(remoteView,isVideoCall = true)
 
             serviceRepository.AI_setupViews()//getting the local surface view
             webRTCClient.getFrameFromSurface(){
-
                 Log.d(TAG, "getRootView: --------$it")
                 viewModel.sendPrompt(it, prompt){
                         ans ->

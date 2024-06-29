@@ -19,7 +19,7 @@ class BakingViewModel : ViewModel() {
         modelName = "gemini-1.5-flash",
         apiKey = "AIzaSyDbxtup1y6wvj9o8G16ZEj0cRTzmZO9yaA",
         generationConfig {
-            temperature = 0.8f
+            temperature = 0.3f
             topK = 64
             topP = 0.70f
             maxOutputTokens = 8192
