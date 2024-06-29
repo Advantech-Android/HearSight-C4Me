@@ -32,6 +32,7 @@ import com.codewithkael.firebasevideocall.utils.NetworkChangeReceiver
 import com.codewithkael.firebasevideocall.utils.NetworkChangeReceiver.Companion.scheduleNetworkCheck
 import com.codewithkael.firebasevideocall.utils.convertToHumanTime
 import com.codewithkael.firebasevideocall.utils.setViewFields.IS_CALLER
+import com.codewithkael.firebasevideocall.videointelegence.AINavigator
 import com.codewithkael.firebasevideocall.videointelegence.BakingViewModel
 import com.codewithkael.firebasevideocall.webrtc.RTCAudioManager
 import com.codewithkael.firebasevideocall.webrtc.UvcCapturerNew
@@ -121,6 +122,10 @@ class CallActivity : CameraActivity(), MainService.EndCallListener,
         views = ActivityCallBinding.inflate(layoutInflater)
         init()
         setContentView(views?.root)
+        views!!.btnVCToAI.setOnClickListener {
+                val intent=Intent(this@CallActivity,AINavigator::class.java)
+                startActivity(intent)
+        }
     }
     override fun onResume() {
         super.onResume()

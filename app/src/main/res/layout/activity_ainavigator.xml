@@ -5,6 +5,7 @@
     android:layout_height="match_parent"
     tools:context=".videointelegence.AINavigator">
 
+
     <ImageView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -25,13 +26,14 @@
         android:textSize="18sp"
         />
 
+
     <TextView
         android:id="@+id/ans_ai"
         android:layout_width="300dp"
         android:layout_height="150dp"
         android:layout_below="@id/language_headline"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="20dp"
+        android:layout_marginTop="15dp"
         android:background="@drawable/ai_outline"
         android:maxLines="4"
         android:padding="15dp"
@@ -47,50 +49,86 @@
         android:layout_height="300dp"
         android:layout_below="@id/ans_ai"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="20dp"
+        android:layout_marginTop="15dp"
         android:layout_marginBottom="20dp"
         android:background="@drawable/ai_outline" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="240dp"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="109dp"
+        android:layout_marginTop="530dp"
+        android:layout_marginEnd="106dp"
+        android:layout_marginBottom="52dp"
+        android:gravity="center"
+
+        android:orientation="vertical">
+
+        <Button
+            android:id="@+id/mobileToggle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:backgroundTint="@color/white"
+            android:visibility="gone"
+            android:text="Mobile Camera"
+            android:textColor="@color/black"></Button>
+
+        <Button
+            android:layout_marginTop="8dp"
+            android:id="@+id/usbToggle"
+            android:visibility="gone"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:backgroundTint="@color/white"
+
+            android:text="USB Camera"
+            android:textColor="@color/black"></Button>
+    </LinearLayout>
 
     <LinearLayout
         android:id="@+id/btns"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@id/ai_remoteview"
-        android:layout_centerHorizontal="true"
-        android:orientation="horizontal"
-        android:gravity="center">
+        android:layout_marginRight="15dp"
+        android:layout_alignParentRight="true"
+        android:orientation="vertical"
+        android:gravity="right"
 
-        <Button
-            android:id="@+id/btnPause"
+        tools:ignore="ExtraText">
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fabPause"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="16dp"
-            android:textSize="12dp"
-            android:backgroundTint="#D3D3D3"
-            android:textColor="@color/black"
-            android:text="Pause" />
-
-        <Button
-            android:id="@+id/btnExit"
+            android:layout_margin="8dp"
+            android:backgroundTint="#FFE854"
+            android:contentDescription="Pause"
+            android:src="@drawable/baseline_pause_24"/>
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fabExit"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="16dp"
-            android:textSize="12dp"
-            android:textColor="@color/black"
+            android:layout_margin="8dp"
+            android:contentDescription="End"
+            android:src="@drawable/baseline_close_24"
+            android:backgroundTint="#FAA0A0"
+        />
 
-            android:backgroundTint="#D3D3D3"
-            android:text="End" />
-
-        <Button
-            android:id="@+id/btnPlay"
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fabPlay"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="16dp"
-            android:textColor="@color/black"
-            android:textSize="12dp"
-            android:backgroundTint="#D3D3D3"
-            android:text="Resume" />
+            android:layout_marginTop="8dp"
+            android:contentDescription="Resume"
+            android:backgroundTint="#D5FFC4"
+            android:src="@drawable/baseline_video_camera_back_24">
+
+        </com.google.android.material.floatingactionbutton.FloatingActionButton>
 
     </LinearLayout>
-
 </RelativeLayout>

@@ -23,6 +23,7 @@ import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContentProviderCompat.requireContext
+import androidx.core.view.isVisible
 import com.codewithkael.firebasevideocall.R
 import com.codewithkael.firebasevideocall.databinding.ActivityAinavigatorBinding
 import com.codewithkael.firebasevideocall.databinding.ActivityCallBinding
@@ -75,6 +76,7 @@ class AINavigator : CameraActivity(), UvcCapturerNew.USBPreview, TextToSpeech.On
     private val handler= android.os.Handler(Looper.getMainLooper())
 
     private var isPaused=false
+private val prompt="Detect the surroundings with directions(left,right,up,down and straight) within 20 words"
 
 
     override fun getCameraView(): IAspectRatio? {
@@ -119,14 +121,41 @@ class AINavigator : CameraActivity(), UvcCapturerNew.USBPreview, TextToSpeech.On
 
             // MainService.remoteSurfaceView = remoteView
 
-            LoginActivity.uvc.isUvc.value =
-                true// get the UVC status from login activity always true(open)
+            LoginActivity.uvc.isUvc.value = true// get the UVC status from login activity always true(open)
 
             //webRTCClient.initLocalSurfaceView(remoteView,isVideoCall = true)
 
             serviceRepository.AI_setupViews()//getting the local surface view
+            webRTCClient.getFrameFromSurface(){
+
+                Log.d(TAG, "getRootView: --------$it")
+                viewModel.sendPrompt(it, prompt){
+                        ans ->
+
+                    handler.postDelayed({
+                        views.apply {//The AI result will keep on updating in UI-Text view .So we using runOnUiThread
+                            runOnUiThread { ansAi.text = ans }
+                        }
+                    },5000)
+                }
+            }
         }
         setContentView(views.root)
+
+        views.apply {
+            mobileToggle.setOnClickListener {
+                Toast.makeText(this@AINavigator, "coming soon mobile toggle", Toast.LENGTH_SHORT).show()
+                LoginActivity.uvc.isUvc.value =
+                    false// get the UVC status from login activity always true(open)
+                //tts start
+                readTextAloud(views.ansAi.text.toString())
+
+
+            }
+            usbToggle.setOnClickListener {
+                Toast.makeText(this@AINavigator, "coming soon camera toggle", Toast.LENGTH_SHORT).show()
+            }
+        }
 
         // Initialize TextToSpeech
         tts = TextToSpeech(this, this)
@@ -151,10 +180,17 @@ class AINavigator : CameraActivity(), UvcCapturerNew.USBPreview, TextToSpeech.On
             }
 
         })
+
+        views.fabPlay.visibility=View.GONE
+        views.fabExit.visibility=View.VISIBLE
+        views.fabPause.visibility=View.VISIBLE
+
         views.apply {
-            btnPlay.setOnClickListener {
+            fabPlay.setOnClickListener {
+
+
                 Toast.makeText(this@AINavigator, "play", Toast.LENGTH_SHORT).show()
-               //tts start
+                //tts start
                 isPaused = false // Resume playback
 
                 MainService.localSurfaceView = aiRemoteview//set the local surface view (which is in main service) to the airemote view
@@ -166,15 +202,22 @@ class AINavigator : CameraActivity(), UvcCapturerNew.USBPreview, TextToSpeech.On
 
                 //tts start
                 readTextAloud(views.ansAi.text.toString())
+
+                fabPlay.visibility=View.GONE
+                fabPause.visibility=View.VISIBLE
+
             }
-            btnPause.setOnClickListener {
+            fabPause.setOnClickListener {
                 Toast.makeText(this@AINavigator, "pause", Toast.LENGTH_SHORT).show()
                 webRTCClient.onPreviewStop {  }
                 isPaused = true // Pause playback
                 tts.stop() // Stop current speech
-            }
-            btnExit.setOnClickListener {
 
+                fabPause.visibility=View.GONE
+                fabPlay.visibility=View.VISIBLE
+
+            }
+            fabExit.setOnClickListener {
                 Toast.makeText(this@AINavigator, "Exit", Toast.LENGTH_SHORT).show()
                 webRTCClient.onPreviewStop {  }
                 finish()
@@ -183,7 +226,6 @@ class AINavigator : CameraActivity(), UvcCapturerNew.USBPreview, TextToSpeech.On
         }
         return views.root
     }
-
 
     //When preview data is received (onPreviewData), it converts the data to a Bitmap, sends it to a view model for processing with a prompt message, and updates the UI with the response asynchronously.
     //onPreviewData is likely called repeatedly as new preview frames are received
@@ -196,7 +238,7 @@ class AINavigator : CameraActivity(), UvcCapturerNew.USBPreview, TextToSpeech.On
                 Log.d(TAG, "onPreviewData() called with: data = $data, width = $width, height = $height, format = $format")//log data check
                 data?.let {
                     convertYuvToBitmap(data, width, height)?.let { it1 ->
-                        viewModel.sendPrompt(it1, "Detect the surroundings with directions(left,right,up,down and straight) within 20 words")
+                        viewModel.sendPrompt(it1, prompt)
                         { ans ->
 
                             handler.postDelayed({
@@ -242,7 +284,7 @@ class AINavigator : CameraActivity(), UvcCapturerNew.USBPreview, TextToSpeech.On
         Log.d(TAG, "onPreviewStart: ")
         data?.let {
             convertYuvToBitmap(data, width, height)?.let { it1 ->
-                viewModel.sendPrompt(it1, "Detect the surroundings with directions(left,right,up,down and straight) within 20 words")
+                viewModel.sendPrompt(it1, prompt)
 
                 { ans ->
 
@@ -317,6 +359,6 @@ class AINavigator : CameraActivity(), UvcCapturerNew.USBPreview, TextToSpeech.On
         }
     }
 
-    }
+}
 
 

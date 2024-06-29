@@ -3,6 +3,8 @@ package com.codewithkael.firebasevideocall.webrtc
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.media.AudioManager
 import android.media.projection.MediaProjection
 import android.util.DisplayMetrics
@@ -10,13 +12,42 @@ import android.util.Log
 import android.view.WindowManager
 import android.widget.Toast
 import androidx.core.graphics.scaleMatrix
+import com.codewithkael.firebasevideocall.ui.LoginActivity
 import com.codewithkael.firebasevideocall.ui.LoginActivity.uvc.isUvc
 import com.codewithkael.firebasevideocall.utils.DataModel
 import com.codewithkael.firebasevideocall.utils.DataModelType
+import com.codewithkael.firebasevideocall.webrtc.WebRTCClient.YuvUtils.I420ToARGB
 import com.google.gson.Gson
-import org.webrtc.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.webrtc.AudioTrack
+import org.webrtc.Camera2Enumerator
+import org.webrtc.CameraVideoCapturer
+import org.webrtc.CapturerObserver
+import org.webrtc.DefaultVideoDecoderFactory
+import org.webrtc.DefaultVideoEncoderFactory
+import org.webrtc.EglBase
+import org.webrtc.IceCandidate
+import org.webrtc.MediaConstraints
+import org.webrtc.MediaStream
+import org.webrtc.PeerConnection
+import org.webrtc.PeerConnectionFactory
+import org.webrtc.RendererCommon
+import org.webrtc.ScreenCapturerAndroid
+import org.webrtc.SessionDescription
+import org.webrtc.SurfaceTextureHelper
+import org.webrtc.SurfaceViewRenderer
+import org.webrtc.VideoCapturer
+import org.webrtc.VideoFrame
+import org.webrtc.VideoTrack
+import java.nio.ByteBuffer
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.math.max
+import kotlin.math.min
+
 
 private const val TAG = "###CallWebRTCClient"
 
@@ -327,7 +358,6 @@ class WebRTCClient @Inject constructor(private val context: Context, private val
     }
 
 
-
     fun setAudioOutputToSpeaker(context: Context) {
         val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
         audioManager.isSpeakerphoneOn = true
@@ -357,8 +387,9 @@ class WebRTCClient @Inject constructor(private val context: Context, private val
             localVideoTrack =
                 peerConnectionFactory.createVideoTrack(localTrackId + "_video", localVideoSource)
         } else {
+            val capturerObserver = customPhoneCameraObserver()
             videoCapturer?.initialize(
-                surfaceTextureHelper, context, localVideoSource.capturerObserver
+                surfaceTextureHelper, context, capturerObserver
             )
             videoCapturer?.startCapture(720, 480, 30)
             localVideoTrack =
@@ -368,6 +399,53 @@ class WebRTCClient @Inject constructor(private val context: Context, private val
         // localVideoTrack?.addSink(localView)
         localVideoTrack?.addSink(localSurfaceView)
         localStream?.addTrack(localVideoTrack)
+
+    }
+
+    private fun customPhoneCameraObserver() = object : CapturerObserver {
+        override fun onCapturerStarted(p0: Boolean) {
+
+        }
+
+        override fun onCapturerStopped() {
+
+        }
+
+        override fun onFrameCaptured(frame: VideoFrame?) {
+            if (frame == null) return
+            Log.d(TAG, "onFrameCaptured: --------------------------------")
+
+          //  getBitmapFromCamera(frame)
+
+            // Pass the frame to the local video source observer
+            localVideoSource.capturerObserver.onFrameCaptured(frame)
+        }
+
+        private fun getBitmapFromCamera(frame: VideoFrame) {
+            // Retain the frame for usage in coroutine
+            frame.retain()
+
+            CoroutineScope(Dispatchers.Main).launch {
+                try {
+                    // Convert frame to Bitmap in the IO dispatcher
+                    val bitmap = withContext(Dispatchers.IO) {
+                        convertVideoFrameToBitmap(frame)
+                    }
+
+                    // Use the bitmap on the main thread
+                    callBack(bitmap)
+                } finally {
+                    // Release the frame after processing
+                    frame.release()
+                }
+            }
+        }
+
+    }
+
+    lateinit var callBack: (Bitmap) -> Unit
+    fun getFrameFromSurface(callBack: (Bitmap) -> Unit) {
+        this.callBack = callBack
     }
 
 
@@ -446,13 +524,83 @@ class WebRTCClient @Inject constructor(private val context: Context, private val
 
     @SuppressLint("SuspiciousIndentation")
     fun onPreviewStop(callBack: () -> Unit) {
-        val uvcCapturerNew = uvcCapturer as UvcCapturerNew
-        uvcCapturerNew.onPreviewStop(callBack)
+        if (LoginActivity.uvc.isUvc.value == true) {
+            if (uvcCapturer != null) {
+                val uvcCapturerNew = uvcCapturer as UvcCapturerNew
+                uvcCapturerNew.onPreviewStop(callBack)
+            }
+        } else {
+            stopCapturingCamera()
+        }
     }
 
     interface Listener {
         fun onTransferEventToSocket(data: DataModel)
     }
+
+    private fun convertVideoFrameToBitmap(frame: VideoFrame): Bitmap {
+        // Get the frame buffer
+        val buffer = frame.buffer
+
+        // Convert to I420 buffer
+        val i420Buffer = buffer.toI420()
+
+        // Get the width and height of the frame
+        val width = i420Buffer.width
+        val height = i420Buffer.height
+
+        // Create a buffer to store the converted pixel data
+        val argbArray = IntArray(width * height)
+
+        // Convert I420 to ARGB
+        I420ToARGB(
+            i420Buffer.dataY, i420Buffer.strideY,
+            i420Buffer.dataU, i420Buffer.strideU,
+            i420Buffer.dataV, i420Buffer.strideV,
+            argbArray, width, height
+        )
+
+        // Release the I420 buffer
+        i420Buffer.release()
+
+        // Create a Bitmap from the ARGB data
+        return Bitmap.createBitmap(argbArray, width, height, Bitmap.Config.ARGB_8888)
+    }
+
+    object YuvUtils {
+        fun I420ToARGB(
+            yBuffer: ByteBuffer, yStride: Int,
+            uBuffer: ByteBuffer, uStride: Int,
+            vBuffer: ByteBuffer, vStride: Int,
+            argbArray: IntArray, width: Int, height: Int
+        ) {
+            val uvPlaneOffset = width * height
+            val uvWidth = width / 2
+            val uvHeight = height / 2
+
+            for (y in 0 until height) {
+                for (x in 0 until width) {
+                    val yIndex = y * yStride + x
+                    val uvIndex = (y / 2) * uStride + (x / 2)
+
+                    val Y = yBuffer[yIndex].toInt() and 0xff
+                    val U = uBuffer[uvIndex].toInt() and 0xff
+                    val V = vBuffer[uvIndex].toInt() and 0xff
+
+                    var r = Y + (1.370705 * (V - 128)).toInt()
+                    var g = Y - (0.337633 * (U - 128)).toInt() - (0.698001 * (V - 128)).toInt()
+                    var b = Y + (1.732446 * (U - 128)).toInt()
+
+                    r = min(255.0, max(0.0, r.toDouble())).toInt()
+                    g = min(255.0, max(0.0, g.toDouble())).toInt()
+                    b = min(255.0, max(0.0, b.toDouble())).toInt()
+
+                    argbArray[y * width + x] = -0x1000000 or (r shl 16) or (g shl 8) or b
+                }
+            }
+        }
+    }
+
 }
 
 
