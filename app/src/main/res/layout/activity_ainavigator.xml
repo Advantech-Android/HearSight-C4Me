@@ -5,13 +5,24 @@
     android:layout_height="match_parent"
     tools:context=".videointelegence.AINavigator">
 
-
     <ImageView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:scaleType="centerCrop"
         android:src="@drawable/n" />
 
+    <TextView
+        android:id="@+id/tv_timer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentRight="true"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="20dp"
+        android:layout_marginRight="16dp"
+        android:text="timer"
+        android:textColor="@color/white"
+        android:textSize="18sp" />
     <TextView
         android:id="@+id/language_headline"
         android:layout_width="wrap_content"
@@ -23,9 +34,7 @@
         android:layout_marginTop="20dp"
         android:text="Select your language"
         android:textColor="@color/white"
-        android:textSize="18sp"
-        />
-
+        android:textSize="18sp" />
 
     <TextView
         android:id="@+id/ans_ai"
@@ -40,7 +49,6 @@
         android:text="AI Guidance"
         android:textColor="@color/white"
         android:textSize="20sp"
-
         android:translationZ="90dp" />
 
     <org.webrtc.SurfaceViewRenderer
@@ -54,52 +62,51 @@
         android:background="@drawable/ai_outline" />
 
     <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="240dp"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentEnd="true"
-        android:layout_alignParentBottom="true"
-        android:layout_marginStart="109dp"
-        android:layout_marginTop="530dp"
-        android:layout_marginEnd="106dp"
-        android:layout_marginBottom="52dp"
-        android:gravity="center"
-
-        android:orientation="vertical">
-
-        <Button
-            android:id="@+id/mobileToggle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:backgroundTint="@color/white"
-            android:visibility="gone"
-            android:text="Mobile Camera"
-            android:textColor="@color/black"></Button>
-
-        <Button
-            android:layout_marginTop="8dp"
-            android:id="@+id/usbToggle"
-            android:visibility="gone"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:backgroundTint="@color/white"
-
-            android:text="USB Camera"
-            android:textColor="@color/black"></Button>
-    </LinearLayout>
-
-    <LinearLayout
         android:id="@+id/btns"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@id/ai_remoteview"
-        android:layout_marginRight="15dp"
-        android:layout_alignParentRight="true"
+        android:layout_centerHorizontal="true"
         android:orientation="vertical"
-        android:gravity="right"
+        android:gravity="center">
 
-        tools:ignore="ExtraText">
+        <Button
+            android:id="@+id/btnAINav"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:backgroundTint="@color/white"
+            android:text="AI Nav"
+            android:textColor="@color/black" />
+
+        <Button
+            android:id="@+id/btnCurrency"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:backgroundTint="@color/white"
+            android:text="Currency"
+            android:textColor="@color/black"
+            android:layout_marginTop="8dp" />
+
+        <Button
+            android:id="@+id/btnCommodity"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:backgroundTint="@color/white"
+            android:text="Commodity"
+            android:textColor="@color/black"
+            android:layout_marginTop="8dp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/controls"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/btns"
+        android:layout_alignParentRight="true"
+        android:layout_marginTop="-161dp"
+        android:layout_marginRight="15dp"
+        android:gravity="right"
+        android:orientation="vertical">
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/fabPause"
@@ -108,27 +115,24 @@
             android:layout_margin="8dp"
             android:backgroundTint="#FFE854"
             android:contentDescription="Pause"
-            android:src="@drawable/baseline_pause_24"/>
+            android:src="@drawable/baseline_pause_24" />
+
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/fabExit"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="8dp"
-            android:contentDescription="End"
-            android:src="@drawable/baseline_close_24"
             android:backgroundTint="#FAA0A0"
-        />
+            android:contentDescription="End"
+            android:src="@drawable/baseline_close_24" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/fabPlay"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:contentDescription="Resume"
+            android:layout_margin="8dp"
             android:backgroundTint="#D5FFC4"
-            android:src="@drawable/baseline_video_camera_back_24">
-
-        </com.google.android.material.floatingactionbutton.FloatingActionButton>
-
+            android:contentDescription="Resume"
+            android:src="@drawable/baseline_video_camera_back_24" />
     </LinearLayout>
 </RelativeLayout>

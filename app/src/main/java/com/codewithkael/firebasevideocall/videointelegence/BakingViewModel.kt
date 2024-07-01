@@ -8,7 +8,6 @@ import com.google.ai.client.generativeai.GenerativeModel
 import com.google.ai.client.generativeai.type.content
 import com.google.ai.client.generativeai.type.generationConfig
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 private const val TAG = "==>>BakingViewModel"
@@ -31,14 +30,14 @@ class BakingViewModel : ViewModel() {
     private val debouncePeriod = 3000L // 3 seconds debounce period
 
     // It ensures that prompts are not sent too frequently (debounce logic). It runs in the main thread and uses viewModelScope.launch to start a background coroutine.
-    fun sendPrompt(bitmap: Bitmap, prompt: String,callback:(String)->Unit)//image,prompt and AI respose input
+    fun sendPrompt(bitmap: Bitmap?, prompt: String, callback:(String)->Unit)//image,prompt and AI respose input
     {
         val currentTime = System.currentTimeMillis()
         if (currentTime - lastPromptTime >= debouncePeriod) {
             lastPromptTime = currentTime
             // sendPromptInternal(bitmap, prompt)
             viewModelScope.launch(Dispatchers.IO) {
-                sendPromptStream(bitmap, prompt,callback)
+                bitmap?.let { sendPromptStream(it, prompt,callback) }
             }
         }
     }
@@ -86,7 +85,7 @@ class BakingViewModel : ViewModel() {
         catch (e: Exception)
         {
             Log.d(TAG, "sendPrompt: ${e.message}")
-            callback("Please wait your camera is ready to focus")
+           // callback("Please wait your camera is ready to focus")
         }
     }
 }

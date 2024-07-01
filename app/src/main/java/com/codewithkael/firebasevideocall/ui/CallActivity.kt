@@ -35,7 +35,6 @@ import com.codewithkael.firebasevideocall.utils.setViewFields.IS_CALLER
 import com.codewithkael.firebasevideocall.videointelegence.AINavigator
 import com.codewithkael.firebasevideocall.videointelegence.BakingViewModel
 import com.codewithkael.firebasevideocall.webrtc.RTCAudioManager
-import com.codewithkael.firebasevideocall.webrtc.UvcCapturerNew
 import com.jiangdg.ausbc.MultiCameraClient
 import com.jiangdg.ausbc.base.CameraActivity
 import com.jiangdg.ausbc.callback.ICameraStateCallBack
@@ -48,7 +47,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.webrtc.SurfaceViewRenderer
 import java.io.ByteArrayOutputStream
 import javax.inject.Inject
 

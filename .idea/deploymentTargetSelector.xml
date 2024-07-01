@@ -4,10 +4,10 @@
     <selectionStates>
       <SelectionState runConfigName="app">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2024-06-29T09:23:18.506666Z">
+        <DropdownSelection timestamp="2024-07-01T09:29:58.074422200Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="Default" identifier="serial=192.168.40.100:5555;connection=256e12c9" />
+              <DeviceId pluginId="Default" identifier="serial=192.168.40.100:5555;connection=5208965a" />
             </handle>
           </Target>
         </DropdownSelection>
@@ -25,6 +25,9 @@
             </Target>
           </targets>
         </DialogSelection>
+      </SelectionState>
+      <SelectionState runConfigName="AINavigator">
+        <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
     </selectionStates>
   </component>
