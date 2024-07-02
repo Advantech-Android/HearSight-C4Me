@@ -6,16 +6,13 @@ import android.app.AlertDialog
 import android.app.Dialog
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
-import android.hardware.usb.UsbManager
 import android.net.wifi.WifiManager
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.provider.ContactsContract
-import android.provider.Settings
 import com.codewithkael.firebasevideocall.utils.SnackBarUtils
 import android.util.Log
 import android.view.Menu
@@ -58,15 +55,12 @@ import com.codewithkael.firebasevideocall.utils.MainActivityFields
 import com.codewithkael.firebasevideocall.utils.PickContactContract
 import com.codewithkael.firebasevideocall.utils.setViewFields
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.runBlocking
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.lifecycleScope
-import com.codewithkael.firebasevideocall.ui.LoginActivity.Share.liveShare
 import com.codewithkael.firebasevideocall.utils.UsbReceiver
 
 import com.codewithkael.firebasevideocall.utils.UserStatus
-import com.codewithkael.firebasevideocall.videointelegence.AINavigator
+import com.codewithkael.firebasevideocall.videointelegence.GemniAI.AINavigator
 import kotlinx.coroutines.launch
 
 import javax.inject.Inject

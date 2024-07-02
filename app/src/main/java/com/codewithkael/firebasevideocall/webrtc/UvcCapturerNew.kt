@@ -277,6 +277,7 @@ class UvcCapturerNew
         msg = s
         Log.d(TAG, "onUVCPreview: isExecute=>$isExecute ,isDetach=$isDetach")
 
+
         if (!isExecute) {
             isExecute = true
             isDetach = false

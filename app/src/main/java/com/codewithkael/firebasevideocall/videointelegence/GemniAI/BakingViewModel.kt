@@ -1,4 +1,4 @@
-package com.codewithkael.firebasevideocall.videointelegence
+package com.codewithkael.firebasevideocall.videointelegence.GemniAI
 
 import android.graphics.Bitmap
 import android.util.Log
@@ -41,6 +41,8 @@ class BakingViewModel : ViewModel() {
             }
         }
     }
+
+
 
     private fun sendPromptInternal(bitmap: Bitmap, prompt: String) {
         Log.d(TAG, "sendPrompt: $bitmap")
@@ -85,7 +87,7 @@ class BakingViewModel : ViewModel() {
         catch (e: Exception)
         {
             Log.d(TAG, "sendPrompt: ${e.message}")
-           // callback("Please wait your camera is ready to focus")
+            callback("Please wait your camera is ready to focus")
         }
     }
 }

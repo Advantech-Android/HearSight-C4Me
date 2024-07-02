@@ -1,4 +1,4 @@
-package com.codewithkael.firebasevideocall.videointelegence
+package com.codewithkael.firebasevideocall.videointelegence.GemniAI
 /*
 import android.os.Build
 import android.util.Log

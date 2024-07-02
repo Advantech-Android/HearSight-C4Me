@@ -1,4 +1,4 @@
-package com.codewithkael.firebasevideocall.videointelegence
+package com.codewithkael.firebasevideocall.videointelegence.GemniAI
 
 import android.content.Context
 import android.content.SharedPreferences
@@ -56,9 +56,11 @@ class AINavigator : CameraActivity(), UvcCapturerNew.USBPreview, TextToSpeech.On
     private var isPaused = false
 
     private val prompts = listOf(
-        "Detect the surroundings with directions and give the approximate distance of the object in centre of image (left,right,up,down and straight) within 10 words.",
-        "Detect the India money and Coins in 8 words also give the .",
-        "Identify the commodity in front of the camera only need with accuracy one. Example: 'This is a Colgate toothpaste', 'This is Rin detergent soap'. Limit your description to 7 words."
+        "Describe the images with directions(left,right,up,down and straight) from the camera to surroundings within 15 words with text extraction.",
+        "Detect the India money and Coins in 8 words.",
+        "Identify the commodity in front of the camera only need with accuracy one. Limit your description to 7 words.",
+        "Extract text from images ensuring no omissions and maintaining margin alignment."
+
     )
     private var currentPromptIndex = 0
 
@@ -109,6 +111,7 @@ class AINavigator : CameraActivity(), UvcCapturerNew.USBPreview, TextToSpeech.On
             //webRTCClient.initLocalSurfaceView(remoteView,isVideoCall = true)
 
             serviceRepository.AI_setupViews() // getting the local surface view
+
             webRTCClient.getFrameFromSurface() {
                 Log.d(TAG, "getRootView: --------$it")
                 viewModel.sendPrompt(it, prompts[currentPromptIndex]) { ans ->
@@ -185,30 +188,28 @@ class AINavigator : CameraActivity(), UvcCapturerNew.USBPreview, TextToSpeech.On
             }
             // Buttons for switching prompts
             btnAINav.setOnClickListener {
+                Toast.makeText(this@AINavigator, "AI Navigator", Toast.LENGTH_SHORT).show()
                 currentPromptIndex = 0
-                updatePrompt()
+
             }
             btnCurrency.setOnClickListener {
+                Toast.makeText(this@AINavigator, "Currency", Toast.LENGTH_SHORT).show()
                 currentPromptIndex = 1
-                updatePrompt()
+
             }
             btnCommodity.setOnClickListener {
+                Toast.makeText(this@AINavigator, "Commodity", Toast.LENGTH_SHORT).show()
                 currentPromptIndex = 2
-                updatePrompt()
+            }
+            btnOCR.setOnClickListener {
+                Toast.makeText(this@AINavigator, "OCR", Toast.LENGTH_SHORT).show()
+                currentPromptIndex=3
+
             }
         }
         return views.root
     }
 
-    private fun updatePrompt() {
-        viewModel.sendPrompt(null, prompts[currentPromptIndex]) { ans ->
-            handler.postDelayed({
-                views.apply { // The AI result will keep on updating in UI-Text view. So we using runOnUiThread
-                    runOnUiThread { ansAi.text = ans }
-                }
-            }, 5000)
-        }
-    }
 
     //When preview data is received (onPreviewData), it converts the data to a Bitmap, sends it to a view model for processing with a prompt message, and updates the UI with the response asynchronously.
     //onPreviewData is likely called repeatedly as new preview frames are received
@@ -260,6 +261,8 @@ class AINavigator : CameraActivity(), UvcCapturerNew.USBPreview, TextToSpeech.On
         return BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
     }
 
+
+
     override fun onStop() {
         super.onStop()
         // uvcPreview?.onCallEnd("")
@@ -273,7 +276,7 @@ class AINavigator : CameraActivity(), UvcCapturerNew.USBPreview, TextToSpeech.On
         height: Int,
         format: IPreviewDataCallBack.DataFormat
     ) {
-      
+
         data?.let {
             views.apply {
                 if (isRunningCountown) {
@@ -293,15 +296,12 @@ class AINavigator : CameraActivity(), UvcCapturerNew.USBPreview, TextToSpeech.On
 
     var countown: CountDownTimer? = null
     var isRunningCountown: Boolean = true
-    fun startCountdownTimer(
-        timeInMillis: Long,
-        interval: Long,
-        textView: TextView,
-        ansAi: TextView,
-        bitmap: Bitmap,
-        data: ByteArray,
-        width: Int,
-        height: Int
+
+    fun startCountdownTimer(timeInMillis: Long, interval: Long, textView: TextView, ansAi: TextView,
+                            bitmap: Bitmap,
+                            data: ByteArray,
+                            width: Int,
+                            height: Int
     ) {
         countown = object : CountDownTimer(timeInMillis, interval) {
 
@@ -326,16 +326,16 @@ class AINavigator : CameraActivity(), UvcCapturerNew.USBPreview, TextToSpeech.On
         }
 
 
-            countown?.start()
+        countown?.start()
 
     }
 
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
-            //val result=tts.setLanguage(Locale.US)
-            val result = tts.setLanguage(Locale("ta", "IN")) // Setting language to Tamil (India)
+            val result=tts.setLanguage(Locale.US)
+            //val result = tts.setLanguage(Locale("ta", "IN")) // Setting language to Tamil (India)
             if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                Toast.makeText(this, "Tamil language is not supported", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, " language is not supported", Toast.LENGTH_SHORT).show()
             } else {
                 Toast.makeText(this, "TextToSpeech initialized successfully", Toast.LENGTH_SHORT).show()
             }

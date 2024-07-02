@@ -32,8 +32,8 @@ import com.codewithkael.firebasevideocall.utils.NetworkChangeReceiver
 import com.codewithkael.firebasevideocall.utils.NetworkChangeReceiver.Companion.scheduleNetworkCheck
 import com.codewithkael.firebasevideocall.utils.convertToHumanTime
 import com.codewithkael.firebasevideocall.utils.setViewFields.IS_CALLER
-import com.codewithkael.firebasevideocall.videointelegence.AINavigator
-import com.codewithkael.firebasevideocall.videointelegence.BakingViewModel
+import com.codewithkael.firebasevideocall.videointelegence.GemniAI.AINavigator
+import com.codewithkael.firebasevideocall.videointelegence.GemniAI.BakingViewModel
 import com.codewithkael.firebasevideocall.webrtc.RTCAudioManager
 import com.jiangdg.ausbc.MultiCameraClient
 import com.jiangdg.ausbc.base.CameraActivity
@@ -57,7 +57,7 @@ import javax.inject.Inject
 class CallActivity : CameraActivity(), MainService.EndCallListener,
     NetworkChangeReceiver.InetWorkChange {
 
-    private val backingBakingViewModel:BakingViewModel by viewModels()
+    private val backingBakingViewModel: BakingViewModel by viewModels()
     private val handler: Handler = Handler(Looper.getMainLooper())
     private val TAG = "###CallActivity"
     private var timer = false
@@ -121,7 +121,7 @@ class CallActivity : CameraActivity(), MainService.EndCallListener,
         init()
         setContentView(views?.root)
         views!!.btnVCToAI.setOnClickListener {
-                val intent=Intent(this@CallActivity,AINavigator::class.java)
+                val intent=Intent(this@CallActivity, AINavigator::class.java)
                 startActivity(intent)
         }
     }

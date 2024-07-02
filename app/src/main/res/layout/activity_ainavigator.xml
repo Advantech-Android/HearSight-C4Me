@@ -3,7 +3,7 @@
     android:id="@+id/AIMainRelativeLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".videointelegence.AINavigator">
+    tools:context=".videointelegence.GemniAI.AINavigator">
 
     <ImageView
         android:layout_width="match_parent"
@@ -22,7 +22,7 @@
         android:layout_marginRight="16dp"
         android:text="timer"
         android:textColor="@color/white"
-        android:textSize="18sp" />
+        android:textSize="15sp" />
     <TextView
         android:id="@+id/language_headline"
         android:layout_width="wrap_content"
@@ -34,7 +34,7 @@
         android:layout_marginTop="20dp"
         android:text="Select your language"
         android:textColor="@color/white"
-        android:textSize="18sp" />
+        android:textSize="15sp" />
 
     <TextView
         android:id="@+id/ans_ai"
@@ -48,7 +48,7 @@
         android:padding="15dp"
         android:text="AI Guidance"
         android:textColor="@color/white"
-        android:textSize="20sp"
+        android:textSize="15sp"
         android:translationZ="90dp" />
 
     <org.webrtc.SurfaceViewRenderer
@@ -72,27 +72,39 @@
 
         <Button
             android:id="@+id/btnAINav"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="95dp"
+            android:layout_height="40dp"
             android:backgroundTint="@color/white"
             android:text="AI Nav"
+            android:textSize="10dp"
             android:textColor="@color/black" />
 
         <Button
             android:id="@+id/btnCurrency"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="95dp"
+            android:layout_height="40dp"
             android:backgroundTint="@color/white"
             android:text="Currency"
+            android:textSize="10dp"
             android:textColor="@color/black"
             android:layout_marginTop="8dp" />
 
         <Button
             android:id="@+id/btnCommodity"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="95dp"
+            android:layout_height="40dp"
             android:backgroundTint="@color/white"
             android:text="Commodity"
+            android:textSize="10dp"
+            android:textColor="@color/black"
+            android:layout_marginTop="8dp" />
+        <Button
+            android:id="@+id/btnOCR"
+            android:layout_width="95dp"
+            android:layout_height="40dp"
+            android:backgroundTint="@color/white"
+            android:text="OCR"
+            android:textSize="10dp"
             android:textColor="@color/black"
             android:layout_marginTop="8dp" />
     </LinearLayout>
@@ -103,10 +115,11 @@
         android:layout_height="wrap_content"
         android:layout_below="@id/btns"
         android:layout_alignParentRight="true"
-        android:layout_marginTop="-161dp"
-        android:layout_marginRight="15dp"
+        android:layout_marginTop="-151dp"
+        android:layout_marginRight="8dp"
         android:gravity="right"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:textSize="15dp">
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/fabPause"

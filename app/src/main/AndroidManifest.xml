@@ -58,7 +58,7 @@
 
         <!-- Activities -->
         <activity
-            android:name=".videointelegence.AINavigator"
+            android:name=".videointelegence.GemniAI.AINavigator"
             android:exported="false" />
         <activity
             android:name=".ui.RandomOTPGenerate"
