@@ -4,7 +4,7 @@
 //import retrofit2.converter.gson.GsonConverterFactory
 //
 //object RetrofitInstance {
-//    private const val BASE_URL = "https://api.openai.com/"
+//
 //
 //    val api: OpenAIApi by lazy {
 //        Retrofit.Builder()
