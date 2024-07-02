@@ -9,7 +9,7 @@
 //import retrofit2.http.POST
 //
 //interface OpenAIApi {
-//    @Headers("Content-Type: application/json", "Authorization: Bearer sk-proj-Ku2oGVsdPp4k6FKbHuJbT3BlbkFJfsETvqyrt1rW0gqItth5")
+//    @Headers("Content-Type: application/json", "Authorization: Bearer open_AI_key")
 //    @POST("v1/completions")
 //    suspend fun generateContent(@Body request: OpenAIRequest): Response<OpenAIResponse>
 //}
