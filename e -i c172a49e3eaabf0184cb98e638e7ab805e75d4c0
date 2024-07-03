@@ -1,0 +1,246 @@
+[33mcommit 44724da04aba6ba54a563dcfb1e80266c435fb9f[m[33m ([m[1;36mHEAD -> [m[1;32muvc_newlib[m[33m)[m
+Author: Divyamadhiran <divyaatadvantech@gmail.com>
+Date:   Wed Jul 3 09:45:32 2024 +0530
+
+    openaichat implementation but model is not for sample
+
+[33mcommit 67545a777130ee9ca63fd9ae0a8678ae731147eb[m
+Author: Divyamadhiran <divyaatadvantech@gmail.com>
+Date:   Tue Jul 2 18:29:27 2024 +0530
+
+    ai  but billing error-
+
+[33mcommit c172a49e3eaabf0184cb98e638e7ab805e75d4c0[m
+Author: Divyamadhiran <divyaatadvantech@gmail.com>
+Date:   Tue Jul 2 18:26:57 2024 +0530
+
+    OpenAI implementation but billing error
+
+[33mcommit d9b9719ba182daa75370e6048adc6b1726caa682[m
+Author: Divyamadhiran <divyaatadvantech@gmail.com>
+Date:   Tue Jul 2 18:22:18 2024 +0530
+
+    OpenAI implementation but billing error
+
+[33mcommit 5f554c80fc89ab86422eacbce2ae6950cd62b071[m[33m ([m[1;31morigin/uvc_newlib[m[33m)[m
+Author: Divyamadhiran <divyaatadvantech@gmail.com>
+Date:   Mon Jul 1 18:20:01 2024 +0530
+
+    Prompt rearrange,Count town for AI result
+
+[33mcommit 7f0721d91227d05726b0b7da72e18c6053a0dde6[m
+Author: Divyamadhiran <divyaatadvantech@gmail.com>
+Date:   Sat Jun 29 17:26:54 2024 +0530
+
+    AI navigation,UI changes,Internal/External camera taken
+
+[33mcommit 7e6f612c802112c2934e03ca61ede5b92870fca1[m
+Author: Divyamadhiran <divyaatadvantech@gmail.com>
+Date:   Sat Jun 29 16:20:30 2024 +0530
+
+    AI navigation,UI changes,Internal/External camera taken
+
+[33mcommit ea85eb2718451faef21ed6a8eceb29d3ce941620[m
+Author: Divyamadhiran <divyaatadvantech@gmail.com>
+Date:   Fri Jun 28 16:49:12 2024 +0530
+
+    AI Navigator implemented,UI changes on this screen
+
+[33mcommit e8bd0642131754753fb3bac18fecc15108bf4af8[m
+Author: nisathp <nisathmylu@gmail.com>
+Date:   Fri Jun 14 11:32:41 2024 +0530
+
+    improve performance earpiece and loudspeaker
+
+[33mcommit 0856857d732084c41e4ed50992fcd125d4ecc9fa[m
+Author: nisathp <nisathmylu@gmail.com>
+Date:   Fri Jun 7 09:43:18 2024 +0530
+
+    final of ringtone
+
+[33mcommit e7818723ebbe039872f554b92343b757286d4630[m
+Author: nisathp <nisathmylu@gmail.com>
+Date:   Tue May 21 13:49:22 2024 +0530
+
+    Bug Fixed in call activity caller and receiver side
+
+[33mcommit adf5268e047d6ead46daa24ca041c29b17682e1a[m
+Merge: f75e62b 4ea9ed1
+Author: nisathp <nisathmylu@gmail.com>
+Date:   Mon May 20 17:24:38 2024 +0530
+
+    conflicts solved UVC class bug fixed
+
+[33mcommit f75e62b22d853bae543202ae9f605f9fc0188d90[m
+Merge: e6ef490 e5463c5
+Author: nisathp <nisathmylu@gmail.com>
+Date:   Mon May 20 15:57:48 2024 +0530
+
+    1.ip address added,2.add unregister contact,3.uvc class logic issues customised code
+
+[33mcommit 4ea9ed150af01822bee518a6a7b0c16ee773d07d[m
+Merge: 2e63e4b e5463c5
+Author: nisathp <nisathmylu@gmail.com>
+Date:   Mon May 20 15:49:28 2024 +0530
+
+    uvc login added
+
+[33mcommit e6ef490357acdb3e6096e17636e8e6039127d220[m
+Author: nisathp <nisathmylu@gmail.com>
+Date:   Mon May 20 11:51:52 2024 +0530
+
+    may 17 login page
+
+[33mcommit 2e63e4bee628b76836b6a18df802c23177d9d5e1[m
+Author: nisathp <nisathmylu@gmail.com>
+Date:   Thu May 16 18:35:45 2024 +0530
+
+    stable code and implement feature of unregistered contacts and also uvc login amode attached
+
+[33mcommit e5463c580c5b883ef1f3b9aae0e1e949147b4fb6[m
+Author: Divyamadhiran <divyaatadvantech@gmail.com>
+Date:   Mon May 13 11:29:41 2024 +0530
+
+    Code changes and UI updated
+
+[33mcommit 0adbee63686146485f8d625fc3aceb358998c7b1[m
+Merge: 737b629 7981653
+Author: nisathp <nisathmylu@gmail.com>
+Date:   Sun May 12 12:53:16 2024 +0530
+
+    confilicts solved
+
+[33mcommit 737b62998e9215fab5230db55dc2b5f0d5e6d9ad[m
+Author: nisathp <nisathmylu@gmail.com>
+Date:   Sat May 11 10:21:49 2024 +0530
+
+    project duplicted
+
+[33mcommit 79816538297d03075fb00bd47a98f97b3e0b9799[m
+Merge: 1176ff4 ee690a7
+Author: Divyamadhiran <divyaatadvantech@gmail.com>
+Date:   Sat May 11 09:49:11 2024 +0530
+
+    Merge branch 'uvc_newlib' of https://github.com/Advantech-Android/HearSight-C4Me into uvc_newlib
+
+[33mcommit 1176ff4dead301118bbcfd7e99c36957d5ca354a[m
+Author: Divyamadhiran <divyaatadvantech@gmail.com>
+Date:   Sat May 11 09:46:36 2024 +0530
+
+    1.final UI tested,2.AddContacts security changes,3.USB tested with UI changes11-05-2024
+
+[33mcommit ee690a73210dacfef940d6101d05b4ba3370d943[m
+Merge: 43c4d5a b896427
+Author: nisathp <nisathmylu@gmail.com>
+Date:   Fri May 10 18:49:18 2024 +0530
+
+    Merge branch 'uvc_newlib' of https://github.com/Advantech-Android/HearSight-C4Me into uvc_newlib
+
+[33mcommit 43c4d5af43b43c9d51b97bc2f3f31a8ef1c844b4[m
+Author: nisathp <nisathmylu@gmail.com>
+Date:   Fri May 10 18:47:48 2024 +0530
+
+    1.AndroidUSBCamera dependency converted to the module library,camera attach and detach functionalitty resolved
+
+[33mcommit 166bbcf4d8a14a7ff99654b1b451c78d9566c0a7[m
+Author: Divyamadhiran <divyaatadvantech@gmail.com>
+Date:   Fri May 10 12:49:16 2024 +0530
+
+    in addcontact put country code
+
+[33mcommit b8964279209aa0b1dc7e1cb402a533874af5a893[m
+Merge: 5cb9548 6f144df
+Author: Divyamadhiran <divyaatadvantech@gmail.com>
+Date:   Wed May 8 10:52:32 2024 +0530
+
+    Merge branch 'uvc_newlib' of https://github.com/Advantech-Android/HearSight-C4Me into uvc_newlib
+
+[33mcommit 5cb954844aa764f7c21ba614db2b4c37e90b4187[m
+Author: Divyamadhiran <divyaatadvantech@gmail.com>
+Date:   Wed May 8 10:48:07 2024 +0530
+
+    Merge remote changes
+
+[33mcommit 6f144df0d972ecbd4e9c53574fb51bdb19257a9e[m[33m ([m[1;32mmaster[m[33m)[m
+Author: nisathp <nisathmylu@gmail.com>
+Date:   Mon May 6 18:50:54 2024 +0530
+
+    Phone number regular exp and reregister error solved
+
+[33mcommit 6ded28b91eee29bfae8940e6e60d8bdc69dc644b[m
+Author: nisathp <nisathmylu@gmail.com>
+Date:   Thu May 2 15:44:33 2024 +0530
+
+    OTP and add new UVC lib for support all device
+
+[33mcommit 19aa156f98b586da187863875e887acff1f60703[m
+Author: nisathp <nisathmylu@gmail.com>
+Date:   Mon Apr 29 11:31:21 2024 +0530
+
+    OTP UI Completed
+
+[33mcommit c10bca9d3323ff33f428f117be2cdfc83ac1e1ee[m
+Author: nisathp <nisathmylu@gmail.com>
+Date:   Fri Apr 26 16:38:38 2024 +0530
+
+    otp functonality progress...
+
+[33mcommit 42f005640585d5432a0d18edba579c753bd79804[m
+Author: nisathp <nisathmylu@gmail.com>
+Date:   Thu Apr 25 16:35:55 2024 +0530
+
+    Conflict solved video call and ringtone
+
+[33mcommit 152472c0099f541bb7bdf650c8da8e62fcb8d492[m
+Merge: 71180af 6d2dbbc
+Author: nisathp <nisathmylu@gmail.com>
+Date:   Thu Apr 25 16:22:59 2024 +0530
+
+    conflict solved add contacts and ringtone
+
+[33mcommit 71180af61b3aebe473cf2c368776bea11632bd2e[m[33m ([m[1;31morigin/feature-function[m[33m)[m
+Merge: df5a905 5221ccf
+Author: nisathp <nisathmylu@gmail.com>
+Date:   Wed Apr 24 16:28:56 2024 +0530
+
+    Merge branch 'feature-function' of https://github.com/Advantech-Android/HearSight-C4Me into feature-function
+
+[33mcommit df5a905080b21420b252120e4e52f8913a4d0f24[m
+Author: nisathp <nisathmylu@gmail.com>
+Date:   Wed Apr 24 16:13:10 2024 +0530
+
+    Add contact and delete contact also video call functionalitty done
+
+[33mcommit 6d2dbbc27e68cbe1d1b755754451879beae55a40[m
+Merge: b0df919 66c1ceb
+Author: Divyamadhiran <159027455+Divyamadhiran@users.noreply.github.com>
+Date:   Wed Apr 24 15:59:40 2024 +0530
+
+    Merge pull request #2 from Advantech-Android/feature-ui
+    
+    Ring tone & progress bar feature is done and conflict solved
+
+[33mcommit 66c1ceba2e3184f0591c91b6175d7aa871a7342d[m[33m ([m[1;31morigin/feature-ui[m[33m)[m
+Merge: f0313c6 b0df919
+Author: Divyamadhiran <159027455+Divyamadhiran@users.noreply.github.com>
+Date:   Wed Apr 24 15:58:19 2024 +0530
+
+    Merge branch 'master' into feature-ui
+
+[33mcommit f0313c609495a36a8f68d397162ba363796fd803[m
+Author: Divyamadhiran <divyaatadvantech@gmail.com>
+Date:   Wed Apr 24 15:48:56 2024 +0530
+
+    Ring tone & progress bar feature is done
+
+[33mcommit 5221ccf55dbe9323ec7be2dee78afe23cbfa44b2[m
+Author: HearSight Unit2 <160222903+NisathAndroid@users.noreply.github.com>
+Date:   Wed Apr 17 19:34:46 2024 +0530
+
+    Update README.md
+
+[33mcommit 6dde4cba33466bdee9d32ece76d00a15625a3757[m
+Author: nisathp <nisathmylu@gmail.com>
+Date:   Wed Apr 17 19:28:51 2024 +0530
+
+    wifi list an
