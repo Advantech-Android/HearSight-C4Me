@@ -9,4 +9,6 @@
     <item android:id="@+id/ai_navigator"
 
         android:title="AI Navigator"></item>
+    <item android:id="@+id/OCRPageMenu"
+        android:title="OCR-Text Extraction"/>
 </menu>

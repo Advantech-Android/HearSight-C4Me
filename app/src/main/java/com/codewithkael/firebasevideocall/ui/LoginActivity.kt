@@ -32,6 +32,7 @@ import android.text.TextWatcher
 import android.util.Log
 import android.widget.EditText
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.codewithkael.firebasevideocall.databinding.ActivityLoginBinding
@@ -62,6 +63,7 @@ import java.io.InputStreamReader
 import java.util.Locale
 import java.util.regex.Pattern
 import javax.inject.Inject
+
 
 
 private const val TAG = "***LoginActivity"
@@ -546,9 +548,26 @@ class LoginActivity : AppCompatActivity() {
                  //   performLogin(usernameText, passwordText)
                   loginReactive(usernameText,passwordText)
                 }
+               // showDialogVIGudie()
             }
 
         }
+    }
+
+    fun showDialogVIGudie(){
+        val builder=AlertDialog.Builder(applicationContext)
+        val dialog:AlertDialog=builder.create()
+        builder.setTitle("Select Option")
+            .setMessage("Are you Visually impaired or guide?")
+            builder.setPositiveButton("VI"){dialog,which->
+                uvc.isUvc.value=true
+
+            }
+            builder.setNegativeButton("Guide"){dialog,which->
+               uvc.isUvc.value=false
+
+            }
+        dialog.show()
     }
 
     private fun loginReactive(usernameText: String,  phoneNumber: String) {

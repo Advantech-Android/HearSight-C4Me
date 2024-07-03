@@ -102,6 +102,7 @@
         android:layout_marginTop="532dp"
         android:text="VI"
         android:textColor="@color/white"
+
         android:textSize="14dp"
         app:layout_constraintEnd_toEndOf="@+id/passwordEt"
         app:layout_constraintHorizontal_bias="0.964"

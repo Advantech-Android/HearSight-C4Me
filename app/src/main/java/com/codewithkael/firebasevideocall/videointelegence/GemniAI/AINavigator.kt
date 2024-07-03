@@ -59,7 +59,7 @@ class AINavigator : CameraActivity(), UvcCapturerNew.USBPreview, TextToSpeech.On
         "Describe the images with directions(left,right,up,down and straight) from the camera to surroundings within 15 words with text extraction.",
         "Detect the India money and Coins in 8 words.",
         "Identify the commodity in front of the camera only need with accuracy one. Limit your description to 7 words.",
-        "Extract text from images ensuring no omissions and maintaining margin alignment."
+        "Detect the text from images"
 
     )
     private var currentPromptIndex = 0

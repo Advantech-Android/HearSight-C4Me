@@ -61,6 +61,7 @@ import com.codewithkael.firebasevideocall.utils.UsbReceiver
 
 import com.codewithkael.firebasevideocall.utils.UserStatus
 import com.codewithkael.firebasevideocall.videointelegence.GemniAI.AINavigator
+import com.codewithkael.firebasevideocall.videointelegence.GemniAI.OCRCamera
 import kotlinx.coroutines.launch
 
 import javax.inject.Inject
@@ -601,6 +602,11 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
                 startActivity(Intent(this, AINavigator::class.java))
                 true
             }
+            R.id.OCRPageMenu -> {
+                startActivity(Intent(this,OCRCamera::class.java))
+                true
+            }
+
 
             else -> super.onOptionsItemSelected(item)
         }
