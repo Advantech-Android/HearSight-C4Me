@@ -4,9 +4,8 @@ import org.apache.tools.ant.taskdefs.condition.Os
 
 android {
 	compileSdkVersion rootProject.ext.versionCompiler
-	buildToolsVersion rootProject.ext.versionBuildTool
 
-	compileOptions {
+    compileOptions {
 		sourceCompatibility rootProject.ext.javaSourceCompatibility
 		targetCompatibility rootProject.ext.javaTargetCompatibility
 	}
@@ -37,6 +36,7 @@ android {
 		pickFirst 'jni/arm64-v8a/libUACAudio.so'
 		pickFirst 'jni/arm64-v8a/libUVCCamera.so'
 	}
+    namespace 'com.jiangdg.uvccamera'
 }
 /*
 tasks.withType(JavaCompile) {

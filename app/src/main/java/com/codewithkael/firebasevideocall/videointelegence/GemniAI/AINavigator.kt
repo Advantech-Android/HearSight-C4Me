@@ -60,7 +60,6 @@ class AINavigator : CameraActivity(), UvcCapturerNew.USBPreview, TextToSpeech.On
         "Detect the India money and Coins in 8 words.",
         "Identify the commodity in front of the camera only need with accuracy one. Limit your description to 7 words.",
         "Detect the text from images"
-
     )
     private var currentPromptIndex = 0
 

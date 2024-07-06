@@ -1,227 +1,257 @@
 package com.codewithkael.firebasevideocall.videointelegence.GemniAI
 
-import android.app.Activity
-import android.content.ContentValues
-import android.content.Intent
+import android.content.Context
 import android.content.pm.PackageManager
-import android.net.Uri
+import android.os.Build
 import android.os.Bundle
-import android.provider.MediaStore
-import android.view.Menu
-import android.widget.PopupMenu
+import android.util.Log
+import android.util.Size
+import android.widget.Button
+import android.widget.ProgressBar
+import android.widget.ScrollView
+import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.result.ActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.ComponentActivity
+
+import androidx.annotation.OptIn
+import androidx.annotation.RequiresApi
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
+import androidx.camera.core.CameraSelector
+import androidx.camera.core.ExperimentalGetImage
+import androidx.camera.core.ImageAnalysis
+import androidx.camera.core.ImageCapture
+import androidx.camera.core.ImageCaptureException
+import androidx.camera.core.ImageProxy
+import androidx.camera.core.Preview
+import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 
-import com.codewithkael.firebasevideocall.databinding.ActivityOcrcameraBinding
-import com.google.mlkit.vision.common.InputImage
+import com.codewithkael.firebasevideocall.R
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 
+import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
-import com.google.mlkit.vision.text.TextRecognizer
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 
+@Suppress("DEPRECATION")
+class OCRCamera : AppCompatActivity()
+{
+
+    private lateinit var previewView: PreviewView
+    private lateinit var imageCapture: ImageCapture
+    private lateinit var progressIndicator: ProgressBar
+    private lateinit var boundingBoxOverlay: BoundingBoxOverlay
+    private lateinit var buttonTakePicture:Button
+    private lateinit var textview_extracted_text:TextView
+    private lateinit var ttsEngine: TTSEngine
+    private lateinit var fab_tts_speak:FloatingActionButton
+    private lateinit var fab_tts_stop:FloatingActionButton
+    private var isSpeaking=false
 
 
-class OCRCamera : AppCompatActivity() {
-    private lateinit var OCRbinding: ActivityOcrcameraBinding
-
-    private companion object {
-        private const val CAMERA_REQUEST_CODE = 100
-        private const val STORAGE_REQUEST_CODE = 101
-    }
-
-    private var imageUri: Uri? = null
-    private lateinit var cameraPermission: Array<String>
-    private lateinit var storagePermission: Array<String>
-    private lateinit var textRecognizer: TextRecognizer
-
-
-    override fun onCreate(savedInstanceState: Bundle?) {
+    @RequiresApi(Build.VERSION_CODES.P)
+    override fun onCreate(savedInstanceState: Bundle?)
+    {
         super.onCreate(savedInstanceState)
-        OCRbinding = ActivityOcrcameraBinding.inflate(layoutInflater)
-        setContentView(OCRbinding.root)
-        cameraPermission = arrayOf(
-            android.Manifest.permission.CAMERA,
-            android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
 
-        textRecognizer=TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+        setContentView(R.layout.activity_ocrcamera)
 
-        storagePermission = arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        previewView = findViewById(R.id.camera_preview)
+        progressIndicator = findViewById(R.id.progress_indicator)
+        boundingBoxOverlay = findViewById(R.id.bounding_box_overlay)
+        buttonTakePicture=findViewById(R.id.button_take_picture)
+        textview_extracted_text=findViewById(R.id.textview_extracted_text)
+        fab_tts_speak=findViewById(R.id.fab_tts_speak)
+        fab_tts_stop=findViewById(R.id.fab_tts_stop)
+        ttsEngine=TTSEngine(this)
 
-        OCRbinding.btnTakeImage.setOnClickListener {
-            showInputImageDialog()
+        buttonTakePicture.setOnClickListener {
+            progressIndicator.visibility = ProgressBar.VISIBLE
+            takePicture { text ->
+                progressIndicator.visibility = ProgressBar.GONE
+                textview_extracted_text.text=text
+                //ttsEngine.speakOut(text)
+                Toast.makeText(this@OCRCamera, "Text extracted successfully", Toast.LENGTH_SHORT).show()
+            }
         }
-        OCRbinding.btnTextExtract.setOnClickListener {
-            if(imageUri==null){
-                Toast.makeText(this, "Pick image first", Toast.LENGTH_SHORT).show()
+
+        fab_tts_speak.setOnClickListener {
+            val text = textview_extracted_text.text.toString()
+            if (text.isNotEmpty()) {
+                if (isSpeaking) {
+                    ttsEngine.shutdown()
+                }
+                ttsEngine.speakOut(text)
+                isSpeaking = true
             }
             else
             {
-                recognizeTextFromImage()
+                Toast.makeText(this@OCRCamera, "No text found", Toast.LENGTH_SHORT).show()
             }
         }
 
-    }
+        fab_tts_stop.setOnClickListener {
+            ttsEngine.shutdown()
+            isSpeaking = false
+        }
 
-    private fun recognizeTextFromImage()
-    {
-       try {
-           val inputImage=InputImage.fromFilePath(this,imageUri!!)
-           val textResult=textRecognizer.process(inputImage).addOnSuccessListener {text->
-               val recognizedText=text.text
-               OCRbinding.txtDisplay.text = recognizedText
-           }
-               .addOnFailureListener {e->
-                   Toast.makeText(this, "Failed to recognize ${e.message.toString()}", Toast.LENGTH_SHORT).show()
-               }
-       }
-       catch (e:Exception)
-       {
-           Toast.makeText(this, "Failed to recognize ${e.message.toString()}", Toast.LENGTH_SHORT).show()
-       }
-    }
 
-    private fun showInputImageDialog() {
-        val popupMenu=PopupMenu(this,OCRbinding.btnTakeImage)
-        popupMenu.menu.add(Menu.NONE,1,1,"CAMERA")
-        popupMenu.menu.add(Menu.NONE,2,2,"GALLERY")
-        popupMenu.show()
-
-        popupMenu.setOnMenuItemClickListener {menuItem->
-            val id=menuItem.itemId
-            if(id==1)
-            {
-                if(checkCameraPermissions()){
-                    pickImageCamera()
-                }
-                else
-                {
-                    requestCameraPermissions()
-                }
-            }
-            else if(id==2)
-            {
-                if(checkStoragePermission()){
-                    pickImageGallery()
-                }
-                else
-                {
-                    requestStoragePermission()
-                }
-            }
-            return@setOnMenuItemClickListener true
+        if (checkPermission(this)) {
+            startCamera()
+        } else {
+            requestPermission(this)
         }
     }
 
-    private fun pickImageGallery() {
-        val intent = Intent(Intent.ACTION_PICK)
-        intent.type = "image/*"
+    @RequiresApi(Build.VERSION_CODES.P)
+    private fun startCamera() {
+        val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
+        cameraProviderFuture.addListener({
+            val cameraProvider = cameraProviderFuture.get()
+            val preview = Preview.Builder().build().also {
+                it.surfaceProvider = previewView.surfaceProvider
+            }
+            imageCapture = ImageCapture.Builder()
+                .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+                .setTargetResolution(Size(1280, 720))
+                .build()
+            val imageAnalysis = ImageAnalysis.Builder()
+                .setTargetResolution(Size(1280, 720))
+                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                .build()
+            imageAnalysis.setAnalyzer(ContextCompat.getMainExecutor(this)) { imageProxy ->
+                processImageProxy(imageProxy)
+            }
+            val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+
+            try {
+                cameraProvider.unbindAll()
+                cameraProvider.bindToLifecycle(
+                    this,
+                    cameraSelector,
+                    preview,
+                    imageCapture,
+                    imageAnalysis
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }, ContextCompat.getMainExecutor(this))
+    }
+    private fun takePicture(onCompleteListener: (String) -> Unit) {
+        imageCapture.takePicture(
+            ContextCompat.getMainExecutor(this),
+            object : ImageCapture.OnImageCapturedCallback() {
+                @OptIn(ExperimentalGetImage::class)
+                @RequiresApi(Build.VERSION_CODES.P)
+                override fun onCaptureSuccess(image: ImageProxy) {
+                    super.onCaptureSuccess(image)
+                    // Pass the imageProxy to startTextRecognition only if it is not null
+                    if (image.image != null) {
+                        startTextRecognition(image, onCompleteListener)
+                    } else {
+                        Log.e("Text-->", "ImageProxy image is null")
+                        Toast.makeText(this@OCRCamera, "Failed to capture image", Toast.LENGTH_SHORT).show()
+                    }
+
+                }
+
+                override fun onError(exception: ImageCaptureException) {
+                    super.onError(exception)
+                    Log.e("Text", "Image capture failed: ${exception.message}")
+                    Toast.makeText(this@OCRCamera, "Failed to capture image", Toast.LENGTH_SHORT).show()
+                }
+            }
+        )
     }
 
-    private val galleryActivityResultLauncher =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { res ->
-            if (res.resultCode == Activity.RESULT_OK) {
-                val data = res.data
-                imageUri = data!!.data
-                OCRbinding.imageIv.setImageURI(imageUri)
-            } else {
-                Toast.makeText(this@OCRCamera, "Cancelled..", Toast.LENGTH_SHORT).show()
-            }
+
+    @OptIn(ExperimentalGetImage::class)
+    private fun startTextRecognition(imageProxy: ImageProxy, onCompleteListener: (String) -> Unit) {
+
+        if (imageProxy.image == null) {
+            Log.e("Text", "ImageProxy or its image is null")
+            Toast.makeText(this@OCRCamera, "Failed to process image", Toast.LENGTH_SHORT).show()
+            return
         }
 
-    private fun pickImageCamera() {
-        val values = ContentValues()
-        values.put(MediaStore.Images.Media.TITLE, "SampleTitle")
-        values.put(MediaStore.Images.Media.DESCRIPTION, "Sample Description")
 
-        imageUri = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+        val inputImage = InputImage.fromMediaImage(imageProxy.image!!, imageProxy.imageInfo.rotationDegrees)
+        val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
 
-        val intent = Intent(MediaStore.ACTION_PICK_IMAGES)
-        intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri)
-        cameraActivityResultLauncher.launch(intent)
+        recognizer.process(inputImage)
+            .addOnSuccessListener { visionText ->
+                val text = processVisionText(visionText)
+                onCompleteListener(text)
+                imageProxy.close()
+            }
+            .addOnFailureListener { e ->
+                e.printStackTrace()
+                imageProxy.close()
+            }
     }
 
-    private val cameraActivityResultLauncher =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { res ->
-            if (res.resultCode == Activity.RESULT_OK) {
-                OCRbinding.imageIv.setImageURI(imageUri)
-            } else {
-                Toast.makeText(this@OCRCamera, "Cancelled", Toast.LENGTH_SHORT).show()
+    private fun processVisionText(visionText: com.google.mlkit.vision.text.Text): String {
+        val text = StringBuilder()
+        for (block in visionText.textBlocks) {
+            for (line in block.lines) {
+                text.append(line.text).append("\n")
             }
-
+            text.append("\n")
         }
+        return text.toString()
+    }
 
-    private fun checkStoragePermission(): Boolean {
+
+    @OptIn(ExperimentalGetImage::class)
+    @RequiresApi(Build.VERSION_CODES.P)
+    private fun processImageProxy(imageProxy: ImageProxy) {
+
+        val inputImage = InputImage.fromMediaImage(imageProxy.image!!, imageProxy.imageInfo.rotationDegrees)
+        val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+        recognizer.process(inputImage)
+            .addOnSuccessListener { visionText ->
+                drawBoundingBoxes(visionText)
+                imageProxy.close()
+            }
+            .addOnFailureListener { e ->
+                e.printStackTrace()
+                imageProxy.close()
+            }
+    }
+
+    private fun drawBoundingBoxes(visionText: com.google.mlkit.vision.text.Text) {
+        val boxes = visionText.textBlocks.flatMap { it.lines }.mapNotNull { it.boundingBox }
+        boundingBoxOverlay.setBoundingBoxes(boxes)
+    }
+
+
+    private fun checkPermission(context: Context): Boolean {
         return ContextCompat.checkSelfPermission(
-            this,
-            android.Manifest.permission.WRITE_EXTERNAL_STORAGE
-        ) ==
-                PackageManager.PERMISSION_GRANTED
-    }
-
-    private fun checkCameraPermissions(): Boolean {
-        val cameraResult = ContextCompat.checkSelfPermission(
-            this,
+            context,
             android.Manifest.permission.CAMERA
         ) == PackageManager.PERMISSION_GRANTED
-        val storageResult = ContextCompat.checkSelfPermission(
-            this,
-            android.Manifest.permission.WRITE_EXTERNAL_STORAGE
-        ) == PackageManager.PERMISSION_GRANTED
-
-        return cameraResult && storageResult
     }
 
-    private fun requestStoragePermission() {
-        ActivityCompat.requestPermissions(this, storagePermission, STORAGE_REQUEST_CODE)
-    }
-
-    private fun requestCameraPermissions() {
-        ActivityCompat.requestPermissions(this, storagePermission, CAMERA_REQUEST_CODE)
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-
-        when (requestCode) {
-            CAMERA_REQUEST_CODE -> {
-                if (grantResults.isNotEmpty()) {
-                    val cameraAccepted = grantResults[0] == PackageManager.PERMISSION_GRANTED
-                    val storageAccepted = grantResults[1] == PackageManager.PERMISSION_GRANTED
-                    if (cameraAccepted && storageAccepted) {
-                        pickImageCamera()
-                    } else {
-                        Toast.makeText(this@OCRCamera, "Camer and Storage Permission required", Toast.LENGTH_SHORT)
-                            .show()
-                    }
-                }
+    @RequiresApi(Build.VERSION_CODES.P)
+    private fun requestPermission(context: Context) {
+        val launcher = (context as ComponentActivity).registerForActivityResult(
+            androidx.activity.result.contract.ActivityResultContracts.RequestPermission()
+        ) { isGranted ->
+            if (isGranted) {
+                Toast.makeText(context, "Permission granted", Toast.LENGTH_SHORT).show()
+                startCamera()
+            } else {
+                Toast.makeText(context, "Permission denied", Toast.LENGTH_SHORT).show()
             }
-            STORAGE_REQUEST_CODE -> {
-                if(grantResults.isNotEmpty()){
-                    val storageAccepted=grantResults[0]==PackageManager.PERMISSION_GRANTED
-                    if(storageAccepted){
-                        pickImageGallery()
-                    }
-                    else
-                    {
-                        Toast.makeText(this, "Storage permission required", Toast.LENGTH_SHORT).show()
-                    }
-                }
-            }
-
         }
+        launcher.launch(android.Manifest.permission.CAMERA)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        ttsEngine.shutdown()
     }
 }
-
-
-
-
-
-

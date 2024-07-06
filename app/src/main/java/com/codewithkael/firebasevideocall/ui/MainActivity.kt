@@ -603,7 +603,7 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
                 true
             }
             R.id.OCRPageMenu -> {
-                startActivity(Intent(this,OCRCamera::class.java))
+                startActivity(Intent(this, OCRCamera::class.java))
                 true
             }
 

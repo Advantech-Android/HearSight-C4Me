@@ -1,61 +1,99 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/OCRPage"
+    android:id="@+id/main"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:orientation="vertical"
+    android:layout_height="match_parent"
     tools:context=".videointelegence.GemniAI.OCRCamera">
-    <LinearLayout
-        android:layout_width="match_parent"
+
+    <androidx.camera.view.PreviewView
+        android:id="@+id/camera_preview"
+        android:layout_width="350dp"
+        android:layout_height="400dp"
+        android:layout_margin="8dp"
+        android:layout_marginBottom="330dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.491"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <com.codewithkael.firebasevideocall.videointelegence.GemniAI.BoundingBoxOverlay
+        android:id="@+id/bounding_box_overlay"
+        android:layout_width="350dp"
+        android:layout_height="400dp"
+        android:layout_marginBottom="330dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.491"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="1.0" />
+
+    <ProgressBar
+        android:id="@+id/progress_indicator"
+        style="?android:attr/progressBarStyleLarge"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_margin="15dp"
-        android:layout_gravity="center"
-        android:gravity="center"
-        android:orientation="horizontal">
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Take image"
-            android:layout_marginRight="8dp"
-            android:id="@+id/btnTakeImage"></Button>
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Extract"
-            android:layout_marginRight="8dp"
-            android:id="@+id/btnTextExtract"></Button>
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/button_take_picture"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="264dp"
+        android:text="Take Picture"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.498"
+        app:layout_constraintStart_toStartOf="parent" />
 
 
-    </LinearLayout>
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        >
-        <com.google.android.material.imageview.ShapeableImageView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="8dp"
-            android:id="@+id/imageIv"
-            app:strokeWidth="2dp"
-            android:adjustViewBounds="true"
-            android:src="@drawable/ic_launcher_background"/>
-        <ScrollView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+    <ScrollView
+        android:layout_width="307dp"
+        android:layout_height="228dp"
+        android:layout_margin="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.115"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/button_take_picture"
+        app:layout_constraintVertical_bias="0.333">
+
         <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
+            android:id="@+id/textview_extracted_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:layout_margin="8dp"
-            android:hint="extracted text"
-            android:id="@+id/txtDisplay"
-            android:textSize="20dp"
-            ></TextView>
-        </ScrollView>
+            android:text="Extracted Text: "
+            android:textColor="@color/black"
+            android:textSize="15sp" />
+    </ScrollView>
 
-    </LinearLayout>
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab_tts_speak"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="152dp"
+        android:contentDescription="Speak"
+        android:src="@android:drawable/ic_btn_speak_now"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:tint="@android:color/white" />
 
-
-</LinearLayout>
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab_tts_stop"
+        android:layout_width="112dp"
+        android:layout_height="56dp"
+        android:contentDescription="Stop"
+        android:src="@android:drawable/ic_media_pause"
+        app:tint="@android:color/white"
+        tools:ignore="MissingConstraints"
+        tools:layout_editor_absoluteX="347dp"
+        tools:layout_editor_absoluteY="602dp" />
+</androidx.constraintlayout.widget.ConstraintLayout>
